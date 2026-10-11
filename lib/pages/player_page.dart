@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/network/api_config.dart';
+import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
@@ -150,6 +151,8 @@ class _PlayerPageState extends State<PlayerPage> {
   void _showChapterSheet(BookPlayer player) {
     final chapters = player.chapters;
     if (chapters.isEmpty) return;
+    final shelf = context.read<ShelfStore>();
+    final bvid = player.book?.bvid ?? '';
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -194,6 +197,7 @@ class _PlayerPageState extends State<PlayerPage> {
                   itemBuilder: (ctx, i) {
                     final c = chapters[i];
                     final active = i == player.index;
+                    final done = bvid.isNotEmpty && shelf.isChapterDone(bvid, c.cid);
                     return ListTile(
                       dense: true,
                       leading: active
@@ -201,12 +205,15 @@ class _PlayerPageState extends State<PlayerPage> {
                               size: 18, color: AppTheme.accent)
                           : SizedBox(
                               width: 18,
-                              child: Text(
-                                '${i + 1}',
-                                textAlign: TextAlign.center,
-                                style:  TextStyle(
-                                    fontSize: 13, color: AppTheme.textSub),
-                              ),
+                              child: done
+                                  ? Icon(Icons.check_rounded,
+                                      size: 15, color: AppTheme.textHint)
+                                  : Text(
+                                      '${i + 1}',
+                                      textAlign: TextAlign.center,
+                                      style:  TextStyle(
+                                          fontSize: 13, color: AppTheme.textSub),
+                                    ),
                             ),
                       title: Text(
                         '${c.page} · ${c.part}',
@@ -216,8 +223,9 @@ class _PlayerPageState extends State<PlayerPage> {
                           fontSize: 14,
                           fontWeight:
                               active ? FontWeight.w700 : FontWeight.w400,
-                          color:
-                              active ? AppTheme.accent : AppTheme.textMain,
+                          color: active
+                              ? AppTheme.accent
+                              : (done ? AppTheme.textHint : AppTheme.textMain),
                         ),
                       ),
                       trailing: Text(
@@ -381,12 +389,18 @@ class _PlayerPageState extends State<PlayerPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            iconSize: 40,
+            iconSize: 38,
             color: player.hasPrev ? AppTheme.textMain : AppTheme.textHint,
             icon: const Icon(Icons.skip_previous_rounded),
             onPressed: player.hasPrev ? player.previous : null,
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 6),
+          IconButton(
+            tooltip: '后退 15 秒',
+            onPressed: () => player.seekRelative(-15),
+            icon: _Seek15Icon(forward: false, color: AppTheme.textSub),
+          ),
+          const SizedBox(width: 10),
           InkResponse(
             onTap: player.togglePlay,
             radius: 40,
@@ -406,9 +420,15 @@ class _PlayerPageState extends State<PlayerPage> {
               ),
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 10),
           IconButton(
-            iconSize: 40,
+            tooltip: '前进 15 秒',
+            onPressed: () => player.seekRelative(15),
+            icon: _Seek15Icon(forward: true, color: AppTheme.textSub),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            iconSize: 38,
             color: player.hasNext ? AppTheme.textMain : AppTheme.textHint,
             icon: const Icon(Icons.skip_next_rounded),
             onPressed: player.hasNext ? player.next : null,
@@ -418,12 +438,80 @@ class _PlayerPageState extends State<PlayerPage> {
     );
   }
 
+  /// 倍速弹窗：听书常用 1.25x / 1.5x
+  void _showSpeedSheet(BookPlayer player) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  '播放速度',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+              ),
+              ...BookPlayer.speedSteps.map((r) {
+                final active = (r - player.rate).abs() < 0.001;
+                final label = r % 1 == 0
+                    ? '${r.toStringAsFixed(1)}x'
+                    : '${r}x';
+                return ListTile(
+                  title: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: active ? AppTheme.accent : AppTheme.textMain,
+                      fontWeight:
+                          active ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                  ),
+                  trailing: active
+                      ? const Icon(Icons.check, color: AppTheme.accent)
+                      : null,
+                  onTap: () {
+                    player.setRate(r);
+                    Navigator.of(ctx).pop();
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildActionRow(BookPlayer player) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 10,
+        runSpacing: 8,
         children: [
+          ActionChip(
+            avatar:  Icon(Icons.speed_rounded,
+                size: 16,
+                color: player.rate != 1.0 ? AppTheme.accent : AppTheme.textSub),
+            label: Text(
+              '倍速 ${player.rateLabel}',
+              style: TextStyle(
+                fontSize: 12,
+                color: player.rate != 1.0 ? AppTheme.accent : null,
+                fontWeight: player.rate != 1.0 ? FontWeight.w700 : null,
+              ),
+            ),
+            onPressed: () => _showSpeedSheet(player),
+          ),
           ActionChip(
             avatar:  Icon(Icons.format_list_bulleted,
                 size: 16, color: AppTheme.accent),
@@ -433,19 +521,24 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             onPressed: () => _showChapterSheet(player),
           ),
-          const SizedBox(width: 10),
           ActionChip(
             avatar:  Icon(Icons.bedtime_outlined,
                 size: 16, color: AppTheme.accent),
             label: Text(
-              player.sleepRemaining > Duration.zero
-                  ? '睡眠 ${Fmt.sleepText(player.sleepRemaining)}'
-                  : '睡眠定时',
-              style: const TextStyle(fontSize: 12),
+              player.stopAtChapterEnd
+                  ? '播完自动暂停'
+                  : player.sleepRemaining > Duration.zero
+                      ? '睡眠 ${Fmt.sleepText(player.sleepRemaining)}'
+                      : '睡眠定时',
+              style: TextStyle(
+                fontSize: 12,
+                color: player.stopAtChapterEnd ? AppTheme.accent : null,
+                fontWeight:
+                    player.stopAtChapterEnd ? FontWeight.w700 : null,
+              ),
             ),
             onPressed: () => _showSleepSheet(player),
           ),
-          const SizedBox(width: 10),
           ActionChip(
             avatar:  Icon(Icons.share_outlined,
                 size: 16, color: AppTheme.accent),
@@ -483,6 +576,22 @@ class _PlayerPageState extends State<PlayerPage> {
                       color: AppTheme.textMain),
                 ),
               ),
+              SwitchListTile(
+                value: player.stopAtChapterEnd,
+                onChanged: (v) {
+                  setState(() => player.setStopAtChapterEnd(v));
+                },
+                title: const Text(
+                  '播完本集自动暂停',
+                  style: TextStyle(fontSize: 15),
+                ),
+                subtitle: const Text(
+                  '本集播完即停，不自动播放下一集',
+                  style: TextStyle(fontSize: 12),
+                ),
+                activeThumbColor: AppTheme.accent,
+              ),
+              const Divider(height: 1),
               ...options.map((o) {
                 final active = (player.sleepRemaining > Duration.zero &&
                     (o.$1 > Duration.zero && player.sleepRemaining <= o.$1 + const Duration(minutes: 1))) ||
@@ -509,6 +618,43 @@ class _PlayerPageState extends State<PlayerPage> {
           ),
         );
       },
+    );
+  }
+}
+
+/// 快进/快退 15 秒图标：圆形箭头叠加数字
+class _Seek15Icon extends StatelessWidget {
+  final bool forward;
+  final Color color;
+  const _Seek15Icon({required this.forward, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 30,
+      height: 30,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            forward ? Icons.forward_rounded : Icons.replay_rounded,
+            size: 30,
+            color: color,
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: forward ? 1 : -1, top: 1),
+            child: Text(
+              '15',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: color,
+                height: 1,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

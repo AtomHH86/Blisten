@@ -14,6 +14,9 @@ class ShelfBook {
   int chapterDurationMs;
   int updatedAt;
 
+  /// 已听完的章节 cid 列表（用于「已听 ✓」区分）
+  List<int> doneCids;
+
   ShelfBook({
     required this.book,
     this.lastCid = 0,
@@ -21,7 +24,9 @@ class ShelfBook {
     this.positionMs = 0,
     this.chapterDurationMs = 0,
     int? updatedAt,
-  }) : updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
+    List<int>? doneCids,
+  })  : updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+        doneCids = doneCids ?? <int>[];
 
   Map<String, dynamic> toJson() => {
         'book': book.toJson(),
@@ -30,6 +35,7 @@ class ShelfBook {
         'positionMs': positionMs,
         'chapterDurationMs': chapterDurationMs,
         'updatedAt': updatedAt,
+        'doneCids': doneCids,
       };
 
   factory ShelfBook.fromJson(Map<String, dynamic> m) => ShelfBook(
@@ -39,6 +45,11 @@ class ShelfBook {
         positionMs: int.tryParse('${m['positionMs'] ?? 0}') ?? 0,
         chapterDurationMs: int.tryParse('${m['chapterDurationMs'] ?? 0}') ?? 0,
         updatedAt: int.tryParse('${m['updatedAt'] ?? 0}') ?? 0,
+        doneCids: (m['doneCids'] as List?)
+                ?.map((e) => int.tryParse('$e') ?? 0)
+                .where((e) => e != 0)
+                .toList() ??
+            <int>[],
       );
 
   /// 精确到秒的播放位置（h:mm:ss / mm:ss）
@@ -150,4 +161,30 @@ class ShelfStore extends ChangeNotifier {
     notifyListeners();
     return existing;
   }
+
+  /// 标记某章节为「已听完」（幂等）
+  Future<void> markChapterDone(String bvid, int cid) async {
+    final existing = byBvid(bvid);
+    if (existing == null || cid == 0) return;
+    if (existing.doneCids.contains(cid)) return;
+    existing.doneCids.add(cid);
+    // 上限保护：只保留最近 800 条，避免极端长篇把本地存储撑爆
+    if (existing.doneCids.length > 800) {
+      existing.doneCids = existing.doneCids.sublist(
+        existing.doneCids.length - 800,
+      );
+    }
+    notifyListeners();
+    await _save();
+  }
+
+  /// 某章节是否已听完
+  bool isChapterDone(String bvid, int cid) {
+    final existing = byBvid(bvid);
+    if (existing == null) return false;
+    return existing.doneCids.contains(cid);
+  }
+
+  /// 本书已听完的章节数
+  int doneCount(String bvid) => byBvid(bvid)?.doneCids.length ?? 0;
 }

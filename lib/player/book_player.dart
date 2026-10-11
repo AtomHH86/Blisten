@@ -5,6 +5,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart' hide AudioTrack;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/network/api_config.dart';
 import '../core/storage/shelf_store.dart';
@@ -43,6 +44,22 @@ class BookPlayer extends ChangeNotifier {
   Timer? _sleepTimer;
   Duration _sleepRemaining = Duration.zero;
 
+  // ---------- 倍速播放 ----------
+  /// 听书常用倍速档位（覆盖 1.0 ~ 2.0）
+  static const speedSteps = <double>[1.0, 1.25, 1.5, 1.75, 2.0];
+  static const _prefRate = 'abts_rate';
+  double _rate = 1.0;
+
+  // ---------- 断流自动重连（长音频） ----------
+  Timer? _watchdog;
+  Duration _lastPos = Duration.zero;
+  DateTime _lastPosAt = DateTime.now();
+  bool _reconnecting = false;
+
+  /// 播完本集自动暂停（小宇宙同款）：到结尾停下而不是连播下一章
+  bool _stopAtChapterEnd = false;
+  bool _markingDone = false;
+
   /// 播放位置（高频，独立于 notifyListeners，避免整页频繁重建）
   final ValueNotifier<Duration> positionTick = ValueNotifier(Duration.zero);
 
@@ -64,6 +81,53 @@ class BookPlayer extends ChangeNotifier {
   String? get playbackUrl => _playbackUrl;
   BookAudio? get lastAudio => _lastAudio;
   Duration get sleepRemaining => _sleepRemaining;
+  double get rate => _rate;
+  bool get stopAtChapterEnd => _stopAtChapterEnd;
+
+  /// 倍速显示文本（如 1.5 → "1.5x"）
+  String get rateLabel {
+    final r = _rate;
+    return '${r % 1 == 0 ? r.toStringAsFixed(1) : r.toStringAsFixed(2).replaceAll(RegExp(r'0$'), '')}x';
+  }
+
+  /// 载入持久化的倍速（启动时调用）
+  Future<void> loadRate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getDouble(_prefRate);
+      if (v != null && v >= 0.5 && v <= 3.0) {
+        _rate = v;
+        await _player.setRate(v);
+      }
+    } catch (e) {
+      debugPrint('[BookPlayer] load rate failed: $e');
+    }
+  }
+
+  /// 设置倍速并持久化（听书常用 1.25~1.5）
+  Future<void> setRate(double v) async {
+    _rate = v.clamp(0.5, 3.0);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_prefRate, _rate);
+    } catch (_) {}
+    await _player.setRate(_rate);
+    _pushState(force: true);
+    notifyListeners();
+  }
+
+  /// 在档位间循环切换倍速（播放页一键）
+  Future<void> cycleSpeed() async {
+    final idx = speedSteps.indexWhere((e) => (e - _rate).abs() < 0.001);
+    final next = speedSteps[(idx + 1) % speedSteps.length];
+    await setRate(next);
+  }
+
+  /// 播完本集自动暂停开关
+  void setStopAtChapterEnd(bool v) {
+    _stopAtChapterEnd = v;
+    notifyListeners();
+  }
 
   Chapter? get currentChapter =>
       _chapters.isNotEmpty && _index < _chapters.length
@@ -82,6 +146,7 @@ class BookPlayer extends ChangeNotifier {
   void setup() {
     if (_ready) return;
     _ready = true;
+    unawaited(loadRate());
     _player.stream.completed.listen((_) async {
       // media_kit 在 open() 换源时可能抛出一次伪 completed，
       // 用「加载中」与「位置未到结尾」两道判断过滤，避免乱跳章节
@@ -92,6 +157,15 @@ class BookPlayer extends ChangeNotifier {
         return;
       }
       flushProgress();
+      _markCurrentDone();
+      if (_stopAtChapterEnd) {
+        // 播完本集自动暂停：不再连播下一章
+        _error = null;
+        await pause();
+        debugPrint('[BookPlayer] 本集播放结束，按设置自动暂停');
+        notifyListeners();
+        return;
+      }
       if (hasNext) {
         await next();
       } else {
@@ -99,10 +173,15 @@ class BookPlayer extends ChangeNotifier {
         notifyListeners();
       }
     });
-    _player.stream.error.listen((e) {
+    _player.stream.error.listen((e) async {
+      debugPrint('[BookPlayer] player error: $e');
       _loading = false;
+      // 长音频断流：先尝试自动重连，重连失败才报错
+      if (_loaded && !_reconnecting) {
+        final ok = await _reconnect();
+        if (ok) return;
+      }
       _error = '播放失败，请稍后重试';
-      debugPrint('[BookPlayer] error: $e');
       notifyListeners();
     });
     _player.stream.position.listen((p) {
@@ -110,9 +189,12 @@ class BookPlayer extends ChangeNotifier {
       _tickSave();
       _pushState();
       _tallyPlayTime();
+      _markDoneIfReached(p);
     });
     _player.stream.playing.listen((_) {
-      _pushState();
+      _lastPos = currentPosition;
+      _lastPosAt = DateTime.now();
+      _pushState(force: true);
       notifyListeners();
     });
     _player.stream.buffering.listen((_) {
@@ -122,6 +204,25 @@ class BookPlayer extends ChangeNotifier {
     _player.stream.duration.listen((_) {
       _pushState(force: true);
       notifyListeners();
+    });
+
+    // 断流看门狗：播放中且长时间（>40s）无进度推进时自动重连
+    _watchdog = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_reconnecting || !_loaded) return;
+      if (!_player.state.playing) {
+        _lastPosAt = DateTime.now();
+        return;
+      }
+      final pos = currentPosition;
+      if (pos != _lastPos) {
+        _lastPos = pos;
+        _lastPosAt = DateTime.now();
+        return;
+      }
+      if (DateTime.now().difference(_lastPosAt) > const Duration(seconds: 40)) {
+        debugPrint('[BookPlayer] 播放停滞超 40s，触发自动重连');
+        unawaited(_reconnect());
+      }
     });
 
     // 音频焦点：被其他 App 抢占时暂停；打断结束后自动续播
@@ -141,7 +242,63 @@ class BookPlayer extends ChangeNotifier {
       ..onFocusGained = () {
         unawaited(_restoreAfterFocusGain());
       }
+      ..onNoisy = () {
+        // 拔耳机等场景（becomingNoisy）：自动暂停，符合用户预期
+        debugPrint('[BookPlayer] 耳机拔出/音频输出变更，自动暂停');
+        unawaited(pause());
+      }
       ..start();
+  }
+
+  /// 断流自动重连：用当前章节的备用音轨地址重开并 seek 回原位置。
+  /// 返回是否恢复成功。
+  Future<bool> _reconnect() async {
+    if (_reconnecting) return false;
+    _reconnecting = true;
+    final keepMs = currentPosition.inMilliseconds;
+    try {
+      final chapter = currentChapter;
+      if (chapter == null) return false;
+      _loading = true;
+      notifyListeners();
+
+      // 换一个候选地址重试（清掉旧地址缓存，强制重新取流）
+      _urlCache.remove(chapter.cid);
+      final candidates = await _fetchStreamCandidates(chapter.cid);
+      if (candidates.isEmpty) return false;
+
+      var opened = false;
+      for (final url in candidates) {
+        try {
+          await _player.open(Media(url, httpHeaders: _streamHeaders()),
+              play: false);
+          await _seekToResume(keepMs);
+          opened = true;
+          _playbackUrl = url;
+          break;
+        } catch (e) {
+          debugPrint('[BookPlayer] 重连候选失败: $e');
+          await _player.stop();
+        }
+      }
+      if (!opened) return false;
+
+      _error = null;
+      _loading = false;
+      _lastPos = currentPosition;
+      _lastPosAt = DateTime.now();
+      unawaited(AudioFocus.instance.request());
+      _pushState(force: true);
+      notifyListeners();
+      debugPrint('[BookPlayer] 自动重连成功 @${keepMs}ms');
+      return true;
+    } catch (e) {
+      debugPrint('[BookPlayer] 重连失败: $e');
+      return false;
+    } finally {
+      _reconnecting = false;
+      _loading = false;
+    }
   }
 
   /// 系统打断（来电等）导致的暂停：不放弃焦点，等待 GAIN 后自动续播
@@ -283,6 +440,8 @@ class BookPlayer extends ChangeNotifier {
           // 有续播位置时先打开再精确跳转，保证落点准确到秒
           await _player.open(Media(url, httpHeaders: _streamHeaders()),
               play: resumeMs <= 0);
+          // open 后倍速可能被播放器复位，这里显式恢复
+          if (_rate != 1.0) await _player.setRate(_rate);
           if (resumeMs > 0) {
             await _seekToResume(resumeMs);
           }
@@ -430,7 +589,9 @@ class BookPlayer extends ChangeNotifier {
 
     final playing = _player.state.playing;
     final pos = currentPosition;
-    final dur = currentDuration;
+    // 真实缓冲位置：之前误传总时长，会让通知栏进度条/状态显示错位
+    final buffered = _player.state.buffer;
+    final buf = buffered > pos ? buffered : pos;
 
     final processing = _loading || _player.state.buffering
         ? AudioProcessingState.buffering
@@ -461,7 +622,7 @@ class BookPlayer extends ChangeNotifier {
         processingState: processing,
         playing: playing,
         updatePosition: pos,
-        bufferedPosition: dur,
+        bufferedPosition: buf,
       ),
     );
   }
@@ -517,8 +678,10 @@ class BookPlayer extends ChangeNotifier {
     unawaited(AudioFocus.instance.abandon());
     _loaded = false;
     _playbackUrl = null;
+    _reconnecting = false;
     positionTick.value = Duration.zero;
     _positionTimer?.cancel();
+    _watchdog?.cancel();
     final h = _audioHandler;
     if (h != null) {
       h.mediaItem.add(null);
@@ -567,6 +730,29 @@ class BookPlayer extends ChangeNotifier {
         AppAnalytics.onEvent('shelf_add_auto');
       }
     }
+  }
+
+  /// 把当前章节标记为「已听完」并入库
+  void _markCurrentDone() {
+    if (_markingDone) return;
+    _markingDone = true;
+    final chapter = currentChapter;
+    final book = _book;
+    _markingDone = false;
+    if (chapter == null || book == null) return;
+    if (!_shelf.isOnShelf(book.bvid)) return;
+    _shelf.markChapterDone(book.bvid, chapter.cid);
+  }
+
+  /// 播到接近结尾（>=95%）自动打「已听」标记，不等 completed 事件
+  void _markDoneIfReached(Duration pos) {
+    final chapter = currentChapter;
+    final book = _book;
+    final dur = currentDuration;
+    if (chapter == null || book == null || dur <= Duration.zero) return;
+    if (pos < dur * 0.95) return;
+    if (!_shelf.isOnShelf(book.bvid)) return;
+    _shelf.markChapterDone(book.bvid, chapter.cid);
   }
 
   Duration? get position => _player.state.duration > Duration.zero

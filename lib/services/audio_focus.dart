@@ -27,6 +27,9 @@ class AudioFocus {
   /// 打断结束、重新拿到焦点：应恢复音量并续播
   void Function()? onFocusGained;
 
+  /// 输出设备变为噪音（拔耳机 / 蓝牙断开）：应自动暂停
+  void Function()? onNoisy;
+
   bool get _isAndroid => Platform.isAndroid;
 
   /// 订阅焦点事件
@@ -42,6 +45,8 @@ class AudioFocus {
           onFocusDucked?.call();
         case 'gained':
           onFocusGained?.call();
+        case 'noisy':
+          onNoisy?.call();
       }
     });
   }

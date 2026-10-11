@@ -1,7 +1,9 @@
 package dev.pages.abts
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -19,6 +21,15 @@ class MainActivity : AudioServiceActivity() {
     private var audioManager: AudioManager? = null
     private var focusCallback: EventChannel.EventSink? = null
     private var focusRequest: AudioFocusRequest? = null
+
+    /// 拔耳机 / 蓝牙断开：系统广播 AUDIO_BECOMING_NOISY，通知 Dart 侧暂停
+    private val noisyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
+                focusCallback?.success("noisy")
+            }
+        }
+    }
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
@@ -47,6 +58,16 @@ class MainActivity : AudioServiceActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        // 注册「即将变噪音」广播（拔耳机/蓝牙断开）→ 自动暂停
+        try {
+            registerReceiver(
+                noisyReceiver,
+                IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),
+            )
+        } catch (e: Exception) {
+            // 个别 ROM 限制隐式广播时忽略，不影响播放
+        }
 
         // 音频焦点
         MethodChannel(
@@ -127,6 +148,15 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    override fun onDestroy() {
+        try {
+            unregisterReceiver(noisyReceiver)
+        } catch (e: Exception) {
+            // 未注册过则忽略
+        }
+        super.onDestroy()
     }
 
     private fun requestFocus(): Boolean {

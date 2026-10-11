@@ -132,11 +132,22 @@ class BiliClient {
     }
   }
 
-  /// gaia 风控闭环：激活 buvid3，把匿名游客伪装成"活跃设备"，显著降低 v_voucher 概率
+  /// gaia 风控闭环：先本地补齐 buvid3/buvid4，再上报 ExClimbWuzhi 把匿名游客
+  /// 伪装成"活跃设备"，显著降低 v_voucher / -412 概率（海外 IP 尤其需要）。
   Future<void> _ensureBuvidActivated() async {
     if (_buvidActivated) return;
     _buvidActivated = true;
     try {
+      // 本地直接种入 buvid3/buvid4：没有这一步，所有请求都缺设备标识，
+      // 会被判定为异常请求而返回 412。
+      if ((_jar.get('buvid3') ?? '').isEmpty) {
+        _jar.put('buvid3', genBuvid3());
+      }
+      if ((_jar.get('buvid4') ?? '').isEmpty) {
+        _jar.put('buvid4', genBuvid3());
+      }
+      await _persist();
+
       final rnd = Random();
       final png = base64.encode([
         for (var i = 0; i < 32; i++) rnd.nextInt(256),
@@ -152,7 +163,7 @@ class BiliClient {
         },
       });
       await post(BiliEndpoints.activateBuvid, data: {'payload': payload});
-      debugPrint('[BiliClient] buvid activated');
+      debugPrint('[BiliClient] buvid activated: ${_jar.get('buvid3')}');
     } catch (e) {
       debugPrint('[BiliClient] buvid activate failed: $e');
     }
@@ -236,6 +247,36 @@ class BiliClient {
 
   static bool _riskCode(int c) => c == -412 || c == -352;
 
+  /// 风控退避阶梯（毫秒）：命中 412/-352 时按序等待再重试
+  static const _backoff = [1200, 2600, 5000];
+
+  /// 判断一次响应是否属于风控拦截（HTTP 412/403 或 body code -412/-352）
+  static bool _isRiskResponse(Response<dynamic> res) {
+    final sc = res.statusCode ?? 0;
+    if (sc == 412 || sc == 403) return true;
+    final d = res.data;
+    if (d is Map) {
+      final code = int.tryParse('${d['code'] ?? 0}') ?? 0;
+      if (_riskCode(code)) return true;
+    }
+    return false;
+  }
+
+  /// 命中风控时的补救：补齐设备标识并重新激活，抬高后续请求的成功率
+  Future<void> _mitigateRisk() async {
+    try {
+      if ((_jar.get('buvid3') ?? '').isEmpty) {
+        _jar.put('buvid3', genBuvid3());
+        _jar.put('buvid4', genBuvid3());
+      }
+      _jar.put('b_nut', '${DateTime.now().millisecondsSinceEpoch}');
+      await _persist();
+      await warmup();
+    } catch (e) {
+      debugPrint('[BiliClient] risk mitigate failed: $e');
+    }
+  }
+
   Future<void> _refreshWbiKeys() async {
     try {
       final res = await _fetchRaw(BiliEndpoints.nav);
@@ -290,20 +331,20 @@ class BiliClient {
           ).toString();
 
     try {
-      var res = await _exec(
+      Response<dynamic> res = await _exec(
         fullUrl,
         headers: {'Referer': BiliEndpoints.home, ...?headers},
       );
-      final body = res.data;
-      if (body is Map) {
-        final code = body['code'];
-        if (code != null && code != 0 && _riskCode(code)) {
-          await Future<void>.delayed(const Duration(milliseconds: 1200));
-          res = await _exec(
-            fullUrl,
-            headers: {'Referer': BiliEndpoints.home, ...?headers},
-          );
-        }
+      // 风控退避重试：HTTP 412/403 与 body code -412/-352 一视同仁，
+      // 首次命中时补齐 buvid 并重新预热，海外 IP 尤其需要这一步。
+      for (var i = 0; _isRiskResponse(res) && i < _backoff.length; i++) {
+        debugPrint('[BiliClient] risk hit, backoff ${_backoff[i]}ms (try ${i + 1})');
+        await Future<void>.delayed(Duration(milliseconds: _backoff[i]));
+        if (i == 0) await _mitigateRisk();
+        res = await _exec(
+          fullUrl,
+          headers: {'Referer': BiliEndpoints.home, ...?headers},
+        );
       }
       final last = res.data;
       final sc = res.statusCode;
@@ -358,12 +399,33 @@ class BiliClient {
     if (res == null) {
       throw BiliApiException(-1, '网络请求失败：$lastErr');
     }
-    res = _normalize(res);
-    if (res.headers['set-cookie'] != null) {
-      _jar.mergeFromHeaders(res.headers['set-cookie']);
+    var resp = _normalize(res);
+    if (resp.headers['set-cookie'] != null) {
+      _jar.mergeFromHeaders(resp.headers['set-cookie']);
       await _persist();
     }
-    final body = res.data;
+    for (var i = 0; _isRiskResponse(resp) && i < _backoff.length; i++) {
+      debugPrint('[BiliClient] POST risk hit, backoff ${_backoff[i]}ms');
+      await Future<void>.delayed(Duration(milliseconds: _backoff[i]));
+      try {
+        resp = _normalize(await _dio.post<dynamic>(
+          url,
+          data: jsonBody ? jsonEncode(data ?? const {}) : data,
+          options: Options(
+            headers: {'Referer': BiliEndpoints.home, ...?headers},
+            contentType: jsonBody ? Headers.jsonContentType : null,
+            validateStatus: (_) => true,
+          ),
+        ));
+      } catch (e) {
+        lastErr = e;
+      }
+      if (resp.headers['set-cookie'] != null) {
+        _jar.mergeFromHeaders(resp.headers['set-cookie']);
+        await _persist();
+      }
+    }
+    final body = resp.data;
     if (body is Map) {
       final code = body['code'];
       final message = body['message'] ?? body['msg'] ?? '';
@@ -374,7 +436,7 @@ class BiliClient {
         );
       }
     }
-    return res;
+    return resp;
   }
 
   /// 是否已登录（有有效 SESSDATA）

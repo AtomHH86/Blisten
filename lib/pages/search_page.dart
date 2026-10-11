@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/storage/follow_store.dart';
 import '../core/storage/search_history_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../data/seed_books.dart';
 import '../models/book.dart';
+import '../models/up_user.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 import '../utils/format.dart';
 import '../widgets/book_cards.dart';
 import 'book_detail_page.dart';
+import 'up_home_page.dart';
 
 /// 独立搜索页：上拉加载下一页；未搜索时展示历史 + 热门
 class SearchPage extends StatefulWidget {
@@ -27,7 +30,12 @@ class _SearchPageState extends State<SearchPage> {
   final _focusNode = FocusNode();
   final _bili = BiliApi.instance;
 
+  /// 0 = 视频（有声小说），1 = UP 主
+  int _tab = 0;
+  static const _tabs = ['听书', 'UP主'];
+
   List<Book> _results = [];
+  List<UpUser> _ups = [];
   bool _loading = false;
   bool _loadingMore = false;
   bool _noMore = false;
@@ -95,11 +103,31 @@ class _SearchPageState extends State<SearchPage> {
       _loading = true;
       _error = null;
       _results = [];
+      _ups = [];
       _page = 1;
       _total = 0;
       _noMore = false;
       _hasSearched = true;
     });
+    if (_tab == 1) {
+      try {
+        final list = await _bili.searchUser(kw, pageSize: _pageSize);
+        if (!mounted) return;
+        setState(() {
+          _ups = list;
+          _loading = false;
+          if (list.length < _pageSize) _noMore = true;
+        });
+        AppAnalytics.onEvent('search_up', {'has_result': list.isNotEmpty ? 1 : 0});
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _error = '搜索失败，请稍后重试';
+        });
+      }
+      return;
+    }
     try {
       final list = await _bili.search(
         kw,
@@ -123,10 +151,28 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  void _switchTab(int i) {
+    if (_tab == i) return;
+    setState(() {
+      _tab = i;
+      _results = [];
+      _ups = [];
+      _page = 1;
+      _total = 0;
+      _noMore = false;
+      _error = null;
+      _hasSearched = false;
+    });
+  }
+
   /// 上拉分页：加载下一页并追加到列表尾部
   Future<void> _loadMore() async {
     final kw = _controller.text.trim();
     if (kw.isEmpty || _loading || _loadingMore) return;
+    if (_tab == 1) {
+      // UP 主不做分页，直接提示到底
+      return;
+    }
     if (_total > 0 && _results.length >= _total) return;
     final nextPage = _page + 1;
     setState(() => _loadingMore = true);
@@ -212,6 +258,7 @@ class _SearchPageState extends State<SearchPage> {
           : null,
       body: Column(
         children: [
+          _buildTabs(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: Container(
@@ -272,6 +319,48 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
+  /// 听书 / UP主 切换
+  Widget _buildTabs() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceHigh,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.divider, width: 0.5),
+        ),
+        child: Row(
+          children: List.generate(_tabs.length, (i) {
+            final active = _tab == i;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => _switchTab(i),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: active ? AppTheme.accent : Colors.transparent,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Text(
+                    _tabs[i],
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                      color: active ? Colors.white : AppTheme.textSub,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody() {
     if (_loading) {
       return Center(
@@ -287,6 +376,15 @@ class _SearchPageState extends State<SearchPage> {
     }
     if (!_hasSearched) {
       return _buildSuggest();
+    }
+    if (_tab == 1) {
+      if (_ups.isEmpty) {
+        return _ErrorState(
+          icon: Icons.person_search_outlined,
+          message: '没有找到「${_controller.text}」相关的 UP 主',
+        );
+      }
+      return _buildUpList();
     }
     if (_results.isEmpty) {
       return _ErrorState(
@@ -316,6 +414,70 @@ class _SearchPageState extends State<SearchPage> {
               MaterialPageRoute(
                 builder: (_) => BookDetailPage(bvid: b.bvid),
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// UP 主搜索结果：关注后可直接只看这一个人的内容
+  Widget _buildUpList() {
+    final follows = context.watch<FollowStore>();
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.only(top: 4, bottom: 16),
+      itemCount: _ups.length + 2,
+      itemBuilder: (context, i) {
+        if (i == 0) return _buildResultsHeader();
+        if (i == _ups.length + 1) return _buildFooter();
+        final up = _ups[i - 1];
+        final following = follows.isFollowing(up.mid);
+        return ListTile(
+          leading: CircleAvatar(
+            radius: 22,
+            backgroundColor: AppTheme.surfaceHigh,
+            backgroundImage:
+                up.face.isNotEmpty ? NetworkImage(up.face) : null,
+            child: up.face.isEmpty
+                ? Icon(Icons.person, color: AppTheme.accent)
+                : null,
+          ),
+          title: Text(
+            up.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textMain,
+            ),
+          ),
+          subtitle: Text(
+            [
+              if (up.fans > 0) '${Fmt.count(up.fans)} 粉丝',
+              if (up.sign.isNotEmpty) up.sign,
+            ].join(' · '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+          ),
+          trailing: FilledButton.tonal(
+            onPressed: () => follows.toggle(up),
+            style: FilledButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: const Size(0, 30),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              following ? '已关注' : '关注',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => UpHomePage(up: up)),
             );
           },
         );

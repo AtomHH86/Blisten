@@ -88,6 +88,16 @@ class SleepTimerPage extends StatelessWidget {
               },
             ),
           const Divider(height: 1),
+          SwitchListTile(
+            value: player.stopAtChapterEnd,
+            onChanged: (v) => player.setStopAtChapterEnd(v),
+            title: Text('播完本集自动暂停',
+                style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
+            subtitle: Text('本集播完即停，不自动播放下一集',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
+            activeThumbColor: AppTheme.accent,
+          ),
+          const Divider(height: 1),
           ListTile(
             leading: Icon(Icons.edit_calendar_rounded,
                 size: 20, color: AppTheme.accent),

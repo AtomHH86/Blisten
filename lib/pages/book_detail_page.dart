@@ -102,10 +102,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final resumeIndex = shelfBook?.lastChapterIndex ?? 0;
     final resumeMs = shelfBook?.positionMs ?? 0;
     final hasProgress = (shelfBook?.positionMs ?? 0) > 0;
-    // 已听章节：当前播放进度优先，其次书架记录
+    // 已听章节：优先用逐章记录（听满 95% 或播完即打标），
+    // 旧版本没有逐章数据时回退到「上次听到的章节序号」
+    final hasDoneRecords = (shelfBook?.doneCids.isNotEmpty ?? false);
     final lastListened = isCurrentBook
         ? player.index
         : (hasProgress ? (shelfBook?.lastChapterIndex ?? -1) : -1);
+    final doneCount = shelf.doneCount(book.bvid);
 
     return Column(
       children: [
@@ -134,14 +137,23 @@ class _BookDetailPageState extends State<BookDetailPage> {
                        Icon(Icons.format_list_bulleted,
                           size: 18, color: AppTheme.accent),
                       const SizedBox(width: 8),
-                      Text(
-                        '目录（${chapters.length} 章）',
-                        style:  TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textMain,
+Text(
+                          '目录（${chapters.length} 章）',
+                          style:  TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textMain,
+                          ),
                         ),
-                      ),
+                      if (doneCount > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            '已听 $doneCount',
+                            style: TextStyle(
+                                fontSize: 12, color: AppTheme.accent),
+                          ),
+                        ),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: chapters.isEmpty
@@ -170,8 +182,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   ),
                 ),
                 ..._orderedIndexes(chapters.length).map((i) {
-                  final listened =
-                      lastListened >= 0 && i < lastListened;
+                  // 有逐章记录时以记录为准，否则退回序号推导
+                  final listened = hasDoneRecords
+                      ? shelf.isChapterDone(book.bvid, chapters[i].cid)
+                      : (lastListened >= 0 && i < lastListened);
                   return _ChapterTile(
                     index: i,
                     chapter: chapters[i],

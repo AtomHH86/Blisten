@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
+
 import '../core/network/api_config.dart';
 import '../core/network/bili_client.dart';
 import '../models/audio_stream.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
+import '../models/up_user.dart';
 
 /// B 站听书数据访问层
 class BiliApi {
@@ -232,6 +235,116 @@ class BiliApi {
     );
     final data = res.data as Map;
     return BookAudio.fromMap((data['data'] as Map).cast<String, dynamic>());
+  }
+
+  // ---------- UP 主 ----------
+
+  /// 搜索 UP 主（search_type=bili_user）
+  Future<List<UpUser>> searchUser(
+    String keyword, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final kw = keyword.trim();
+    if (kw.isEmpty) return [];
+    final res = await _client.get(
+      BiliEndpoints.searchType,
+      query: {
+        'search_type': 'bili_user',
+        'keyword': kw,
+        'page': page,
+        'page_size': pageSize,
+      },
+      useWbi: true,
+      headers: {
+        'origin': BiliEndpoints.searchHome,
+        'referer': '${BiliEndpoints.searchHome}/upuser?keyword='
+            '${Uri.encodeComponent(kw)}',
+      },
+    );
+    final data = res.data as Map;
+    final result = data['data'] as Map? ?? {};
+    final list = result['result'] as List? ?? [];
+    final out = <UpUser>[];
+    for (final item in list) {
+      if (item is! Map) continue;
+      final u = UpUser.fromSearch(item.cast<String, dynamic>());
+      if (u.mid == 0 || u.name.isEmpty) continue;
+      out.add(u);
+    }
+    return out;
+  }
+
+  /// 拉取某个 UP 主的有声内容（只播放这个 UP 的内容）
+  ///
+  /// 优先走 UP 空间投稿接口；未登录时被风控拦截则退化为
+  /// 「UP 名 + 有声小说」关键词搜索并按 mid 过滤，保证功能可用。
+  Future<List<Book>> upAudios(
+    UpUser up, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
+    if (up.mid == 0) return [];
+    try {
+      final res = await _client.get(
+        BiliEndpoints.spaceArcSearch,
+        query: {
+          'mid': up.mid,
+          'pn': page,
+          'ps': pageSize,
+          'order': 'pubdate',
+          'platform': 'web',
+          'web_location': 1550101,
+        },
+        useWbi: true,
+        headers: {
+          'origin': BiliEndpoints.home,
+          'referer': BiliEndpoints.space(up.mid),
+        },
+      );
+      final data = res.data as Map;
+      if (data['code'] != 0) throw BiliApiException(-352, 'space blocked');
+      final list = (data['data'] as Map?)?['list'] as Map? ?? {};
+      final vlist = list['vlist'] as List? ?? [];
+      final out = <Book>[];
+      for (final item in vlist) {
+        if (item is! Map) continue;
+        final m = item.cast<String, dynamic>();
+        // 空间接口字段与搜索接口不同，单独做一次听书判定
+        if (!_isSpaceAudiobook(m)) continue;
+        final b = Book(
+          bvid: m['bvid'] as String? ?? '',
+          aid: int.tryParse('${m['aid'] ?? 0}') ?? 0,
+          title: m['title'] as String? ?? '',
+          pic: Book.normalizePic(m['pic'] as String? ?? ''),
+          pages: 1,
+          duration: Book.parseDurationSeconds(m['length']),
+          author: up.name,
+          mid: up.mid,
+          authorFace: up.face,
+          play: int.tryParse('${m['play'] ?? 0}') ?? 0,
+        );
+        if (b.bvid.isEmpty) continue;
+        out.add(b);
+      }
+      return out;
+    } catch (e) {
+      debugPrint('[BiliApi] upAudios fallback: $e');
+      // 退化路径：按 UP 名 + 题材搜，再按 mid 精确过滤
+      final list = await _searchRaw('${up.name} 有声小说', page: page, pageSize: pageSize);
+      return list.where((b) => b.mid == up.mid).toList();
+    }
+  }
+
+  /// 空间接口专用的听书判定（字段为 length/play/title）
+  bool _isSpaceAudiobook(Map<String, dynamic> m) {
+    final title = '${m['title'] ?? ''}';
+    final meta = '${m['description'] ?? ''} ${m['tag'] ?? ''}';
+    if (_noiseHints.any('$title $meta'.contains)) return false;
+    final seconds = Book.parseDurationSeconds(m['length']);
+    if (_hasAudioHint(title) && seconds >= 300) return true;
+    if (_hasAudioHint(meta) && seconds >= 1800) return true;
+    return false;
   }
 
   // ---------- 二维码登录（网页 passport 流程） ----------

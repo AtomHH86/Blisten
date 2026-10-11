@@ -18,6 +18,9 @@ class BiliEndpoints {
   /// 通用搜索
   static const String searchType = '$base/x/web-interface/wbi/search/type';
 
+  /// UP 主空间投稿列表（按 mid 拉取该 UP 的视频）
+  static const String spaceArcSearch = '$base/x/space/wbi/arc/search';
+
   /// 视频基本信息（含分P列表）
   static const String view = '$base/x/web-interface/view';
 
@@ -40,6 +43,9 @@ class BiliEndpoints {
 
   /// 原作品网页链接
   static String video(String bvid) => '$home/video/$bvid';
+
+  /// UP 主主页链接
+  static String space(int mid) => '$home/space/$mid';
 
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '

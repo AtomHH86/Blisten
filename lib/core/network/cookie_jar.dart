@@ -40,6 +40,12 @@ class CookieJar {
 
   String? get(String key) => _cookies[key];
 
+  /// 本地直接写入一个 Cookie（不经过响应头，如自造 buvid3）
+  void put(String key, String value) {
+    _cookies[key] = value;
+    _hasCookie = true;
+  }
+
   String buildHeader() {
     final buf = StringBuffer();
     final keys = SplayTreeSet<String>.of(_cookies.keys);
