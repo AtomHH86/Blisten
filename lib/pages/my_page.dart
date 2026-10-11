@@ -11,6 +11,7 @@ import '../core/theme/theme_controller.dart';
 import '../player/book_player.dart';
 import '../services/app_update.dart';
 import '../services/auth_store.dart';
+import '../services/browser.dart';
 import '../services/umeng_analytics.dart';
 import '../widgets/book_cover.dart';
 import 'about_page.dart';
@@ -567,10 +568,14 @@ style: TextStyle(
     );
   }
 
+  /// 打开下载链接；打不开时复制到剪贴板兜底
   Future<void> _openUrl(BuildContext context, String url) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await Browser.open(url);
+    if (ok) return;
     await Clipboard.setData(ClipboardData(text: url));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(content: Text('下载链接已复制\n$url'),
           duration: const Duration(seconds: 3)),
     );

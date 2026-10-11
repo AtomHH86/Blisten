@@ -27,9 +27,19 @@ class PlayerPage extends StatefulWidget {
 class _PlayerPageState extends State<PlayerPage> {
   double _dragValue = -1;
 
+  /// 提前抓住播放器引用：在 dispose() 里再 context.read 会触发
+  /// provider 的「查找已失活 widget 的祖先」断言。
+  BookPlayer? _playerRef;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _playerRef = context.read<BookPlayer>();
+  }
+
   @override
   void dispose() {
-    context.read<BookPlayer>().flushProgress();
+    _playerRef?.flushProgress();
     super.dispose();
   }
 
@@ -470,11 +480,10 @@ class _PlayerPageState extends State<PlayerPage> {
     );
   }
 
-  /// 倍速弹窗：0.5x ~ 3.0x 档位 + 自定义滑杆
+  /// 倍速弹窗：0.5x ~ 3.0x 档位，点一下即选中
   void _showSpeedSheet(BookPlayer player) {
     showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) {
         return StatefulBuilder(
@@ -484,7 +493,7 @@ class _PlayerPageState extends State<PlayerPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
                     child: Row(
                       children: [
                         Text(
@@ -510,61 +519,6 @@ class _PlayerPageState extends State<PlayerPage> {
                       children: [
                         for (final r in BookPlayer.speedSteps)
                           _speedTile(ctx, player, setSheet, r),
-                        const Divider(height: 1),
-                        // 自定义
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                          child: Text(
-                            '自定义 ${_customLabel(player.rate)}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textSub,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          child: SliderTheme(
-                            data: SliderTheme.of(ctx).copyWith(
-                              trackHeight: 3,
-                              activeTrackColor: AppTheme.accent,
-                              inactiveTrackColor: AppTheme.divider,
-                              thumbColor: AppTheme.accent,
-                              overlayShape:
-                                  const RoundSliderOverlayShape(overlayRadius: 14),
-                              overlayColor:
-                                  AppTheme.accent.withValues(alpha: 0.2),
-                            ),
-                            child: Slider(
-                              value: player.rate.clamp(
-                                  BookPlayer.minRate, BookPlayer.maxRate),
-                              min: BookPlayer.minRate,
-                              max: BookPlayer.maxRate,
-                              divisions:
-                                  ((BookPlayer.maxRate -
-                                              BookPlayer.minRate) *
-                                          20)
-                                      .round(),
-                              label: _customLabel(player.rate),
-                              onChanged: (v) {
-                                final snapped =
-                                    (v * 20).round() / 20; // 步进 0.05
-                                player.setRate(snapped);
-                                setSheet(() {});
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                          child: Text(
-                            '可拖动设置 0.5x ~ 3.0x 之间任意倍速，长音频慢速细听很实用',
-                            style: TextStyle(
-                                fontSize: 11.5, color: AppTheme.textHint),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -602,9 +556,6 @@ class _PlayerPageState extends State<PlayerPage> {
 
   static String _speedLabel(double r) =>
       '${r % 1 == 0 ? r.toStringAsFixed(1) : r.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '')}x';
-
-  static String _customLabel(double r) =>
-      r % 1 == 0 ? '${r.toStringAsFixed(1)}x' : '${r.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '')}x';
 
   Widget _buildActionRow(BookPlayer player) {
     return Padding(

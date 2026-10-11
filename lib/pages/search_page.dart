@@ -168,10 +168,15 @@ class _SearchPageState extends State<SearchPage> {
     try {
       List<Book>? books;
       List<UpUser>? ups;
+      var rawCount = _pageSize;
       if (i == 1) {
         ups = await _bili.searchUser(kw, pageSize: _pageSize);
       } else {
-        books = await _bili.search(kw, pageSize: _pageSize);
+        books = await _bili.search(
+          kw,
+          pageSize: _pageSize,
+          onRawCount: (c) => rawCount = c,
+        );
       }
       if (!mounted) return;
       setState(() {
@@ -181,9 +186,9 @@ class _SearchPageState extends State<SearchPage> {
         _error = null;
         _page = 1;
         _total = 0;
-        _noMore = (i == 1)
-            ? (_ups.length < _pageSize)
-            : (_results.length < _pageSize);
+        // 必须按「原始条数」判断是否到底：听书过滤后常不足一页，
+        // 用过滤后的长度会导致第二页永远加载不出来。
+        _noMore = (i == 1) ? (_ups.length < _pageSize) : (rawCount < _pageSize);
       });
     } catch (e) {
       if (!mounted) return;

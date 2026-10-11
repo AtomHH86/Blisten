@@ -61,16 +61,16 @@ class _UpHomePageState extends State<UpHomePage> {
       _noMore = false;
     });
     try {
-      final list =
-          await _bili.upAudios(widget.up, page: 1, pageSize: _pageSize);
+      final res = await _bili.upAudios(widget.up,
+          page: 1, pageSize: _pageSize);
       if (!mounted) return;
       setState(() {
-        _books = list;
+        _books = res.books;
         _loading = false;
-        // 合集一次性返回全部；分页路径按整页判断
-        _noMore = list.length < _pageSize;
+        // 是否还有更多由接口给出，不能按返回条数猜
+        _noMore = !res.hasMore;
       });
-      AppAnalytics.onEvent('up_open', {'count': list.length});
+      AppAnalytics.onEvent('up_open', {'count': res.books.length});
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -85,7 +85,7 @@ class _UpHomePageState extends State<UpHomePage> {
     setState(() => _loadingMore = true);
     try {
       final next = _page + 1;
-      final list =
+      final res =
           await _bili.upAudios(widget.up, page: next, pageSize: _pageSize);
       if (!mounted) return;
       setState(() {
@@ -93,10 +93,10 @@ class _UpHomePageState extends State<UpHomePage> {
         final seen = _books.map((b) => b.bvid).toSet();
         _books = [
           ..._books,
-          ...list.where((b) => seen.add(b.bvid)),
+          ...res.books.where((b) => seen.add(b.bvid)),
         ];
         _loadingMore = false;
-        if (list.length < _pageSize) _noMore = true;
+        if (res.books.isEmpty || !res.hasMore) _noMore = true;
       });
     } catch (e) {
       if (!mounted) return;

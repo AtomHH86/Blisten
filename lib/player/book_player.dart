@@ -58,7 +58,13 @@ class BookPlayer extends ChangeNotifier {
   double _rate = 1.0;
 
   // ---------- 断流自动重连（长音频） ----------
-  Timer? _watchdog;
+  // 断流看门狗与系统状态校正器在 setup() 里创建后随单例存活，
+  // 故意不随 stop() 取消（stop 可由通知栏触发，取消后功能会永久失效）。
+  /// 当前是否已成功打开音源（在线 URL 或本地文件都算）。
+  /// 用它判断「音源是否还活着」，不能用 _playbackUrl：离线播放时 URL 本来就是 null。
+  bool _mediaReady = false;
+  /// 会话代号：stop() 会自增，进行中的重连发现代号变了就放弃，避免停止后又被唤醒播放
+  int _session = 0;
   Duration _lastPos = Duration.zero;
   DateTime _lastPosAt = DateTime.now();
   bool _reconnecting = false;
@@ -203,6 +209,9 @@ class BookPlayer extends ChangeNotifier {
         _error = null;
         await _rewindTail();
         await pause();
+        // 回退片尾是为了「再按播放能重听结尾」，但进度要记到下一章，
+        // 否则「继续收听」会把已经打完 ✓ 的这一章又翻出来重播
+        _advanceSavedProgress();
         debugPrint('[BookPlayer] 本集播放结束，按设置自动暂停');
         notifyListeners();
         return;
@@ -252,7 +261,7 @@ class BookPlayer extends ChangeNotifier {
     });
 
     // 断流看门狗：播放中且长时间（>40s）无进度推进时自动重连
-    _watchdog = Timer.periodic(const Duration(seconds: 5), (_) {
+    Timer.periodic(const Duration(seconds: 5), (_) {
       if (_reconnecting || !_loaded) return;
       if (!_player.state.playing) {
         _lastPosAt = DateTime.now();
@@ -268,6 +277,19 @@ class BookPlayer extends ChangeNotifier {
         debugPrint('[BookPlayer] 播放停滞超 40s，触发自动重连');
         unawaited(_reconnect());
       }
+    });
+
+    // 系统媒体会话状态校正：App 内实际播放状态与已推送给系统的不一致时补推一次。
+    // media_kit 的 playing 状态是异步落地的，来电/锁屏/通知栏操作等竞态下
+    // 偶尔会出现系统显示与 App 不一致，这里做兜底自愈。
+    Timer.periodic(const Duration(seconds: 2), (_) {
+      final h = _audioHandler;
+      if (h == null) return;
+      final actual = _player.state.playing;
+      final remote = h.playbackState.value;
+      if (remote.playing == actual) return;
+      debugPrint('[BookPlayer] 校正系统播放状态 ${remote.playing} -> $actual');
+      _pushState(force: true);
     });
 
     // 音频焦点：被其他 App 抢占时暂停；打断结束后自动续播
@@ -300,6 +322,8 @@ class BookPlayer extends ChangeNotifier {
   Future<bool> _reconnect({int? keepMs}) async {
     if (_reconnecting) return false;
     _reconnecting = true;
+    // 记录会话代号：期间若用户按了停止，这里要放弃，不能把声音又放出来
+    final mySession = _session;
     final resumeMs = keepMs ?? currentPosition.inMilliseconds;
     try {
       final chapter = currentChapter;
@@ -314,9 +338,14 @@ class BookPlayer extends ChangeNotifier {
       if (local != null) {
         try {
           await _player.open(Media(local));
+          if (mySession != _session) {
+            await _player.stop();
+            return false;
+          }
           if (_rate != 1.0) await _player.setRate(_rate);
           await _seekToResume(resumeMs);
           _isOffline = true;
+          _mediaReady = true;
           _error = null;
           _loading = false;
           _lastPos = currentPosition;
@@ -341,6 +370,11 @@ class BookPlayer extends ChangeNotifier {
         try {
           await _player.open(Media(url, httpHeaders: _streamHeaders()),
               play: false);
+          if (mySession != _session) {
+            debugPrint('[BookPlayer] 重连期间已被停止，放弃');
+            await _player.stop();
+            return false;
+          }
           // open 之后倍速可能被复位，显式恢复
           if (_rate != 1.0) await _player.setRate(_rate);
           await _seekToResume(resumeMs);
@@ -356,6 +390,7 @@ class BookPlayer extends ChangeNotifier {
 
       _error = null;
       _loading = false;
+      _mediaReady = true;
       _lastPos = currentPosition;
       _lastPosAt = DateTime.now();
       unawaited(AudioFocus.instance.request());
@@ -372,6 +407,23 @@ class BookPlayer extends ChangeNotifier {
     }
   }
 
+  /// 把已保存的进度指向下一章开头（本章已听完时调用）
+  void _advanceSavedProgress() {
+    final book = _book;
+    if (book == null || !hasNext) return;
+    if (!_shelf.isOnShelf(book.bvid)) return;
+    final nextIndex = _index + 1;
+    if (nextIndex < 0 || nextIndex >= _chapters.length) return;
+    final nextChapter = _chapters[nextIndex];
+    unawaited(_shelf.updateProgress(
+      book.bvid,
+      cid: nextChapter.cid,
+      chapterIndex: nextIndex,
+      positionMs: 0,
+      chapterDurationMs: nextChapter.duration * 1000,
+    ));
+  }
+
   /// 播到片尾后回退一小段：否则流已处于 EOF，再按播放会毫无反应
   Future<void> _rewindTail({int seconds = 15}) async {
     try {
@@ -379,8 +431,9 @@ class BookPlayer extends ChangeNotifier {
       if (pos <= Duration.zero) return;
       final back = pos - Duration(seconds: seconds);
       await _player.seek(back < Duration.zero ? Duration.zero : back);
+      // 这里刻意不落库：回退位置只是为了「再按播放能重听结尾」，
+      // 不是用户真实的收听进度，落库会把它当成续播点。
       positionTick.value = currentPosition;
-      _tickSave();
     } catch (e) {
       debugPrint('[BookPlayer] 回退片尾失败: $e');
     }
@@ -522,17 +575,29 @@ class BookPlayer extends ChangeNotifier {
 
       if (localPath != null) {
         // 已缓存：直接播本地文件，不需要网络地址
+        var opened = false;
         try {
           await _player.open(Media(localPath));
-          if (_rate != 1.0) await _player.setRate(_rate);
-          if (resumeMs > 0) await _seekToResume(resumeMs);
-          ok = true;
-          _playbackUrl = null;
-          _isOffline = true;
-          _pausedByInterruption = false;
+          opened = true;
         } catch (e) {
           debugPrint('[BookPlayer] 本地缓存打开失败，回退在线: $e');
-          // 缓存文件损坏：删除记录后走在线
+        }
+        if (opened) {
+          // 只有「打开文件」本身失败才认为缓存坏了；
+          // 之后的设置倍速/跳转失败都可能是瞬时问题，不能删用户的离线文件。
+          try {
+            if (_rate != 1.0) await _player.setRate(_rate);
+            if (resumeMs > 0) await _seekToResume(resumeMs);
+          } catch (e) {
+            debugPrint('[BookPlayer] 缓存播放参数设置失败: $e');
+          }
+          ok = true;
+          _playbackUrl = null;
+          _mediaReady = true;
+          _isOffline = true;
+          _pausedByInterruption = false;
+        } else {
+          // 文件确实打不开：清掉索引回退在线
           await _cache.remove(curBvid ?? '', chapter.cid);
         }
       }
@@ -557,6 +622,7 @@ class BookPlayer extends ChangeNotifier {
             if (_error != null) _error = null;
             ok = true;
             _playbackUrl = url;
+            _mediaReady = true;
             _isOffline = false;
             _pausedByInterruption = false;
             break;
@@ -589,6 +655,7 @@ class BookPlayer extends ChangeNotifier {
         _playbackUrl = prevUrl;
         _lastAudio = prevAudio;
         _isOffline = prevOffline;
+        _mediaReady = false;
       }
       _loading = false;
       _pushNowPlaying();
@@ -706,7 +773,12 @@ class BookPlayer extends ChangeNotifier {
     final buffered = _player.state.buffer;
     final buf = buffered > pos ? buffered : pos;
 
-    final processing = _loading || _player.state.buffering
+    // 只有「切章/换源」这种真正的加载过程才上报 buffering。
+    // 注意：网络抖动引起的短暂缓冲不能上报 buffering —— Android 会把
+    // PLAYBACK_STATE_BUFFERING 当作「未在播放」，锁屏/通知栏就会显示暂停图标，
+    // 而 App 内实际还在放，造成两边状态不一致。
+    // 缓冲状态由 App 内的 loading 提示负责表达，不污染系统媒体会话。
+    final processing = _loading
         ? AudioProcessingState.buffering
         : _error != null
             ? AudioProcessingState.error
@@ -755,9 +827,10 @@ class BookPlayer extends ChangeNotifier {
   Future<void> resume() async {
     _pausedByInterruption = false;
     await _restoreVolumeIfDucked();
-    // 断流重连彻底失败后播放器会停在 stop 状态，此时直接 play() 是无效的
-    // （对应「点了播放没反应」），这里重新载入当前章节再播。
-    if (_loaded && _playbackUrl == null && !_reconnecting) {
+    // 音源确实不在了（重连彻底失败）时重新载入当前章节再播。
+    // 注意用 _mediaReady 判断，不能用 _playbackUrl：离线播放时 URL 本来就是 null，
+    // 否则每次恢复都会重新开一次本地文件（多一次 loading 与跳转延迟）。
+    if (_loaded && !_mediaReady && !_reconnecting) {
       final ok = await _reconnect();
       if (ok) return;
     }
@@ -796,14 +869,19 @@ class BookPlayer extends ChangeNotifier {
 
   Future<void> stop() async {
     _pausedByInterruption = false;
+    // 会话代号自增：让进行中的重连立即作废，避免「按了停止声音又出来」
+    _session++;
     await _player.stop();
     unawaited(AudioFocus.instance.abandon());
     _loaded = false;
     _playbackUrl = null;
+    _mediaReady = false;
     _reconnecting = false;
     positionTick.value = Duration.zero;
     _positionTimer?.cancel();
-    _watchdog?.cancel();
+    // 注意：不要取消 _watchdog / _stateReconciler。
+    // 它们在 setup() 里只创建一次，而 stop() 可以被通知栏的「停止」触发，
+    // 一旦在这里取消，断流重连与系统状态校正就永久失效了。
     final h = _audioHandler;
     if (h != null) {
       h.mediaItem.add(null);

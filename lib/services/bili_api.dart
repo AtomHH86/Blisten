@@ -314,14 +314,15 @@ class BiliApi {
   ///
   /// 为避免触发风控，这里用游标把各合集摊平成一条长列表，
   /// 每次只发「尽量少的请求」凑够一页。
-  Future<List<Book>> upAudios(
+  Future<({List<Book> books, bool hasMore})> upAudios(
     UpUser up, {
     int page = 1,
     int pageSize = 30,
   }) async {
-    if (up.mid == 0) return [];
+    if (up.mid == 0) return (books: <Book>[], hasMore: false);
     try {
-      return await _upFromCollections(up, page: page, pageSize: pageSize);
+      final r = await _upFromCollections(up, page: page, pageSize: pageSize);
+      if (r.books.isNotEmpty) return r;
     } catch (e) {
       debugPrint('[BiliApi] 合集取数失败: $e');
     }
@@ -330,7 +331,9 @@ class BiliApi {
     try {
       final bySpace =
           await _upWorksFromSpace(up, page: page, pageSize: pageSize);
-      if (bySpace.isNotEmpty) return bySpace;
+      if (bySpace.isNotEmpty) {
+        return (books: bySpace, hasMore: bySpace.length >= pageSize);
+      }
     } catch (e) {
       debugPrint('[BiliApi] 空间投稿失败: $e');
     }
@@ -345,32 +348,38 @@ class BiliApi {
       );
       final mine = list.where((b) => b.mid == up.mid).toList();
       if (mine.isNotEmpty) {
-        return mine
-            .map((b) => b.author.isEmpty
-                ? Book.fromJson({...b.toJson(), 'author': up.name})
-                : b)
-            .toList();
+        return (
+          books: mine
+              .map((b) => b.author.isEmpty
+                  ? Book.fromJson({...b.toJson(), 'author': up.name})
+                  : b)
+              .toList(),
+          hasMore: mine.length >= pageSize,
+        );
       }
     } catch (e) {
       debugPrint('[BiliApi] UP 搜索兜底失败: $e');
     }
-    return [];
+    return (books: <Book>[], hasMore: false);
   }
 
   /// 每个 UP 的合集摊平游标（跨分页复用，避免重复请求）
   final Map<int, _UpCursor> _upCursors = {};
 
-  /// 合集取数：第 1 页返回「各合集预览 + 首个合集前几页」，之后顺着合集继续翻
-  Future<List<Book>> _upFromCollections(UpUser up,
+  /// 合集取数：第 1 页返回「各合集预览 + 首个合集前几页」，之后顺着合集继续翻。
+  /// hasMore 由游标真实状态决定，不由返回条数推断 —— 否则撞到请求预算上限时
+  /// 会被误判成「没有更多」，后面的视频再也刷不出来。
+  Future<({List<Book> books, bool hasMore})> _upFromCollections(UpUser up,
       {required int page, required int pageSize}) async {
     var cursor = _upCursors[up.mid];
-    if (cursor == null) {
+    // 第 1 页重新初始化，保证「刷新」拿到的确实是从头开始
+    if (cursor == null || page == 1) {
       cursor = _UpCursor();
       await _initUpCursor(up, cursor);
       _upCursors[up.mid] = cursor;
     }
     if (cursor.preview.isEmpty && cursor.seasonIds.isEmpty) {
-      throw StateError('该 UP 没有公开合集');
+      throw StateError('该 UP 没有可用的公开合集');
     }
 
     final out = <Book>[];
@@ -383,9 +392,9 @@ class BiliApi {
       }
     }
 
-    // 再按合集顺序补齐到 pageSize（每次最多 3 个请求，克制风控）
+    // 再按合集顺序补齐到 pageSize（每次最多 4 个请求，克制风控）
     for (var guard = 0;
-        out.length < pageSize && guard < 3 && !cursor.exhausted;
+        out.length < pageSize && guard < 4 && !cursor.exhausted;
         guard++) {
       final season = cursor.currentSeason;
       final res = await _client.get(
@@ -434,7 +443,7 @@ class BiliApi {
     if (page == 1) {
       out.sort((a, b) => b.pubdate.compareTo(a.pubdate));
     }
-    return out;
+    return (books: out, hasMore: !cursor.exhausted || out.length >= pageSize);
   }
 
   /// 读取 UP 的合集/系列，写入游标

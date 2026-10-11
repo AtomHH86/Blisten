@@ -48,15 +48,18 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   /// 分类浏览：从 B 站拉取该分类真实内容（带缓存，避免来回切换重复请求触发风控）
   Future<void> _loadBrowse({bool force = false}) async {
-    if (!force && _browseCache.containsKey(_cat)) {
+    // 先固定住本次请求对应的分类：await 之后 _cat 可能已被用户切走，
+    // 若还用 _cat 写缓存/渲染，A 的结果会落到 B 的分类下。
+    final catIndex = _cat;
+    if (!force && _browseCache.containsKey(catIndex)) {
       setState(() {
-        _browseBooks = _browseCache[_cat]!;
+        _browseBooks = _browseCache[catIndex]!;
         _browseLoading = false;
         _browseError = null;
       });
       return;
     }
-    final cat = DiscoverSeeds.categories[_cat];
+    final cat = DiscoverSeeds.categories[catIndex];
     setState(() {
       _browseLoading = true;
       _browseError = null;
@@ -65,17 +68,20 @@ class _DiscoverPageState extends State<DiscoverPage> {
       // 错开自动请求，降低被风控的概率
       await Future<void>.delayed(const Duration(milliseconds: 500));
       // 热门推荐：有声小说按播放量排序的榜单；其余分类走关键词搜索
-      final list = _cat == 0
+      final list = catIndex == 0
           ? await _bili.rankHotNovel()
           : await _bili.search(cat.keyword);
       if (!mounted) return;
+      _browseCache[catIndex] = list;
+      // 期间用户已切到别的分类就别覆盖当前界面
+      if (_cat != catIndex) return;
       setState(() {
         _browseBooks = list;
-        _browseCache[_cat] = list;
         _browseLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
+      if (_cat != catIndex) return;
       setState(() {
         _browseLoading = false;
         _browseError = '$e';
@@ -261,7 +267,16 @@ Icon(Icons.cloud_off_outlined,
         padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
         child: Row(
           children: [
-            Icon(Icons.bolt_rounded, size: 20, color: AppTheme.accent),
+            // 刷新按钮放在标题左侧（原闪电图标位置）
+            IconButton(
+              onPressed: () => _loadBrowse(force: true),
+              icon: Icon(Icons.refresh_rounded,
+                  size: 19, color: AppTheme.accent),
+              tooltip: '刷新',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -286,12 +301,6 @@ Icon(Icons.cloud_off_outlined,
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
-            ),
-            IconButton(
-              onPressed: () => _loadBrowse(force: true),
-              icon: Icon(Icons.refresh_rounded,
-                  size: 18, color: AppTheme.textSub),
-              tooltip: '刷新',
             ),
           ],
         ),

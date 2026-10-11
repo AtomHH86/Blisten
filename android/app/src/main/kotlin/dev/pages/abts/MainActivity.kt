@@ -119,6 +119,25 @@ class MainActivity : AudioServiceActivity() {
             }
         }
 
+        // 打开外部链接（浏览器）
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "abts/browser",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "open" -> {
+                    val url = call.argument<String>("url")
+                    if (url.isNullOrBlank()) {
+                        result.success(false)
+                    } else {
+                        result.success(openExternal(url))
+                    }
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+
         // 电池优化（后台留存）
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -197,6 +216,19 @@ class MainActivity : AudioServiceActivity() {
             focusRequest = null
         } else {
             am.abandonAudioFocus(focusListener)
+        }
+    }
+
+    /** 用系统浏览器打开链接；没有可用浏览器时返回 false */
+    private fun openExternal(url: String): Boolean {
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
