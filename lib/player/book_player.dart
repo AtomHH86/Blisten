@@ -161,6 +161,7 @@ class BookPlayer extends ChangeNotifier {
       if (_stopAtChapterEnd) {
         // 播完本集自动暂停：不再连播下一章
         _error = null;
+        await _rewindTail();
         await pause();
         debugPrint('[BookPlayer] 本集播放结束，按设置自动暂停');
         notifyListeners();
@@ -170,14 +171,18 @@ class BookPlayer extends ChangeNotifier {
         await next();
       } else {
         _error = null;
+        await _rewindTail();
+        await pause();
         notifyListeners();
       }
     });
     _player.stream.error.listen((e) async {
       debugPrint('[BookPlayer] player error: $e');
+      // 重连进行中再次报错是重连链路的正常噪声，直接忽略，避免覆盖成功状态
+      if (_reconnecting) return;
       _loading = false;
       // 长音频断流：先尝试自动重连，重连失败才报错
-      if (_loaded && !_reconnecting) {
+      if (_loaded) {
         final ok = await _reconnect();
         if (ok) return;
       }
@@ -252,13 +257,15 @@ class BookPlayer extends ChangeNotifier {
 
   /// 断流自动重连：用当前章节的备用音轨地址重开并 seek 回原位置。
   /// 返回是否恢复成功。
-  Future<bool> _reconnect() async {
+  Future<bool> _reconnect({int? keepMs}) async {
     if (_reconnecting) return false;
     _reconnecting = true;
-    final keepMs = currentPosition.inMilliseconds;
+    final resumeMs = keepMs ?? currentPosition.inMilliseconds;
     try {
       final chapter = currentChapter;
       if (chapter == null) return false;
+      // 音源视为已失效：重建失败时 resume() 会据此重新载入
+      _playbackUrl = null;
       _loading = true;
       notifyListeners();
 
@@ -272,7 +279,9 @@ class BookPlayer extends ChangeNotifier {
         try {
           await _player.open(Media(url, httpHeaders: _streamHeaders()),
               play: false);
-          await _seekToResume(keepMs);
+          // open 之后倍速可能被复位，显式恢复
+          if (_rate != 1.0) await _player.setRate(_rate);
+          await _seekToResume(resumeMs);
           opened = true;
           _playbackUrl = url;
           break;
@@ -290,7 +299,7 @@ class BookPlayer extends ChangeNotifier {
       unawaited(AudioFocus.instance.request());
       _pushState(force: true);
       notifyListeners();
-      debugPrint('[BookPlayer] 自动重连成功 @${keepMs}ms');
+      debugPrint('[BookPlayer] 自动重连成功 @${resumeMs}ms');
       return true;
     } catch (e) {
       debugPrint('[BookPlayer] 重连失败: $e');
@@ -298,6 +307,20 @@ class BookPlayer extends ChangeNotifier {
     } finally {
       _reconnecting = false;
       _loading = false;
+    }
+  }
+
+  /// 播到片尾后回退一小段：否则流已处于 EOF，再按播放会毫无反应
+  Future<void> _rewindTail({int seconds = 15}) async {
+    try {
+      final pos = currentPosition;
+      if (pos <= Duration.zero) return;
+      final back = pos - Duration(seconds: seconds);
+      await _player.seek(back < Duration.zero ? Duration.zero : back);
+      positionTick.value = currentPosition;
+      _tickSave();
+    } catch (e) {
+      debugPrint('[BookPlayer] 回退片尾失败: $e');
     }
   }
 
@@ -631,14 +654,23 @@ class BookPlayer extends ChangeNotifier {
   void togglePlay() {
     final willPlay = !_player.state.playing;
     _pausedByInterruption = false;
-    _player.playOrPause();
-    if (willPlay) unawaited(AudioFocus.instance.request());
+    if (willPlay) {
+      unawaited(resume());
+    } else {
+      unawaited(pause());
+    }
     _pushState(force: true);
   }
 
   Future<void> resume() async {
     _pausedByInterruption = false;
     await _restoreVolumeIfDucked();
+    // 断流重连彻底失败后播放器会停在 stop 状态，此时直接 play() 是无效的
+    // （对应「点了播放没反应」），这里重新载入当前章节再播。
+    if (_loaded && _playbackUrl == null && !_reconnecting) {
+      final ok = await _reconnect();
+      if (ok) return;
+    }
     await _player.play();
     unawaited(AudioFocus.instance.request());
     _pushState(force: true);

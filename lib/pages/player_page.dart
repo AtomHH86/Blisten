@@ -577,10 +577,8 @@ class _PlayerPageState extends State<PlayerPage> {
                 ),
               ),
               SwitchListTile(
-                value: player.stopAtChapterEnd,
-                onChanged: (v) {
-                  setState(() => player.setStopAtChapterEnd(v));
-                },
+                value: ctx.watch<BookPlayer>().stopAtChapterEnd,
+                onChanged: (v) => player.setStopAtChapterEnd(v),
                 title: const Text(
                   '播完本集自动暂停',
                   style: TextStyle(fontSize: 15),

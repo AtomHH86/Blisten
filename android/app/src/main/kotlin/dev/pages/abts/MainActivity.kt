@@ -61,10 +61,13 @@ class MainActivity : AudioServiceActivity() {
 
         // 注册「即将变噪音」广播（拔耳机/蓝牙断开）→ 自动暂停
         try {
-            registerReceiver(
-                noisyReceiver,
-                IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),
-            )
+            val noisyFilter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // targetSdk 33+ 必须显式声明导出属性；系统受保护广播照常送达
+                registerReceiver(noisyReceiver, noisyFilter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                registerReceiver(noisyReceiver, noisyFilter)
+            }
         } catch (e: Exception) {
             // 个别 ROM 限制隐式广播时忽略，不影响播放
         }
