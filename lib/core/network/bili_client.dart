@@ -36,7 +36,10 @@ class BiliClient {
   bool _buvidActivated = false;
   int _lastReqAt = 0;
 
-  static const _minGapMillis = 300;
+  /// 未登录（游客）请求的最小间隔。
+  /// 官方客户端与主流第三方客户端都刻意放慢游客请求节奏，
+  /// 间隔太密很容易触发 -352/-412 风控，这里取 450ms 偏保守的值。
+  static const _minGapMillis = 450;
 
   void _setupIo() {
     _dio = Dio(

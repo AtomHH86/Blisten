@@ -48,8 +48,12 @@ class BookPlayer extends ChangeNotifier {
   Duration _sleepRemaining = Duration.zero;
 
   // ---------- 倍速播放 ----------
-  /// 听书常用倍速档位（覆盖 1.0 ~ 2.0）
-  static const speedSteps = <double>[1.0, 1.25, 1.5, 1.75, 2.0];
+  /// 倍速档位：0.5x ~ 3.0x；另外支持自定义任意值（0.5~3.0，步进 0.05）
+  static const speedSteps = <double>[
+    0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0,
+  ];
+  static const double minRate = 0.5;
+  static const double maxRate = 3.0;
   static const _prefRate = 'abts_rate';
   double _rate = 1.0;
 

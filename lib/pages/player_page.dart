@@ -470,57 +470,141 @@ class _PlayerPageState extends State<PlayerPage> {
     );
   }
 
-  /// 倍速弹窗：听书常用 1.25x / 1.5x
+  /// 倍速弹窗：0.5x ~ 3.0x 档位 + 自定义滑杆
   void _showSpeedSheet(BookPlayer player) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  '播放速度',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textMain,
-                  ),
-                ),
-              ),
-              ...BookPlayer.speedSteps.map((r) {
-                final active = (r - player.rate).abs() < 0.001;
-                final label = r % 1 == 0
-                    ? '${r.toStringAsFixed(1)}x'
-                    : '${r}x';
-                return ListTile(
-                  title: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: active ? AppTheme.accent : AppTheme.textMain,
-                      fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w400,
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                    child: Row(
+                      children: [
+                        Text(
+                          '播放速度',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textMain,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '当前 ${player.rateLabel}',
+                          style: TextStyle(
+                              fontSize: 13, color: AppTheme.accent),
+                        ),
+                      ],
                     ),
                   ),
-                  trailing: active
-                      ? const Icon(Icons.check, color: AppTheme.accent)
-                      : null,
-                  onTap: () {
-                    player.setRate(r);
-                    Navigator.of(ctx).pop();
-                  },
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final r in BookPlayer.speedSteps)
+                          _speedTile(ctx, player, setSheet, r),
+                        const Divider(height: 1),
+                        // 自定义
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                          child: Text(
+                            '自定义 ${_customLabel(player.rate)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSub,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: SliderTheme(
+                            data: SliderTheme.of(ctx).copyWith(
+                              trackHeight: 3,
+                              activeTrackColor: AppTheme.accent,
+                              inactiveTrackColor: AppTheme.divider,
+                              thumbColor: AppTheme.accent,
+                              overlayShape:
+                                  const RoundSliderOverlayShape(overlayRadius: 14),
+                              overlayColor:
+                                  AppTheme.accent.withValues(alpha: 0.2),
+                            ),
+                            child: Slider(
+                              value: player.rate.clamp(
+                                  BookPlayer.minRate, BookPlayer.maxRate),
+                              min: BookPlayer.minRate,
+                              max: BookPlayer.maxRate,
+                              divisions:
+                                  ((BookPlayer.maxRate -
+                                              BookPlayer.minRate) *
+                                          20)
+                                      .round(),
+                              label: _customLabel(player.rate),
+                              onChanged: (v) {
+                                final snapped =
+                                    (v * 20).round() / 20; // 步进 0.05
+                                player.setRate(snapped);
+                                setSheet(() {});
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                          child: Text(
+                            '可拖动设置 0.5x ~ 3.0x 之间任意倍速，长音频慢速细听很实用',
+                            style: TextStyle(
+                                fontSize: 11.5, color: AppTheme.textHint),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
         );
       },
     );
   }
+
+  Widget _speedTile(
+      BuildContext ctx, BookPlayer player, StateSetter setSheet, double r) {
+    final active = (r - player.rate).abs() < 0.001;
+    return ListTile(
+      title: Text(
+        _speedLabel(r),
+        style: TextStyle(
+          fontSize: 15,
+          color: active ? AppTheme.accent : AppTheme.textMain,
+          fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+        ),
+      ),
+      trailing: active
+          ? const Icon(Icons.check, color: AppTheme.accent)
+          : null,
+      onTap: () {
+        player.setRate(r);
+        setSheet(() {});
+      },
+    );
+  }
+
+  static String _speedLabel(double r) =>
+      '${r % 1 == 0 ? r.toStringAsFixed(1) : r.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '')}x';
+
+  static String _customLabel(double r) =>
+      r % 1 == 0 ? '${r.toStringAsFixed(1)}x' : '${r.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '')}x';
 
   Widget _buildActionRow(BookPlayer player) {
     return Padding(

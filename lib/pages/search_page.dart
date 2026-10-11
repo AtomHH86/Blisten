@@ -40,6 +40,8 @@ class _SearchPageState extends State<SearchPage> {
   bool _loadingMore = false;
   bool _noMore = false;
   String? _error;
+  /// 切换标签时的加载中（此时保持旧数据，页面不跳动）
+  bool _switching = false;
 
   int _page = 1;
   int _total = 0;
@@ -157,20 +159,38 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  /// 切换「听书 / UP主」：立即按当前关键词加载对应数据
-  void _switchTab(int i) {
-    if (_tab == i) return;
-    setState(() {
-      _tab = i;
-      _results = [];
-      _ups = [];
-      _page = 1;
-      _total = 0;
-      _noMore = false;
-      _error = null;
-      _loading = true;
-    });
-    _search();
+/// 切换「听书 / UP主」：先把数据取回来再整体替换，切换过程中页面不闪不跳
+  Future<void> _switchTab(int i) async {
+    if (_tab == i || _switching) return;
+    final kw = _controller.text.trim();
+    if (kw.isEmpty) return;
+    setState(() => _switching = true);
+    try {
+      List<Book>? books;
+      List<UpUser>? ups;
+      if (i == 1) {
+        ups = await _bili.searchUser(kw, pageSize: _pageSize);
+      } else {
+        books = await _bili.search(kw, pageSize: _pageSize);
+      }
+      if (!mounted) return;
+      setState(() {
+        _tab = i;
+        _results = books ?? <Book>[];
+        _ups = ups ?? <UpUser>[];
+        _error = null;
+        _page = 1;
+        _total = 0;
+        _noMore = (i == 1)
+            ? (_ups.length < _pageSize)
+            : (_results.length < _pageSize);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = '加载失败，请稍后重试');
+    } finally {
+      if (mounted) setState(() => _switching = false);
+    }
   }
 
   /// 上拉分页：加载下一页并追加到列表尾部
@@ -277,8 +297,6 @@ class _SearchPageState extends State<SearchPage> {
           : null,
       body: Column(
         children: [
-          // 搜索前不显示切换器，搜索出结果后才出现，避免无意义的干扰
-          if (_hasSearched && !_loading) _buildTabs(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: Container(
@@ -333,50 +351,72 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
           ),
+          // 搜索框在上、切换在下；搜索出结果后才出现
+          if (_hasSearched) _buildTabs(),
           Expanded(child: _buildBody()),
         ],
       ),
     );
   }
 
-  /// 听书 / UP主 切换
+  /// 听书 / UP主 切换（搜索框下方，搜索后才出现）
   Widget _buildTabs() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceHigh,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.divider, width: 0.5),
-        ),
-        child: Row(
-          children: List.generate(_tabs.length, (i) {
-            final active = _tab == i;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => _switchTab(i),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: active ? AppTheme.accent : Colors.transparent,
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: Text(
-                    _tabs[i],
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                      color: active ? Colors.white : AppTheme.textSub,
-                    ),
-                  ),
-                ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceHigh,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.divider, width: 0.5),
               ),
-            );
-          }),
-        ),
+              child: Row(
+                children: List.generate(_tabs.length, (i) {
+                  final active = _tab == i;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => _switchTab(i),
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color:
+                              active ? AppTheme.accent : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Text(
+                          _tabs[i],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w400,
+                            color:
+                                active ? Colors.white : AppTheme.textSub,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+          // 切换时的轻量指示：不清空列表，页面保持不跳动
+          if (_switching)
+            const Padding(
+              padding: EdgeInsets.only(left: 12),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppTheme.accent),
+              ),
+            ),
+        ],
       ),
     );
   }

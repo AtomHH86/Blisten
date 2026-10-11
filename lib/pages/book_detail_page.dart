@@ -7,6 +7,7 @@ import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
+import '../models/up_user.dart';
 import '../player/book_player.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
@@ -14,6 +15,7 @@ import '../utils/format.dart';
 import '../widgets/book_cover.dart';
 import 'cache_sheet.dart';
 import 'player_page.dart';
+import 'up_home_page.dart';
 
 /// 书籍详情页：书籍信息 + 章节目录 + 收听入口
 class BookDetailPage extends StatefulWidget {
@@ -259,31 +261,42 @@ Text(
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 10,
-                      backgroundColor: AppTheme.surfaceHigh,
-                      backgroundImage: book.authorFace.isNotEmpty
-                          ? NetworkImage(book.authorFace)
-                          : null,
-                      child: book.authorFace.isEmpty
-                          ? const Icon(Icons.person, size: 12)
-                          : null,
+                InkWell(
+                  onTap: () => _openUp(book),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 10,
+                          backgroundColor: AppTheme.surfaceHigh,
+                          backgroundImage: book.authorFace.isNotEmpty
+                              ? NetworkImage(book.authorFace)
+                              : null,
+                          child: book.authorFace.isEmpty
+                              ? const Icon(Icons.person, size: 12)
+                              : null,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          book.author.isEmpty ? '未知UP主' : book.author,
+                          style: TextStyle(
+                              fontSize: 13, color: AppTheme.textSub),
+                        ),
+                        // UP 主名可点，进入他的主页只看他的作品
+                        if (book.mid != 0)
+                          Icon(Icons.chevron_right_rounded,
+                              size: 16, color: AppTheme.textHint),
+                        const Spacer(),
+                        Text(
+                          Fmt.date(book.pubdate),
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.textHint),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      book.author.isEmpty ? '未知UP主' : book.author,
-                      style:  TextStyle(
-                          fontSize: 13, color: AppTheme.textSub),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      Fmt.date(book.pubdate),
-                      style:  TextStyle(
-                          fontSize: 12, color: AppTheme.textHint),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -464,6 +477,27 @@ Text(
         ),
       );
     }
+  }
+
+  /// 点击 UP 主名进入他的主页（只看这一个人的内容）
+  void _openUp(Book book) {
+    if (book.mid == 0 || book.author.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('该作品没有 UP 主信息')),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UpHomePage(
+          up: UpUser(
+            mid: book.mid,
+            name: book.author,
+            face: book.authorFace,
+          ),
+        ),
+      ),
+    );
   }
 
   /// 毫秒 → h:mm:ss / mm:ss（精确到秒）

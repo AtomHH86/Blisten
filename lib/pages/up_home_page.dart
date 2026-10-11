@@ -11,6 +11,7 @@ import '../services/umeng_analytics.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
 import 'book_detail_page.dart';
+import 'search_page.dart';
 
 /// UP 主主页：关注 + 只看这一个人的作品（分页上拉加载）
 class UpHomePage extends StatefulWidget {
@@ -122,7 +123,27 @@ class _UpHomePageState extends State<UpHomePage> {
         context.watch<FollowStore>().isFollowing(widget.up.mid);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.up.name)),
+      appBar: AppBar(
+        title: Text(
+          widget.up.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          IconButton(
+            tooltip: following ? '取消关注' : '关注',
+            onPressed: _toggleFollow,
+            icon: Icon(
+              following
+                  ? Icons.notifications_active_rounded
+                  : Icons.notifications_none_rounded,
+              size: 20,
+              color: following ? AppTheme.accent : AppTheme.textSub,
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           _buildHeader(following),
@@ -135,71 +156,114 @@ class _UpHomePageState extends State<UpHomePage> {
 
   Widget _buildHeader(bool following) {
     final up = widget.up;
+    // 数据统计：只在有值时显示，避免出现空的「· ·」
+    final stats = <String>[
+      if (up.fans > 0) '${Fmt.count(up.fans)} 粉丝',
+      if (up.videos > 0) '${up.videos} 投稿',
+    ];
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       color: AppTheme.surface,
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppTheme.surfaceHigh,
-            backgroundImage: up.face.isNotEmpty ? NetworkImage(up.face) : null,
-            child: up.face.isEmpty
-                ? Icon(Icons.person_rounded, size: 30, color: AppTheme.accent)
-                : null,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  up.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textMain,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 头像：加白色描边，视觉上更像「UP 主主页」
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.accent, width: 1.5),
                 ),
-                const SizedBox(height: 6),
-                // 粉丝/投稿只在有值时显示，避免出现「· ·」这种空信息
-                if (up.fans > 0 || up.videos > 0)
-                  Text(
-                    [
-                      if (up.fans > 0) '${Fmt.count(up.fans)} 粉丝',
-                      if (up.videos > 0) '${up.videos} 投递稿件',
-                    ].join(' · '),
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
-                  ),
-                if (up.sign.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    up.sign,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: AppTheme.textHint),
-                  ),
-                ],
-              ],
-            ),
+                child: CircleAvatar(
+                  radius: 27,
+                  backgroundColor: AppTheme.surfaceHigh,
+                  backgroundImage:
+                      up.face.isNotEmpty ? NetworkImage(up.face) : null,
+                  child: up.face.isEmpty
+                      ? const Icon(Icons.person_rounded,
+                          size: 28, color: AppTheme.accent)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      up.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textMain,
+                      ),
+                    ),
+                    if (stats.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          for (var i = 0; i < stats.length; i++) ...[
+                            if (i > 0)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8),
+                                child: Container(
+                                  width: 2,
+                                  height: 2,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppTheme.textHint,
+                                  ),
+                                ),
+                              ),
+                            Text(
+                              stats[i],
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSub),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonal(
+                onPressed: _toggleFollow,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  minimumSize: const Size(0, 34),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  following ? '已关注' : '+ 关注',
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          FilledButton.tonal(
-            onPressed: _toggleFollow,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              minimumSize: const Size(0, 36),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          if (up.sign.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              up.sign,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 12.5, color: AppTheme.textSub, height: 1.6),
             ),
-            child: Text(
-              following ? '已关注' : '+ 关注',
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -214,19 +278,28 @@ class _UpHomePageState extends State<UpHomePage> {
     if (_error != null) {
       return _message(
         icon: Icons.cloud_off_outlined,
-        text: _error!,
+        title: '加载失败',
+        subtitle: _error!,
         actionLabel: '重试',
         onAction: _load,
       );
     }
     if (_books.isEmpty) {
-      // 明确告诉用户为什么没有内容，以及下一步怎么办
+      // 明确告诉用户为什么没有内容，并给出可操作的下一步
       return _message(
         icon: Icons.mic_off_outlined,
-        text: '没能取到「${widget.up.name}」的有声内容\n'
-            'B 站对未登录的 UP 空间接口有风控限制，\n可稍后重试或先登录账号再试',
-        actionLabel: '重新加载',
-        onAction: _load,
+        title: '暂时取不到「${widget.up.name}」的投稿',
+        subtitle: '该 UP 主可能没有公开合集，或游客访问被 B 站风控限制。\n'
+            '可以下拉重试，或直接搜索 TA 的名字看相关内容。',
+        actionLabel: '搜索「${widget.up.name}」',
+        onAction: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SearchPage(
+                  initialKeyword: widget.up.name, autofocus: false),
+            ),
+          );
+        },
       );
     }
 
@@ -240,11 +313,30 @@ class _UpHomePageState extends State<UpHomePage> {
         itemCount: _books.length + 2,
         itemBuilder: (context, i) {
           if (i == 0) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
-              child: Text(
-                '作品 ${_books.length} 个${_noMore ? '' : '（上拉加载更多）'}',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+            return Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              color: AppTheme.surface,
+              child: Row(
+                children: [
+                  Icon(Icons.video_library_outlined,
+                      size: 16, color: AppTheme.accent),
+                  const SizedBox(width: 6),
+                  Text(
+                    '投稿内容',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMain,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (!_noMore)
+                    Text(
+                      '已加载 ${_books.length}',
+                      style: TextStyle(
+                          fontSize: 11.5, color: AppTheme.textHint),
+                    ),
+                ],
               ),
             );
           }
@@ -364,7 +456,8 @@ class _UpHomePageState extends State<UpHomePage> {
 
   Widget _message({
     required IconData icon,
-    required String text,
+    required String title,
+    String subtitle = '',
     String? actionLabel,
     VoidCallback? onAction,
   }) {
@@ -377,11 +470,25 @@ class _UpHomePageState extends State<UpHomePage> {
             Icon(icon, size: 46, color: AppTheme.textHint),
             const SizedBox(height: 14),
             Text(
-              text,
+              title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 13, color: AppTheme.textSub, height: 1.7),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textMain,
+              ),
             ),
+            if (subtitle.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 12.5,
+                    color: AppTheme.textSub,
+                    height: 1.7),
+              ),
+            ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 18),
               FilledButton(onPressed: onAction, child: Text(actionLabel)),

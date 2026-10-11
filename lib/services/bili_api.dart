@@ -7,6 +7,24 @@ import '../models/book.dart';
 import '../models/chapter.dart';
 import '../models/up_user.dart';
 
+/// UP 合集摊平游标：把该 UP 的多个合集当一条长列表顺序翻页
+class _UpCursor {
+  final List<int> seasonIds = [];
+  final List<Book> preview = [];
+  int seasonIdx = 0;
+  int seasonPage = 1;
+
+  bool get exhausted => seasonIdx >= seasonIds.length;
+
+  int get currentSeason => seasonIds[seasonIdx];
+
+  /// 移到下一个合集
+  void advance() {
+    seasonIdx++;
+    seasonPage = 1;
+  }
+}
+
 /// B 站听书数据访问层
 class BiliApi {
   BiliApi._();
@@ -286,34 +304,38 @@ class BiliApi {
 
   /// 拉取某个 UP 主的有声内容（只播放这个 UP 的内容）
   ///
-  /// ���测结论（B 站匿名访问）：
-  /// 1. `/x/space/wbi/arc/search` 基本必被风控（-352/412），只有登录后才稳；
-  /// 2. `/x/polymer/web-space/seasons_series_list` 匿名可用，能拿到合集里的
-  ///    真实作品，是最可靠的一级来源；
-  /// 3. 搜索接口兜底：按 UP 名搜再按 mid 过滤，能捞到一部分但召回不稳定。
-  /// 因此按 2 → 1 → 3 依次降级，任一层有结果就返回。
+  /// 实测结论（B 站匿名访问）：
+  /// - `/x/space/wbi/arc/search` 未登录基本必被风控（-352/412），仅登录后可用；
+  /// - `/x/polymer/web-space/seasons_series_list` 匿名可用，能拿到该 UP 的合集，
+  ///   `data.items_lists` 是 **Map**（含 seasons_list / series_list），不是 List；
+  ///   合集里的 archives 只是每集 6 条预览，完整目录要用
+  ///   `/x/polymer/web-space/seasons_archives_list` 按 season_id 翻页；
+  /// - 搜索接口作为最后兜底（按 mid 过滤）。
+  ///
+  /// 为避免触发风控，这里用游标把各合集摊平成一条长列表，
+  /// 每次只发「尽量少的请求」凑够一页。
   Future<List<Book>> upAudios(
     UpUser up, {
     int page = 1,
     int pageSize = 30,
   }) async {
     if (up.mid == 0) return [];
-
-    // ① 合集 / 系列（匿名可用，最稳）
-    if (page == 1) {
-      final fromCollection = await _upWorksFromCollections(up, pageSize);
-      if (fromCollection.isNotEmpty) return fromCollection;
+    try {
+      return await _upFromCollections(up, page: page, pageSize: pageSize);
+    } catch (e) {
+      debugPrint('[BiliApi] 合集取数失败: $e');
     }
 
-    // ② 空间投稿（登录后可用）
+    // 空间投稿（登录后才稳）
     try {
-      final bySpace = await _upWorksFromSpace(up, page: page, pageSize: pageSize);
+      final bySpace =
+          await _upWorksFromSpace(up, page: page, pageSize: pageSize);
       if (bySpace.isNotEmpty) return bySpace;
     } catch (e) {
       debugPrint('[BiliApi] 空间投稿失败: $e');
     }
 
-    // ③ 搜索兜底：按 UP 名搜，按 mid 精确过滤
+    // 搜索兜底：按 UP 名搜，按 mid 精确过滤
     try {
       final list = await _searchRaw(
         up.name,
@@ -323,7 +345,6 @@ class BiliApi {
       );
       final mine = list.where((b) => b.mid == up.mid).toList();
       if (mine.isNotEmpty) {
-        // 搜索结果里的 author 字段可能为空，用 UP 名兜底展示
         return mine
             .map((b) => b.author.isEmpty
                 ? Book.fromJson({...b.toJson(), 'author': up.name})
@@ -336,19 +357,103 @@ class BiliApi {
     return [];
   }
 
-  /// 从 UP 的合集/系列里取视频
-  Future<List<Book>> _upWorksFromCollections(UpUser up, int pageSize) async {
-    final res = await _client.get(
-      BiliEndpoints.upCollections,
-      query: {'mid': up.mid, 'page_num': 1, 'page_size': 20},
-    );
-    final data = res.data as Map;
-    final items = (data['data'] as Map?)?['items_lists'];
-    if (items is! List || items.isEmpty) return [];
+  /// 每个 UP 的合集摊平游标（跨分页复用，避免重复请求）
+  final Map<int, _UpCursor> _upCursors = {};
+
+  /// 合集取数：第 1 页返回「各合集预览 + 首个合集前几页」，之后顺着合集继续翻
+  Future<List<Book>> _upFromCollections(UpUser up,
+      {required int page, required int pageSize}) async {
+    var cursor = _upCursors[up.mid];
+    if (cursor == null) {
+      cursor = _UpCursor();
+      await _initUpCursor(up, cursor);
+      _upCursors[up.mid] = cursor;
+    }
+    if (cursor.preview.isEmpty && cursor.seasonIds.isEmpty) {
+      throw StateError('该 UP 没有公开合集');
+    }
 
     final out = <Book>[];
     final seen = <String>{};
-    final seasonIds = <int>[];
+
+    // 第 1 页先给各合集的预览条目（瞬间可见）
+    if (page == 1) {
+      for (final b in cursor.preview) {
+        if (seen.add(b.bvid)) out.add(b);
+      }
+    }
+
+    // 再按合集顺序补齐到 pageSize（每次最多 3 个请求，克制风控）
+    for (var guard = 0;
+        out.length < pageSize && guard < 3 && !cursor.exhausted;
+        guard++) {
+      final season = cursor.currentSeason;
+      final res = await _client.get(
+        BiliEndpoints.upCollectionArchives,
+        query: {
+          'mid': up.mid,
+          'season_id': season,
+          'sort_reverse': false,
+          'page_num': cursor.seasonPage,
+          'page_size': 30,
+        },
+        headers: {
+          'origin': BiliEndpoints.home,
+          'referer': BiliEndpoints.spaceHome(up.mid),
+        },
+      );
+      final data = res.data as Map;
+      final body = data['data'];
+      if (data['code'] != 0 || body is! Map) {
+        cursor.advance();
+        continue;
+      }
+      final archives = body['archives'] as List? ?? [];
+      if (archives.isEmpty) {
+        cursor.advance();
+        continue;
+      }
+      var added = 0;
+      for (final a in archives) {
+        if (a is! Map) continue;
+        final b = _bookFromArchive(a.cast<String, dynamic>(), up);
+        if (b != null && seen.add(b.bvid)) {
+          out.add(b);
+          added++;
+        }
+      }
+      if (added == 0) {
+        // 这一页全是重复内容，直接换下一个合集
+        cursor.advance();
+      } else {
+        cursor.seasonPage++;
+      }
+    }
+
+    // 按发布时间倒序，和 B 站空间页观感一致
+    if (page == 1) {
+      out.sort((a, b) => b.pubdate.compareTo(a.pubdate));
+    }
+    return out;
+  }
+
+  /// 读取 UP 的合集/系列，写入游标
+  Future<void> _initUpCursor(UpUser up, _UpCursor cursor) async {
+    final res = await _client.get(
+      BiliEndpoints.upCollections,
+      query: {'mid': up.mid, 'page_num': 1, 'page_size': 20},
+      headers: {
+        'origin': BiliEndpoints.home,
+        'referer': BiliEndpoints.spaceHome(up.mid),
+      },
+    );
+    final body = res.data as Map;
+    if (body['code'] != 0) throw StateError('collections ${body['code']}');
+    final data = body['data'];
+    if (data is! Map) return;
+    // 注意：items_lists 是 Map，不是 List
+    final box = data['items_lists'];
+    if (box is! Map) return;
 
     void collect(List? list) {
       if (list == null) return;
@@ -356,59 +461,24 @@ class BiliApi {
         if (s is! Map) continue;
         final meta = s['meta'] as Map? ?? {};
         final sid = int.tryParse('${meta['season_id']}') ?? 0;
-        if (sid > 0) seasonIds.add(sid);
-        for (final a in (s['archives'] as List? ?? [])) {
-          if (a is! Map) continue;
-          final b = _bookFromArchive(a.cast<String, dynamic>(), up);
-          if (b != null && seen.add(b.bvid)) out.add(b);
-        }
-      }
-    }
-
-    for (final it in items) {
-      if (it is! Map) continue;
-      collect(it['seasons_list'] as List?);
-      collect(it['series_list'] as List?);
-    }
-
-    // 合集里的 archives 只是预览（每个约 6 条），总量看 meta.total，
-    // 这里按需翻页补齐，保证「只听这个 UP」能拿到完整目录。
-    for (final sid in seasonIds.take(4)) {
-      if (out.length >= pageSize * 3) break;
-      for (var p = 1; p <= 3 && out.length < pageSize * 3; p++) {
-        try {
-          final r = await _client.get(
-            BiliEndpoints.upCollectionArchives,
-            query: {
-              'mid': up.mid,
-              'season_id': sid,
-              'sort_reverse': false,
-              'page_num': p,
-              'page_size': 30,
-            },
-          );
-          final rdata = (r.data as Map)['data'];
-          final archives = rdata is Map ? rdata['archives'] as List? : null;
-          if (archives == null || archives.isEmpty) break;
-          var added = 0;
+        if (sid > 0) cursor.seasonIds.add(sid);
+        final archives = s['archives'];
+        if (archives is List) {
           for (final a in archives) {
             if (a is! Map) continue;
             final b = _bookFromArchive(a.cast<String, dynamic>(), up);
-            if (b != null && seen.add(b.bvid)) {
-              out.add(b);
-              added++;
-            }
+            if (b != null) cursor.preview.add(b);
           }
-          if (added == 0) break;
-        } catch (e) {
-          debugPrint('[BiliApi] 合集#$sid 第$p页失败: $e');
-          break;
         }
       }
     }
 
-    out.sort((a, b) => b.pubdate.compareTo(a.pubdate));
-    return out;
+    collect(box['seasons_list'] as List?);
+    collect(box['series_list'] as List?);
+
+    // 预览去重
+    final seen = <String>{};
+    cursor.preview.removeWhere((b) => !seen.add(b.bvid));
   }
 
   /// 合集/空间接口的视频条目 → Book（字段为 bvid/title/pic/duration/stat）

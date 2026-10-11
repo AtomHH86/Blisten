@@ -58,7 +58,7 @@ class MyPage extends StatelessWidget {
         children: [
           _buildHeader(context, shelf, auth),
           const SizedBox(height: 4),
-          _statRow(books, reading, cacheCount, follows),
+          _statRow(books, reading, cacheCount, follows, context),
           if (reading.isNotEmpty) _buildContinueReading(context, reading),
           _groupLabel('听书'),
           _menuTile(
@@ -231,7 +231,7 @@ class MyPage extends StatelessWidget {
   }
 
   Widget _statRow(List<ShelfBook> books, List<ShelfBook> reading,
-      int cacheCount, int follows) {
+      int cacheCount, int follows, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -243,15 +243,21 @@ class MyPage extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // 统计项可点击直达对应页面
             _statCell('${books.length}', '书架',
-                Icons.collections_bookmark_outlined),
-            _divider(),
-            _statCell('${reading.length}', '在听', Icons.headset_rounded),
+                Icons.collections_bookmark_outlined,
+                onTap: () => _push(context, const FavoritesPage())),
             _divider(),
             _statCell(
-                '$cacheCount', '已缓存', Icons.download_for_offline_outlined),
+                '${reading.length}', '在听', Icons.headset_rounded,
+                onTap: () => _push(context, const RecentPage())),
             _divider(),
-            _statCell('$follows', '关注', Icons.person_rounded),
+            _statCell('$cacheCount', '已缓存',
+                Icons.download_for_offline_outlined,
+                onTap: () => _push(context, const CachePage())),
+            _divider(),
+            _statCell('$follows', '关注', Icons.person_rounded,
+                onTap: () => _push(context, const FollowPage())),
           ],
         ),
       ),
@@ -262,8 +268,9 @@ class MyPage extends StatelessWidget {
     return Container(width: 1, height: 36, color: AppTheme.divider);
   }
 
-  Widget _statCell(String value, String label, IconData icon) {
-    return Expanded(
+  Widget _statCell(String value, String label, IconData icon,
+      {VoidCallback? onTap}) {
+    final cell = Expanded(
       child: Column(
         children: [
           Icon(icon, size: 18, color: AppTheme.accent),
@@ -282,6 +289,42 @@ class MyPage extends StatelessWidget {
             style: TextStyle(fontSize: 11, color: AppTheme.textSub),
           ),
         ],
+      ),
+    );
+    if (onTap == null) return cell;
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Column(
+            children: [
+              Icon(icon, size: 18, color: AppTheme.accent),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textMain,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 11, color: AppTheme.textSub),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 13, color: AppTheme.textHint),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

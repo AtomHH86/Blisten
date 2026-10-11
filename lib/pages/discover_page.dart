@@ -275,9 +275,17 @@ Icon(Icons.cloud_off_outlined,
                 ),
               ),
             ),
-            Text(
-              '${_browseBooks.length} 个结果',
-              style: TextStyle(fontSize: 12, color: AppTheme.textHint),
+            // 「更多」：带着当前分类关键词进搜索页看完整结果
+            TextButton.icon(
+              onPressed: () => _openMore(cat),
+              icon: Icon(Icons.open_in_new_rounded,
+                  size: 14, color: AppTheme.accent),
+              label: Text('更多',
+                  style: TextStyle(fontSize: 12.5, color: AppTheme.accent)),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
             ),
             IconButton(
               onPressed: () => _loadBrowse(force: true),
@@ -305,6 +313,16 @@ Icon(Icons.cloud_off_outlined,
       ),
       const SizedBox(height: 12),
     ];
+  }
+
+  /// 「更多」：把分类关键词带进搜索页，可继续翻页看全部结果
+  void _openMore(DiscoverCategory cat) {
+    final kw = _cat == 0 ? '有声小说' : cat.keyword;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchPage(initialKeyword: kw, autofocus: false),
+      ),
+    );
   }
 
   /// 精选主播：点击查看该主播相关的有声小说（进入独立搜索页）

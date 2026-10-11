@@ -55,6 +55,9 @@ class BiliEndpoints {
   /// UP 主主页链接
   static String space(int mid) => '$home/space/$mid';
 
+  /// UP 主空间页（部分 polyer 接口要求这个 referer 才返回数据）
+  static String spaceHome(int mid) => 'https://space.bilibili.com/$mid';
+
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
