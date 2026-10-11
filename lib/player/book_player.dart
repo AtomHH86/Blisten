@@ -438,7 +438,8 @@ class BookPlayer extends ChangeNotifier {
   }
 
   /// 开始听书：自动从上次进度继续。失败时回滚，保持原播放状态
-  Future<void> playBook(Book book, {int resumeIndex = 0, int resumeMs = 0}) async {
+  /// 返回是否成功进入播放
+  Future<bool> playBook(Book book, {int resumeIndex = 0, int resumeMs = 0}) async {
     _ensureNotificationPermission();
     List<Chapter> chapters;
     if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
@@ -452,7 +453,7 @@ class BookPlayer extends ChangeNotifier {
       _book = book;
       _loaded = false;
       notifyListeners();
-      return;
+      return false;
     }
 
     // 换本书时重置「播放 1 分钟自动入书架」的累计
@@ -465,13 +466,13 @@ class BookPlayer extends ChangeNotifier {
     final idx = resumeIndex >= 0 && resumeIndex < chapters.length
         ? resumeIndex
         : 0;
-    await _loadTarget(idx,
+    return _loadTarget(idx,
         resumeMs: resumeMs, newBook: book, newChapters: chapters);
   }
 
   /// 从书架进度继续收听
-  Future<void> resumeShelf(ShelfBook sb) async {
-    await playBook(
+  Future<bool> resumeShelf(ShelfBook sb) async {
+    return playBook(
       sb.book,
       resumeIndex: sb.lastChapterIndex,
       resumeMs: sb.positionMs,
@@ -872,38 +873,108 @@ class BookPlayer extends ChangeNotifier {
     _shelf.markChapterDone(book.bvid, chapter.cid);
   }
 
-  /// 取某章节的下载候选地址（带 CDN 必需请求头）
-  Future<String?> streamUrlOf(int cid) async {
-    final local = await _cachedPathOf(_book?.bvid, cid);
-    if (local != null) return null; // 已缓存，无需下载
-    try {
-      final candidates = await _fetchStreamCandidates(cid);
-      return candidates.isEmpty ? null : candidates.first;
-    } catch (e) {
-      debugPrint('[BookPlayer] 取流地址失败: $e');
-      return null;
-    }
-  }
-
   Map<String, String> get downloadHeaders => _streamHeaders();
 
-  /// 下载某个章节到本地（离线可听）
-  Future<bool> cacheChapter(Chapter c) async {
-    final book = _book;
-    if (book == null) return false;
-    if (_cache.isCached(book.bvid, c.cid)) return true;
-    final url = await streamUrlOf(c.cid);
-    if (url == null) return false;
-    return _cache.download(
-      bvid: book.bvid,
-      cid: c.cid,
-      url: url,
-      bookTitle: book.cleanTitle,
-      chapterTitle: '${c.page} · ${c.part}',
-      cover: book.pic,
-      durationSec: c.duration,
-      headers: _streamHeaders(),
-    );
+  /// 直接播放缓存里的一集（离线入口，缓存页调用）
+  ///
+  /// 从缓存页进来时只有 bvid/cid，没有完整章节列表；
+  /// 先尝试拉章节列表（失败也不阻塞，缓存页只有一集时用单集占位）。
+  Future<bool> playCachedEntry(String bvid, int cid, Book book) async {
+    _ensureNotificationPermission();
+    List<Chapter> chapters;
+    try {
+      chapters = await _api.pageList(bvid);
+    } catch (_) {
+      chapters = const [];
+    }
+
+    var index = chapters.indexWhere((c) => c.cid == cid);
+    if (index < 0) {
+      // 列表里没有这一集（可能是多 P 的某一集），补一个占位章节
+      chapters = [
+        Chapter(cid: cid, page: 1, part: book.cleanTitle),
+      ];
+      index = 0;
+    }
+
+    final local = await _cachedPathOf(bvid, cid);
+    if (local == null) return false;
+
+    final prevBook = _book;
+    final prevChapters = _chapters;
+    final prevIndex = _index;
+    final prevLoaded = _loaded;
+
+    _book = book;
+    _chapters = chapters;
+    _index = index;
+    _loading = true;
+    _error = null;
+    notifyListeners();
+
+    var ok = false;
+    try {
+      await _player.open(Media(local));
+      if (_rate != 1.0) await _player.setRate(_rate);
+      _playbackUrl = null;
+      _isOffline = true;
+      ok = true;
+    } catch (e) {
+      debugPrint('[BookPlayer] 缓存播放失败: $e');
+      _book = prevBook;
+      _chapters = prevChapters;
+      _index = prevIndex;
+      _loaded = prevLoaded;
+    } finally {
+      _loading = false;
+      if (ok) {
+        _loaded = true;
+        unawaited(AudioFocus.instance.request());
+        _pushNowPlaying();
+      }
+      notifyListeners();
+    }
+    return ok;
+  }
+
+  /// 取任意 (bvid, cid) 的下载地址（详情页缓存单集时用）
+  Future<String?> resolveUrlFor(String bvid, int cid) async {
+    try {
+      final cached = _urlCache[cid];
+      if (cached != null &&
+          DateTime.now().millisecondsSinceEpoch - cached.ts <
+              90 * 60 * 1000) {
+        return cached.url;
+      }
+      final audio = await _api.playUrl(bvid, cid);
+      final urls = <String>[];
+      String toHttps(String u) =>
+          u.startsWith('http://') ? 'https://${u.substring(7)}' : u;
+      void add(AudioTrack? t) {
+        if (t == null) return;
+        if (t.baseUrl.isNotEmpty) urls.add(toHttps(t.baseUrl));
+        for (final b in t.backupUrls) {
+          if (b.isNotEmpty) urls.add(toHttps(b));
+        }
+      }
+
+      final aac = [...audio.tracks]..sort((a, b) => b.bandwidth.compareTo(a.bandwidth));
+      for (final t in aac) {
+        add(t);
+      }
+      add(audio.flac);
+      add(audio.dolby);
+      final uniq = urls.toSet().toList();
+      if (uniq.isEmpty) return null;
+      _urlCache[cid] = (url: uniq.first, ts: DateTime.now().millisecondsSinceEpoch);
+      if (_urlCache.length > 12) {
+        _urlCache.remove(_urlCache.keys.first);
+      }
+      return uniq.first;
+    } catch (e) {
+      debugPrint('[BookPlayer] 取下载地址失败: $e');
+      return null;
+    }
   }
 
   /// 缓存播放位置（用于离线时恢复进度不依赖网络）

@@ -21,6 +21,14 @@ class BiliEndpoints {
   /// UP 主空间投稿列表（按 mid 拉取该 UP 的视频）
   static const String spaceArcSearch = '$base/x/space/wbi/arc/search';
 
+  /// UP 主合集/系列列表（匿名可用的主要来源）
+  static const String upCollections =
+      '$base/x/polymer/web-space/seasons_series_list';
+
+  /// 单个合集下的全部视频（分页）
+  static const String upCollectionArchives =
+      '$base/x/polymer/web-space/seasons_archives_list';
+
   /// 视频基本信息（含分P列表）
   static const String view = '$base/x/web-interface/view';
 

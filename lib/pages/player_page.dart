@@ -13,6 +13,7 @@ import '../models/chapter.dart';
 import '../player/book_player.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
+import 'book_detail_page.dart';
 import 'cache_sheet.dart';
 
 /// 全屏播放页（PiliPlus 风格）
@@ -293,14 +294,38 @@ class _PlayerPageState extends State<PlayerPage> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
       child: Column(
         children: [
-          Text(
-            book.cleanTitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style:  TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textMain,
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BookDetailPage(bvid: book.bvid),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      book.cleanTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style:  TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textMain,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18, color: AppTheme.textSub),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -558,7 +583,7 @@ class _PlayerPageState extends State<PlayerPage> {
                 fontWeight: player.currentCached ? FontWeight.w700 : null,
               ),
             ),
-            onPressed: () => CacheSheet.show(context),
+            onPressed: () => CacheSheet.show(context, book: player.book),
           ),
         ],
       ),

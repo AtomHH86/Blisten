@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../core/nav/home_tabs.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
+import '../player/book_player.dart';
+import '../pages/player_page.dart';
 
 /// 书架进度徽标（百分比）
 class ShelfProgressBadge extends StatelessWidget {
@@ -74,6 +76,30 @@ class EmptyShelfView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 书架/我的书架 点击：直接开始续播并进入播放页
+///
+/// 长按仍然走移出书架；要进书籍详情可以在播放页点书名。
+Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
+  final navigator = Navigator.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final player = context.read<BookPlayer>();
+  player.flushProgress();
+  final ok = sb.positionMs > 0
+      ? await player.resumeShelf(sb)
+      : await player.playBook(sb.book);
+  if (!context.mounted) return;
+  if (!ok) {
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('加载失败，请检查网络后重试'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    return;
+  }
+  navigator.push(MaterialPageRoute(builder: (_) => const PlayerPage()));
 }
 
 /// 确认后把书移出书架（收听进度一并清除）

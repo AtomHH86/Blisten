@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../core/storage/cache_store.dart';
 import '../core/theme/app_theme.dart';
+import '../models/book.dart';
+import '../player/book_player.dart';
 import '../widgets/book_cover.dart';
+import 'player_page.dart';
 
-/// 离线缓存管理：查看已缓存章节、占用空间、删除
+/// 离线缓存管理：按书分组，点开看已缓存章节，可单个/批量删除、可直接播放
 class CachePage extends StatelessWidget {
   const CachePage({super.key});
 
@@ -14,11 +17,14 @@ class CachePage extends StatelessWidget {
     final cache = context.watch<CacheStore>();
     final all = cache.entries;
 
-    // 按书分组
+    // 按书分组（保持最近缓存的顺序）
     final grouped = <String, List<CacheEntry>>{};
     for (final e in all) {
       grouped.putIfAbsent(e.bvid, () => []).add(e);
     }
+    final books = grouped.keys.toList()
+      ..sort((a, b) => grouped[b]!.first.cachedAt
+          .compareTo(grouped[a]!.first.cachedAt));
 
     return Scaffold(
       appBar: AppBar(
@@ -35,173 +41,149 @@ class CachePage extends StatelessWidget {
         ],
       ),
       body: all.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.download_for_offline_outlined,
-                        size: 52, color: AppTheme.textHint),
-                    const SizedBox(height: 14),
-                    Text(
-                      '还没有缓存任何内容',
-                      style:
-                          TextStyle(fontSize: 14, color: AppTheme.textMain),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '在播放页点「缓存」选集，下载后无网也能听',
-                      textAlign: TextAlign.center,
-                      style:
-                          TextStyle(fontSize: 12, color: AppTheme.textSub),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView(
+          ? const _CacheEmpty()
+          : ListView.builder(
               padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                Container(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.divider),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.sd_storage_rounded,
-                          size: 22, color: AppTheme.accent),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '已缓存 ${all.length} 集',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textMain,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '占用 ${cache.totalSizeText}',
-                              style: TextStyle(
-                                  fontSize: 12, color: AppTheme.textSub),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                for (final entry in grouped.entries)
-                  ..._buildBookGroup(context, cache, entry.key, entry.value),
-              ],
+              itemCount: books.length + 1,
+              itemBuilder: (context, i) {
+                if (i == 0) return _buildSummary(context, cache, all.length);
+                final bvid = books[i - 1];
+                return _buildBookCard(context, cache, bvid, grouped[bvid]!);
+              },
             ),
     );
   }
 
-  List<Widget> _buildBookGroup(BuildContext context, CacheStore cache,
-      String bvid, List<CacheEntry> list) {
-    final first = list.first;
-    final size = list.fold<int>(0, (s, e) => s + e.sizeBytes);
-    return [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 8, 4),
-        child: Row(
-          children: [
-            BookCover(url: first.cover, width: 34, height: 34),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    first.bookTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textMain,
-                    ),
-                  ),
-                  Text(
-                    '${list.length} 集 · ${_sizeText(size)}',
-                    style: TextStyle(fontSize: 11, color: AppTheme.textSub),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              tooltip: '删除这本书的缓存',
-              icon: Icon(Icons.delete_outline, size: 20, color: AppTheme.textSub),
-              onPressed: () => _confirmRemoveBook(context, cache, first),
-            ),
-          ],
-        ),
+  Widget _buildSummary(BuildContext context, CacheStore cache, int count) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.divider),
       ),
-      for (final e in list)
-        ListTile(
-          dense: true,
-          leading: Icon(Icons.check_circle_rounded,
-              size: 18, color: AppTheme.accent),
-          title: Text(
-            e.chapterTitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 13, color: AppTheme.textMain),
-          ),
-          subtitle: Text(
-            [e.durationText, e.sizeText].where((s) => s.isNotEmpty).join(' · '),
-            style: TextStyle(fontSize: 11, color: AppTheme.textHint),
-          ),
-          trailing: IconButton(
-            tooltip: '删除',
-            icon: Icon(Icons.close_rounded, size: 18, color: AppTheme.textHint),
-            onPressed: () => cache.remove(e.bvid, e.cid),
-          ),
-        ),
-      const Divider(height: 1),
-    ];
-  }
-
-  static String _sizeText(int bytes) {
-    if (bytes <= 0) return '0 MB';
-    final mb = bytes / 1024 / 1024;
-    if (mb >= 1024) return '${(mb / 1024).toStringAsFixed(2)} GB';
-    return '${mb.toStringAsFixed(1)} MB';
-  }
-
-  Future<void> _confirmRemoveBook(
-      BuildContext context, CacheStore cache, CacheEntry e) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('删除缓存'),
-        content: Text('删除《${e.bookTitle}》的全部离线缓存？',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 14)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('取消', style: TextStyle(color: AppTheme.textSub)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('删除', style: TextStyle(color: AppTheme.accent)),
+      child: Row(
+        children: [
+          Icon(Icons.sd_storage_rounded, size: 22, color: AppTheme.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '已缓存 $count 集',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '占用 ${cache.totalSizeText} · 点击书籍查看已缓存章节',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
-    if (ok == true) await cache.removeBook(e.bvid);
+  }
+
+  Widget _buildBookCard(
+      BuildContext context, CacheStore cache, String bvid, List<CacheEntry> list) {
+    final first = list.first;
+    final size = list.fold<int>(0, (s, e) => s + e.sizeBytes);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Material(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _showBookChapters(context, cache, bvid, list),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.divider),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                BookCover(url: first.cover, width: 52, height: 52),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        first.bookTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textMain,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accent.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '已缓存 ${list.length} 集',
+                              style: TextStyle(
+                                  fontSize: 11, color: AppTheme.accent),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            sizeText(size),
+                            style: TextStyle(
+                                fontSize: 11, color: AppTheme.textHint),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 弹窗：这本书已缓存了哪些集，可播放/单删/全删
+  Future<void> _showBookChapters(BuildContext context, CacheStore cache,
+      String bvid, List<CacheEntry> initial) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      scrollControlDisabledMaxHeightRatio: 0.85,
+      showDragHandle: true,
+      builder: (ctx) => _BookChaptersSheet(
+        bvid: bvid,
+        title: initial.isEmpty ? '' : initial.first.bookTitle,
+      ),
+    );
+  }
+
+  static String sizeText(int bytes) {
+    if (bytes <= 0) return '0 MB';
+    final mb = bytes / 1024 / 1024;
+    if (mb >= 1024) return '${(mb / 1024).toStringAsFixed(2)} GB';
+    return '${mb.toStringAsFixed(1)} MB';
   }
 
   Future<void> _confirmClearAll(BuildContext context, CacheStore cache) async {
@@ -225,5 +207,186 @@ class CachePage extends StatelessWidget {
       ),
     );
     if (ok == true) await cache.clearAll();
+  }
+}
+
+/// 单本书的已缓存章节弹窗
+class _BookChaptersSheet extends StatelessWidget {
+  final String bvid;
+  final String title;
+  const _BookChaptersSheet({required this.bvid, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final cache = context.watch<CacheStore>();
+    final list = cache.entriesOf(bvid);
+    final size = list.fold<int>(0, (s, e) => s + e.sizeBytes);
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.75,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 8, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textMain,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '已缓存 ${list.length} 集 · ${CachePage.sizeText(size)}',
+                        style:
+                            TextStyle(fontSize: 12, color: AppTheme.textSub),
+                      ),
+                    ],
+                  ),
+                ),
+                if (list.isNotEmpty)
+                  TextButton(
+                    onPressed: () => _confirmDeleteAll(context, cache, list),
+                    child: Text('删除全部',
+                        style: TextStyle(color: AppTheme.textSub, fontSize: 13)),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: list.isEmpty
+                ? Center(
+                    child: Text('缓存已被清空',
+                        style:
+                            TextStyle(fontSize: 13, color: AppTheme.textHint)),
+                  )
+                : ListView.builder(
+                    itemCount: list.length,
+                    itemBuilder: (context, i) {
+                      final e = list[i];
+                      return ListTile(
+                        dense: true,
+                        leading: Icon(Icons.offline_pin_rounded,
+                            size: 20, color: AppTheme.accent),
+                        title: Text(
+                          e.chapterTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 14, color: AppTheme.textMain),
+                        ),
+                        subtitle: Text(
+                          [e.durationText, e.sizeText]
+                              .where((s) => s.isNotEmpty)
+                              .join(' · '),
+                          style:
+                              TextStyle(fontSize: 11, color: AppTheme.textHint),
+                        ),
+                        onTap: () => _playEntry(context, cache, e),
+                        trailing: IconButton(
+                          tooltip: '删除',
+                          icon: Icon(Icons.delete_outline,
+                              size: 20, color: AppTheme.textSub),
+                          onPressed: () => cache.remove(e.bvid, e.cid),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 直接播放这一集（离线）
+  Future<void> _playEntry(
+      BuildContext context, CacheStore cache, CacheEntry e) async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final player = BookPlayer.instance;
+    final book = Book(
+      bvid: e.bvid,
+      aid: 0,
+      title: e.bookTitle,
+      pic: e.cover,
+    );
+    // 从缓存目录反查 cid 对应的章节信息
+    final ok = await player.playCachedEntry(e.bvid, e.cid, book);
+    navigator.pop();
+    if (!ok) {
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('缓存文件已失效，请重新缓存'),
+            duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const PlayerPage()),
+    );
+  }
+
+  Future<void> _confirmDeleteAll(
+      BuildContext context, CacheStore cache, List<CacheEntry> list) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Text('删除缓存'),
+        content: Text('删除这 ${list.length} 集离线缓存？',
+            style: TextStyle(color: AppTheme.textMain, fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('取消', style: TextStyle(color: AppTheme.textSub)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('删除', style: TextStyle(color: AppTheme.accent)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await cache.removeBook(bvid);
+  }
+}
+
+class _CacheEmpty extends StatelessWidget {
+  const _CacheEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.download_for_offline_outlined,
+                size: 52, color: AppTheme.textHint),
+            const SizedBox(height: 14),
+            Text(
+              '还没有缓存任何内容',
+              style: TextStyle(fontSize: 14, color: AppTheme.textMain),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '在书籍详情页点每集后面的下载图标，\n或用「批量缓存」一次存下多集，无网也能听',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -93,12 +93,14 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Future<void> _search() async {
+  Future<void> _search({bool recordHistory = true}) async {
     final kw = _controller.text.trim();
     if (kw.isEmpty) return;
     FocusScope.of(context).unfocus();
-    // 命中历史/热门时也会走这里，统一记录搜索历史
-    context.read<SearchHistoryStore>().add(kw);
+    // 切换标签触发的加载不重复写搜索历史
+    if (recordHistory) {
+      context.read<SearchHistoryStore>().add(kw);
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -129,17 +131,21 @@ class _SearchPageState extends State<SearchPage> {
       return;
     }
     try {
+      var rawCount = _pageSize;
       final list = await _bili.search(
         kw,
         page: _page,
         pageSize: _pageSize,
         onFirstPage: (t) => _total = t,
+        onRawCount: (c) => rawCount = c,
       );
       if (!mounted) return;
       setState(() {
         _results = list;
         _loading = false;
-        if (list.length < _pageSize) _noMore = true;
+        // 用「原始条数」判断是否还有下一页：听书过滤后可能不足一页，
+        // 但后面仍有结果，按过滤后的长度判断会误判成到底。
+        if (rawCount < _pageSize) _noMore = true;
       });
       AppAnalytics.onEvent('search', {'has_result': list.isNotEmpty ? 1 : 0});
     } catch (e) {
@@ -151,6 +157,7 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  /// 切换「听书 / UP主」：立即按当前关键词加载对应数据
   void _switchTab(int i) {
     if (_tab == i) return;
     setState(() {
@@ -161,40 +168,52 @@ class _SearchPageState extends State<SearchPage> {
       _total = 0;
       _noMore = false;
       _error = null;
-      _hasSearched = false;
+      _loading = true;
     });
+    _search();
   }
 
   /// 上拉分页：加载下一页并追加到列表尾部
   Future<void> _loadMore() async {
     final kw = _controller.text.trim();
-    if (kw.isEmpty || _loading || _loadingMore) return;
-    if (_tab == 1) {
-      // UP 主不做分页，直接提示到底
+    if (kw.isEmpty || _loading || _loadingMore || _noMore) return;
+    if (_tab == 1) return; // UP 主一次性返回，不分页
+    if (_total > 0 && _page * _pageSize >= _total) {
+      if (mounted) setState(() => _noMore = true);
       return;
     }
-    if (_total > 0 && _results.length >= _total) return;
     final nextPage = _page + 1;
     setState(() => _loadingMore = true);
     try {
+      var rawCount = _pageSize;
       final list = await _bili.search(
         kw,
         page: nextPage,
         pageSize: _pageSize,
+        onRawCount: (c) => rawCount = c,
       );
       if (!mounted) return;
       setState(() {
         _page = nextPage;
         _results = [..._results, ...list];
         _loadingMore = false;
-        if (list.isEmpty || list.length < _pageSize) _noMore = true;
+        // 原始条数不足一页才是真的到底（听书过滤会少于 pageSize）
+        if (rawCount < _pageSize) _noMore = true;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() => _loadingMore = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加载更多失败，请稍后重试'),
-            duration: Duration(seconds: 1)),
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('加载更多失败，上滑重试'),
+          duration: const Duration(seconds: 1),
+          action: SnackBarAction(
+            label: '重试',
+            textColor: AppTheme.accent,
+            onPressed: _loadMore,
+          ),
+        ),
       );
     }
   }
@@ -258,7 +277,8 @@ class _SearchPageState extends State<SearchPage> {
           : null,
       body: Column(
         children: [
-          _buildTabs(),
+          // 搜索前不显示切换器，搜索出结果后才出现，避免无意义的干扰
+          if (_hasSearched && !_loading) _buildTabs(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: Container(

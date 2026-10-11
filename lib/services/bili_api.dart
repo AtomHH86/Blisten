@@ -69,6 +69,10 @@ class BiliApi {
     int pageSize = 20,
     String? order,
     Function(int total)? onFirstPage,
+    /// 结果条数回调（未经听书过滤的原始条数），用于判断是否还有下一页
+    Function(int rawCount)? onRawCount,
+    /// 关闭听书过滤（UP 主场景：已按 mid 精确过滤，不需要再按题材筛）
+    bool applyAudioFilter = true,
   }) async {
     var attempt = 0;
     while (true) {
@@ -108,11 +112,12 @@ class BiliApi {
         for (final item in list) {
           if (item is! Map) continue;
           final m = item.cast<String, dynamic>();
-          if (!_isAudiobookItem(m, keyword)) continue;
+          if (applyAudioFilter && !_isAudiobookItem(m, keyword)) continue;
           final b = Book.fromSearch(m);
           if (b.bvid.isEmpty || b.aid == 0) continue;
           books.add(b);
         }
+        onRawCount?.call(list.length);
         onFirstPage?.call(page == 1 ? numResults : 0);
         return books;
       } on BiliApiException catch (e) {
@@ -129,12 +134,14 @@ class BiliApi {
   ///
   /// 先用原关键词搜（标题相关性最好），命中太少时再用
   /// 「关键词 有声小说」补搜一次并合并去重。
+  /// 补搜只在第 1 页做，避免翻页时请求翻倍触发风控。
   Future<List<Book>> search(
     String keyword, {
     int page = 1,
     int pageSize = 20,
     String? order,
     Function(int total)? onFirstPage,
+    Function(int rawCount)? onRawCount,
   }) async {
     final kw = keyword.trim();
     if (kw.isEmpty) return [];
@@ -144,7 +151,9 @@ class BiliApi {
       pageSize: pageSize,
       order: order,
       onFirstPage: onFirstPage,
+      onRawCount: onRawCount,
     );
+    if (page > 1) return primary;
     if (primary.length >= 6 || _hasAudioHint(kw)) return primary;
 
     try {
@@ -277,74 +286,188 @@ class BiliApi {
 
   /// 拉取某个 UP 主的有声内容（只播放这个 UP 的内容）
   ///
-  /// 优先走 UP 空间投稿接口；未登录时被风控拦截则退化为
-  /// 「UP 名 + 有声小说」关键词搜索并按 mid 过滤，保证功能可用。
+  /// ���测结论（B 站匿名访问）：
+  /// 1. `/x/space/wbi/arc/search` 基本必被风控（-352/412），只有登录后才稳；
+  /// 2. `/x/polymer/web-space/seasons_series_list` 匿名可用，能拿到合集里的
+  ///    真实作品，是最可靠的一级来源；
+  /// 3. 搜索接口兜底：按 UP 名搜再按 mid 过滤，能捞到一部分但召回不稳定。
+  /// 因此按 2 → 1 → 3 依次降级，任一层有结果就返回。
   Future<List<Book>> upAudios(
     UpUser up, {
     int page = 1,
     int pageSize = 30,
   }) async {
     if (up.mid == 0) return [];
-    try {
-      final res = await _client.get(
-        BiliEndpoints.spaceArcSearch,
-        query: {
-          'mid': up.mid,
-          'pn': page,
-          'ps': pageSize,
-          'order': 'pubdate',
-          'platform': 'web',
-          'web_location': 1550101,
-        },
-        useWbi: true,
-        headers: {
-          'origin': BiliEndpoints.home,
-          'referer': BiliEndpoints.space(up.mid),
-        },
-      );
-      final data = res.data as Map;
-      if (data['code'] != 0) throw BiliApiException(-352, 'space blocked');
-      final list = (data['data'] as Map?)?['list'] as Map? ?? {};
-      final vlist = list['vlist'] as List? ?? [];
-      final out = <Book>[];
-      for (final item in vlist) {
-        if (item is! Map) continue;
-        final m = item.cast<String, dynamic>();
-        // 空间接口字段与搜索接口不同，单独做一次听书判定
-        if (!_isSpaceAudiobook(m)) continue;
-        final b = Book(
-          bvid: m['bvid'] as String? ?? '',
-          aid: int.tryParse('${m['aid'] ?? 0}') ?? 0,
-          title: m['title'] as String? ?? '',
-          pic: Book.normalizePic(m['pic'] as String? ?? ''),
-          pages: 1,
-          duration: Book.parseDurationSeconds(m['length']),
-          author: up.name,
-          mid: up.mid,
-          authorFace: up.face,
-          play: int.tryParse('${m['play'] ?? 0}') ?? 0,
-        );
-        if (b.bvid.isEmpty) continue;
-        out.add(b);
-      }
-      return out;
-    } catch (e) {
-      debugPrint('[BiliApi] upAudios fallback: $e');
-      // 退化路径：按 UP 名 + 题材搜，再按 mid 精确过滤
-      final list = await _searchRaw('${up.name} 有声小说', page: page, pageSize: pageSize);
-      return list.where((b) => b.mid == up.mid).toList();
+
+    // ① 合集 / 系列（匿名可用，最稳）
+    if (page == 1) {
+      final fromCollection = await _upWorksFromCollections(up, pageSize);
+      if (fromCollection.isNotEmpty) return fromCollection;
     }
+
+    // ② 空间投稿（登录后可用）
+    try {
+      final bySpace = await _upWorksFromSpace(up, page: page, pageSize: pageSize);
+      if (bySpace.isNotEmpty) return bySpace;
+    } catch (e) {
+      debugPrint('[BiliApi] 空间投稿失败: $e');
+    }
+
+    // ③ 搜索兜底：按 UP 名搜，按 mid 精确过滤
+    try {
+      final list = await _searchRaw(
+        up.name,
+        page: page,
+        pageSize: pageSize * 2,
+        applyAudioFilter: false,
+      );
+      final mine = list.where((b) => b.mid == up.mid).toList();
+      if (mine.isNotEmpty) {
+        // 搜索结果里的 author 字段可能为空，用 UP 名兜底展示
+        return mine
+            .map((b) => b.author.isEmpty
+                ? Book.fromJson({...b.toJson(), 'author': up.name})
+                : b)
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('[BiliApi] UP 搜索兜底失败: $e');
+    }
+    return [];
   }
 
-  /// 空间接口专用的听书判定（字段为 length/play/title）
-  bool _isSpaceAudiobook(Map<String, dynamic> m) {
+  /// 从 UP 的合集/系列里取视频
+  Future<List<Book>> _upWorksFromCollections(UpUser up, int pageSize) async {
+    final res = await _client.get(
+      BiliEndpoints.upCollections,
+      query: {'mid': up.mid, 'page_num': 1, 'page_size': 20},
+    );
+    final data = res.data as Map;
+    final items = (data['data'] as Map?)?['items_lists'];
+    if (items is! List || items.isEmpty) return [];
+
+    final out = <Book>[];
+    final seen = <String>{};
+    final seasonIds = <int>[];
+
+    void collect(List? list) {
+      if (list == null) return;
+      for (final s in list) {
+        if (s is! Map) continue;
+        final meta = s['meta'] as Map? ?? {};
+        final sid = int.tryParse('${meta['season_id']}') ?? 0;
+        if (sid > 0) seasonIds.add(sid);
+        for (final a in (s['archives'] as List? ?? [])) {
+          if (a is! Map) continue;
+          final b = _bookFromArchive(a.cast<String, dynamic>(), up);
+          if (b != null && seen.add(b.bvid)) out.add(b);
+        }
+      }
+    }
+
+    for (final it in items) {
+      if (it is! Map) continue;
+      collect(it['seasons_list'] as List?);
+      collect(it['series_list'] as List?);
+    }
+
+    // 合集里的 archives 只是预览（每个约 6 条），总量看 meta.total，
+    // 这里按需翻页补齐，保证「只听这个 UP」能拿到完整目录。
+    for (final sid in seasonIds.take(4)) {
+      if (out.length >= pageSize * 3) break;
+      for (var p = 1; p <= 3 && out.length < pageSize * 3; p++) {
+        try {
+          final r = await _client.get(
+            BiliEndpoints.upCollectionArchives,
+            query: {
+              'mid': up.mid,
+              'season_id': sid,
+              'sort_reverse': false,
+              'page_num': p,
+              'page_size': 30,
+            },
+          );
+          final rdata = (r.data as Map)['data'];
+          final archives = rdata is Map ? rdata['archives'] as List? : null;
+          if (archives == null || archives.isEmpty) break;
+          var added = 0;
+          for (final a in archives) {
+            if (a is! Map) continue;
+            final b = _bookFromArchive(a.cast<String, dynamic>(), up);
+            if (b != null && seen.add(b.bvid)) {
+              out.add(b);
+              added++;
+            }
+          }
+          if (added == 0) break;
+        } catch (e) {
+          debugPrint('[BiliApi] 合集#$sid 第$p页失败: $e');
+          break;
+        }
+      }
+    }
+
+    out.sort((a, b) => b.pubdate.compareTo(a.pubdate));
+    return out;
+  }
+
+  /// 合集/空间接口的视频条目 → Book（字段为 bvid/title/pic/duration/stat）
+  Book? _bookFromArchive(Map<String, dynamic> m, UpUser up) {
+    final bvid = m['bvid'] as String? ?? '';
+    if (bvid.isEmpty) return null;
+    final secs = int.tryParse('${m['duration'] ?? 0}') ?? 0;
     final title = '${m['title'] ?? ''}';
-    final meta = '${m['description'] ?? ''} ${m['tag'] ?? ''}';
-    if (_noiseHints.any('$title $meta'.contains)) return false;
-    final seconds = Book.parseDurationSeconds(m['length']);
-    if (_hasAudioHint(title) && seconds >= 300) return true;
-    if (_hasAudioHint(meta) && seconds >= 1800) return true;
-    return false;
+    final stat = m['stat'] as Map? ?? {};
+    return Book(
+      bvid: bvid,
+      aid: int.tryParse('${m['aid'] ?? 0}') ?? 0,
+      title: title,
+      pic: Book.normalizePic(m['pic'] as String? ?? ''),
+      pages: 1,
+      duration: secs,
+      author: up.name,
+      mid: up.mid,
+      authorFace: up.face,
+      play: int.tryParse('${stat['view'] ?? 0}') ?? 0,
+      pubdate: int.tryParse('${m['pubdate'] ?? 0}') ?? 0,
+    );
+  }
+
+  /// UP 空间投稿（需要登录，未登录大概率风控）
+  Future<List<Book>> _upWorksFromSpace(
+    UpUser up, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
+    final res = await _client.get(
+      BiliEndpoints.spaceArcSearch,
+      query: {
+        'mid': up.mid,
+        'pn': page,
+        'ps': pageSize,
+        'order': 'pubdate',
+        'platform': 'web',
+        'web_location': 1550101,
+      },
+      useWbi: true,
+      headers: {
+        'origin': BiliEndpoints.home,
+        'referer': BiliEndpoints.space(up.mid),
+      },
+    );
+    final data = res.data as Map;
+    if (data['code'] != 0) throw BiliApiException(-352, 'space blocked');
+    final list = (data['data'] as Map?)?['list'] as Map? ?? {};
+    final vlist = list['vlist'] as List? ?? [];
+    final out = <Book>[];
+    for (final item in vlist) {
+      if (item is! Map) continue;
+      final b = _bookFromArchive(item.cast<String, dynamic>(), up);
+      if (b == null) continue;
+      if (b.duration > 0 && b.duration < 180) continue; // 过滤短视频
+      out.add(b);
+    }
+    return out;
   }
 
   // ---------- 二维码登录（网页 passport 流程） ----------

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/network/bili_client.dart';
+import '../core/storage/cache_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../models/book.dart';
@@ -11,6 +12,7 @@ import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
+import 'cache_sheet.dart';
 import 'player_page.dart';
 
 /// 书籍详情页：书籍信息 + 章节目录 + 收听入口
@@ -173,6 +175,14 @@ Text(
                         ),
                       ),
                       IconButton(
+                        onPressed: chapters.isEmpty
+                            ? null
+                            : () => CacheSheet.show(context, book: book),
+                        tooltip: '批量缓存',
+                        icon:  Icon(Icons.download_for_offline_outlined,
+                            color: AppTheme.textSub),
+                      ),
+                      IconButton(
                         onPressed: chapters.isEmpty ? null : () => _playFrom(0),
                         tooltip: '从头播放',
                         icon:  Icon(Icons.replay,
@@ -193,7 +203,9 @@ Text(
                     isCurrent: i == currentIdx,
                     isPlaying:
                         i == currentIdx && isCurrentBook && player.isPlaying,
+                    bvid: book.bvid,
                     onTap: () => _playFrom(i),
+                    onCache: () => _cacheOne(chapters[i]),
                   );
                 }),
                 const SizedBox(height: 16),
@@ -487,6 +499,52 @@ Text(
     );
   }
 
+  /// 缓存单集到本地（供离线收听）
+  Future<void> _cacheOne(Chapter c) async {
+    final book = _book;
+    if (book == null) return;
+    final cache = context.read<CacheStore>();
+    if (cache.isCached(book.bvid, c.cid)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('第 ${c.page} 章已缓存'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    final player = context.read<BookPlayer>();
+    final messenger = ScaffoldMessenger.of(context);
+    final url = await player.resolveUrlFor(book.bvid, c.cid);
+    if (!mounted) return;
+    if (url == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('获取下载地址失败，请检查网络'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    final ok = await cache.download(
+      bvid: book.bvid,
+      cid: c.cid,
+      url: url,
+      bookTitle: book.cleanTitle,
+      chapterTitle: '${c.page} · ${c.part}',
+      cover: book.pic,
+      durationSec: c.duration,
+      headers: player.downloadHeaders,
+    );
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(ok ? '第 ${c.page} 章已缓存，可离线收听' : '缓存失败，请稍后重试'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   Future<void> _playFrom(int index) async {
     final player = context.read<BookPlayer>();
     player.flushProgress();
@@ -507,7 +565,9 @@ class _ChapterTile extends StatelessWidget {
   final bool listened;
   final bool isCurrent;
   final bool isPlaying;
+  final String bvid;
   final VoidCallback onTap;
+  final VoidCallback onCache;
 
   const _ChapterTile({
     required this.index,
@@ -515,7 +575,9 @@ class _ChapterTile extends StatelessWidget {
     required this.listened,
     required this.isCurrent,
     required this.isPlaying,
+    required this.bvid,
     required this.onTap,
+    required this.onCache,
   });
 
   /// 标题自带序号（01xxx / 第 1 章 / P1 / 1 · xxx）时不再重复加序号
@@ -598,8 +660,72 @@ class _ChapterTile extends StatelessWidget {
               chapter.durationText,
               style: TextStyle(fontSize: 12, color: AppTheme.textHint),
             ),
+            const SizedBox(width: 6),
+            _CacheButton(bvid: bvid, cid: chapter.cid, onTap: onCache),
+            const SizedBox(width: 6),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 章节目录行尾的缓存按钮：未缓存显示下载图标，已缓存显示「已缓存」
+class _CacheButton extends StatelessWidget {
+  final String bvid;
+  final int cid;
+  final VoidCallback onTap;
+
+  const _CacheButton({
+    required this.bvid,
+    required this.cid,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cache = context.watch<CacheStore>();
+    final cached = cache.isCached(bvid, cid);
+    final task = cache.taskOf(bvid, cid);
+    final busy = task != null && !task.done && !task.failed;
+
+    if (busy) {
+      return SizedBox(
+        width: 52,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 13,
+              height: 13,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppTheme.accent,
+                value: task.progress > 0 ? task.progress : null,
+              ),
+            ),
+            const SizedBox(width: 3),
+            Text(
+              '${(task.progress * 100).round()}%',
+              style: TextStyle(fontSize: 10, color: AppTheme.accent),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: cached
+            ? Text(
+                '已缓存',
+                style: TextStyle(fontSize: 11, color: AppTheme.accent),
+              )
+            : Icon(Icons.download_rounded,
+                size: 18, color: AppTheme.textHint),
       ),
     );
   }

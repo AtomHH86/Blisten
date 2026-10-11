@@ -3,22 +3,30 @@ import 'package:provider/provider.dart';
 
 import '../core/storage/cache_store.dart';
 import '../core/theme/app_theme.dart';
+import '../models/book.dart';
+import '../models/chapter.dart';
 import '../player/book_player.dart';
 import '../services/umeng_analytics.dart';
 
 /// 缓存选集：勾选章节后批量下载，下载完可离线播放
+///
+/// 两种入口：
+/// - 播放页：传入 [book]（当前书）与预选章节
+/// - 详情页：同样传入 [book]，章节取自详情数据
 class CacheSheet extends StatefulWidget {
-  /// 仅做「播放页缓存」时传入，用于预选当前章节
+  final Book? book;
   final int? preselectIndex;
-  const CacheSheet({super.key, this.preselectIndex});
+  const CacheSheet({super.key, this.book, this.preselectIndex});
 
-  static Future<void> show(BuildContext context, {int? preselectIndex}) {
+  static Future<void> show(BuildContext context,
+      {Book? book, int? preselectIndex}) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       scrollControlDisabledMaxHeightRatio: 0.9,
       showDragHandle: true,
-      builder: (_) => CacheSheet(preselectIndex: preselectIndex),
+      builder: (_) => CacheSheet(
+          book: book, preselectIndex: preselectIndex),
     );
   }
 
@@ -31,32 +39,64 @@ class _CacheSheetState extends State<CacheSheet> {
   bool _running = false;
   bool _initDone = false;
 
+  Book? get _book => widget.book ?? context.read<BookPlayer>().book;
+
+  List<Chapter> get _chapters {
+    final explicit = widget.book?.chapters;
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    return context.read<BookPlayer>().chapters;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() {
-        final p = context.read<BookPlayer>();
-        final i = widget.preselectIndex ?? p.index;
-        if (i >= 0 && i < p.chapters.length) _selected.add(i);
         _initDone = true;
       });
     });
   }
 
+  /// 缓存选中章节（不依赖播放器的当前状态，直接用列表里的书与章节）
   Future<void> _start() async {
     if (_running || _selected.isEmpty) return;
-    final player = context.read<BookPlayer>();
-    final chapters = player.chapters;
+    final book = _book;
+    final chapters = _chapters;
+    if (book == null || chapters.isEmpty) return;
+
     final list = _selected.toList()..sort();
     setState(() => _running = true);
     AppAnalytics.onEvent('cache_start', {'count': list.length});
 
+    final cache = context.read<CacheStore>();
+    final player = context.read<BookPlayer>();
+    final headers = player.downloadHeaders;
+
     int ok = 0;
     for (final i in list) {
+      if (!mounted) return;
       if (i < 0 || i >= chapters.length) continue;
-      final done = await player.cacheChapter(chapters[i]);
+      final c = chapters[i];
+      if (cache.isCached(book.bvid, c.cid)) {
+        ok++;
+        continue;
+      }
+      final url = await player.resolveUrlFor(book.bvid, c.cid);
+      if (url == null) {
+        if (mounted) setState(() {});
+        continue;
+      }
+      final done = await cache.download(
+        bvid: book.bvid,
+        cid: c.cid,
+        url: url,
+        bookTitle: book.cleanTitle,
+        chapterTitle: '${c.page} · ${c.part}',
+        cover: book.pic,
+        durationSec: c.duration,
+        headers: headers,
+      );
       if (done) ok++;
       // 逐个下载，及时刷新进度
       if (mounted) setState(() {});
@@ -65,11 +105,12 @@ class _CacheSheetState extends State<CacheSheet> {
 
     if (!mounted) return;
     setState(() => _running = false);
+    final total = list.length;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok == list.length
+        content: Text(ok == total
             ? '已缓存 $ok 集，可离线收听'
-            : '缓存完成 $ok/${list.length} 集，部分失败请检查网络'),
+            : '缓存完成 $ok/$total 集，部分失败请检查网络'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -78,16 +119,18 @@ class _CacheSheetState extends State<CacheSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final player = context.watch<BookPlayer>();
     final cache = context.watch<CacheStore>();
-    final chapters = player.chapters;
+    final book = _book;
+    final chapters = _chapters;
 
-    if (!_initDone || chapters.isEmpty) {
+    if (!_initDone || chapters.isEmpty || book == null) {
       return const SizedBox(
         height: 220,
         child: Center(child: CircularProgressIndicator(color: AppTheme.accent)),
       );
     }
+
+    final bvid = book.bvid;
 
     final running = _running;
     return SizedBox(
@@ -138,8 +181,8 @@ class _CacheSheetState extends State<CacheSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              '已缓存 ${cache.countOf(player.book?.bvid ?? '')} 集 · '
-              '共占用 ${cache.totalSizeText}',
+              '${book.cleanTitle} · 共 ${chapters.length} 集\n'
+              '已缓存 ${cache.countOf(bvid)} 集 · 占用 ${cache.totalSizeText}',
               style: TextStyle(fontSize: 12, color: AppTheme.textSub),
             ),
           ),
@@ -150,8 +193,8 @@ class _CacheSheetState extends State<CacheSheet> {
               itemCount: chapters.length,
               itemBuilder: (context, i) {
                 final c = chapters[i];
-                final cached = cache.isCached(player.book?.bvid ?? '', c.cid);
-                final task = cache.taskOf(player.book?.bvid ?? '', c.cid);
+                final cached = cache.isCached(bvid, c.cid);
+                final task = cache.taskOf(bvid, c.cid);
                 final busy = task != null && !task.done && !task.failed;
                 return CheckboxListTile(
                   value: _selected.contains(i),

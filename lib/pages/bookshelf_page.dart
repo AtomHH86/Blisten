@@ -5,7 +5,6 @@ import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../widgets/book_cards.dart';
 import '../widgets/shelf_common.dart';
-import 'book_detail_page.dart';
 
 /// 书架：收藏的书籍 + 续读进度
 class BookshelfPage extends StatelessWidget {
@@ -50,13 +49,7 @@ class BookshelfPage extends StatelessWidget {
                   badge: sb.positionMs > 0
                       ? ShelfProgressBadge(percent: sb.percent)
                       : null,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => BookDetailPage(bvid: sb.book.bvid),
-                      ),
-                    );
-                  },
+                  onTap: () => playFromShelf(context, sb),
                   onLongPress: () => confirmRemoveFromShelf(context, sb),
                 );
               },

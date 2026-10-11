@@ -58,26 +58,15 @@ class MyPage extends StatelessWidget {
         children: [
           _buildHeader(context, shelf, auth),
           const SizedBox(height: 4),
-          _statRow(books, reading),
-          const SizedBox(height: 16),
+          _statRow(books, reading, cacheCount, follows),
           if (reading.isNotEmpty) _buildContinueReading(context, reading),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-            child: Text(
-              '资料库',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textMain,
-              ),
-            ),
-          ),
+          _groupLabel('听书'),
           _menuTile(
             context,
             icon: Icons.collections_bookmark_rounded,
             color: AppTheme.accent,
             title: '我的书架',
-            subtitle: '${books.length} 本',
+            subtitle: books.isEmpty ? '还没有收藏' : '${books.length} 本 · 点击直接续播',
             onTap: () => _push(context, const FavoritesPage()),
           ),
           _menuTile(
@@ -85,27 +74,10 @@ class MyPage extends StatelessWidget {
             icon: Icons.headphones_rounded,
             color: AppTheme.toneCyan,
             title: '最近收听',
-            subtitle:
-                reading.isEmpty ? '去发现找一本想听的书' : '共 ${reading.length} 本在听',
+            subtitle: reading.isEmpty
+                ? '去发现找一本想听的书'
+                : '共 ${reading.length} 本在听',
             onTap: () => _push(context, const RecentPage()),
-          ),
-          _menuTile(
-            context,
-            icon: Icons.download_for_offline_outlined,
-            color: AppTheme.toneIce,
-            title: '离线缓存',
-            subtitle: cacheCount == 0
-                ? '播放页可缓存选集，无网也能听'
-                : '已缓存 $cacheCount 集 · $cacheSize',
-            onTap: () => _push(context, const CachePage()),
-          ),
-          _menuTile(
-            context,
-            icon: Icons.person_search_rounded,
-            color: AppTheme.toneCyan,
-            title: '关注的 UP 主',
-            subtitle: follows == 0 ? '搜索主播并关注，只听 TA 的内容' : '已关注 $follows 位',
-            onTap: () => _push(context, const FollowPage()),
           ),
           _menuTile(
             context,
@@ -115,6 +87,28 @@ class MyPage extends StatelessWidget {
             subtitle: _sleepSubtitle(player),
             onTap: () => _push(context, const SleepTimerPage()),
           ),
+          _groupLabel('离线与关注'),
+          _menuTile(
+            context,
+            icon: Icons.download_for_offline_outlined,
+            color: AppTheme.toneIce,
+            title: '离线缓存',
+            subtitle: cacheCount == 0
+                ? '详情页可缓存选集，无网也能听'
+                : '已缓存 $cacheCount 集 · $cacheSize',
+            onTap: () => _push(context, const CachePage()),
+          ),
+          _menuTile(
+            context,
+            icon: Icons.person_search_rounded,
+            color: AppTheme.toneCyan,
+            title: '关注的 UP 主',
+            subtitle: follows == 0
+                ? '搜索主播并关注，只听 TA 的内容'
+                : '已关注 $follows 位',
+            onTap: () => _push(context, const FollowPage()),
+          ),
+          _groupLabel('设置与关于'),
           _menuTile(
             context,
             icon: Icons.palette_outlined,
@@ -133,20 +127,42 @@ class MyPage extends StatelessWidget {
           ),
           _menuTile(
             context,
-            icon: Icons.info_outline_rounded,
-            color: AppTheme.toneInk,
-            title: '关于我们',
-            subtitle: '版本 ${AppMeta.version}',
-            onTap: () => _push(context, const AboutPage()),
-          ),
-          _menuTile(
-            context,
             icon: Icons.system_update_alt_rounded,
             color: AppTheme.toneDeep,
             title: '检查更新',
             subtitle: _updateSubtitle(),
             onTap: () => _checkUpdate(context),
           ),
+          _menuTile(
+            context,
+            icon: Icons.info_outline_rounded,
+            color: AppTheme.toneInk,
+            title: '关于我们',
+            subtitle: '版本 ${AppMeta.version}',
+            onTap: () => _push(context, const AboutPage()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 分组标题：把「听书 / 离线与关注 / 设置」三类功能隔开，层次更清晰
+  Widget _groupLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 4),
+      child: Row(
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textHint,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(child: Divider(height: 1)),
         ],
       ),
     );
@@ -214,12 +230,8 @@ class MyPage extends StatelessWidget {
     );
   }
 
-  Widget _statRow(List<ShelfBook> books, List<ShelfBook> reading) {
-    final remainingChapters = reading.fold<int>(
-      0,
-      (sum, b) =>
-          sum + (b.book.pages - b.lastChapterIndex - 1).clamp(0, 9999).toInt(),
-    );
+  Widget _statRow(List<ShelfBook> books, List<ShelfBook> reading,
+      int cacheCount, int follows) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -231,11 +243,15 @@ class MyPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            _statCell('${books.length}', '书架', Icons.collections_bookmark_outlined),
+            _statCell('${books.length}', '书架',
+                Icons.collections_bookmark_outlined),
             _divider(),
             _statCell('${reading.length}', '在听', Icons.headset_rounded),
             _divider(),
-            _statCell('$remainingChapters', '剩余章', Icons.auto_stories_rounded),
+            _statCell(
+                '$cacheCount', '已缓存', Icons.download_for_offline_outlined),
+            _divider(),
+            _statCell('$follows', '关注', Icons.person_rounded),
           ],
         ),
       ),
