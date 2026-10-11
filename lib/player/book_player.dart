@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart' hide AudioTrack;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/network/api_config.dart';
+import '../core/storage/cache_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../models/audio_stream.dart';
 import '../models/book.dart';
@@ -24,6 +26,7 @@ class BookPlayer extends ChangeNotifier {
   final Player _player = Player();
   final BiliApi _api = BiliApi.instance;
   final ShelfStore _shelf = ShelfStore.instance;
+  final CacheStore _cache = CacheStore.instance;
 
   BaseAudioHandler? _audioHandler;
   int _lastStatePush = 0;
@@ -83,6 +86,39 @@ class BookPlayer extends ChangeNotifier {
   Duration get sleepRemaining => _sleepRemaining;
   double get rate => _rate;
   bool get stopAtChapterEnd => _stopAtChapterEnd;
+
+  /// 当前是否正在播本地缓存（离线播放）
+  bool _isOffline = false;
+  bool get isOffline => _isOffline;
+
+  /// 当前章节是否已缓存
+  bool get currentCached {
+    final b = _book?.bvid;
+    final c = currentChapter?.cid;
+    if (b == null || c == null || c == 0) return false;
+    return _cache.isCached(b, c);
+  }
+
+  /// 查本地缓存文件路径；文件不在则视为未缓存
+  Future<String?> _cachedPathOf(String? bvid, int cid) async {
+    if (bvid == null || bvid.isEmpty || cid == 0) return null;
+    final name = _cache.pathOf(bvid, cid);
+    if (name == null) return null;
+    try {
+      final dir = await _audioDir();
+      final f = File('$dir/$name');
+      if (await f.exists()) return f.path;
+      // 文件丢了：清掉索引
+      await _cache.remove(bvid, cid);
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Directory> _audioDir() async {
+    final base = await getExternalStorageDirectory() ??
+        await getApplicationDocumentsDirectory();
+    return Directory('${base.path}/audio_cache');
+  }
 
   /// 倍速显示文本（如 1.5 → "1.5x"）
   String get rateLabel {
@@ -269,6 +305,28 @@ class BookPlayer extends ChangeNotifier {
       _loading = true;
       notifyListeners();
 
+      // 已缓存的章节直接重开本地文件，无需重新取流
+      final local = await _cachedPathOf(_book?.bvid, chapter.cid);
+      if (local != null) {
+        try {
+          await _player.open(Media(local));
+          if (_rate != 1.0) await _player.setRate(_rate);
+          await _seekToResume(resumeMs);
+          _isOffline = true;
+          _error = null;
+          _loading = false;
+          _lastPos = currentPosition;
+          _lastPosAt = DateTime.now();
+          unawaited(AudioFocus.instance.request());
+          _pushState(force: true);
+          notifyListeners();
+          return true;
+        } catch (e) {
+          debugPrint('[BookPlayer] 本地重开失败: $e');
+          await _cache.remove(_book?.bvid ?? '', chapter.cid);
+        }
+      }
+
       // 换一个候选地址重试（清掉旧地址缓存，强制重新取流）
       _urlCache.remove(chapter.cid);
       final candidates = await _fetchStreamCandidates(chapter.cid);
@@ -439,6 +497,7 @@ class BookPlayer extends ChangeNotifier {
     final prevLoaded = _loaded;
     final prevUrl = _playbackUrl;
     final prevAudio = _lastAudio;
+    final prevOffline = _isOffline;
 
     if (newBook != null) _book = newBook;
     if (newChapters != null) _chapters = newChapters;
@@ -452,32 +511,55 @@ class BookPlayer extends ChangeNotifier {
         throw StateError('章节索引越界：$index');
       }
       final chapter = _chapters[index];
-      final candidates = await _fetchStreamCandidates(chapter.cid);
-      if (candidates.isEmpty) {
-        throw StateError('获取音频链接失败（章节可能无法播放）');
+      // 注意：换章时 newBook 为 null，必须用已提交的 _book 判定缓存
+      final curBvid = _book?.bvid;
+      final localPath = await _cachedPathOf(curBvid, chapter.cid);
+
+      if (localPath != null) {
+        // 已缓存：直接播本地文件，不需要网络地址
+        try {
+          await _player.open(Media(localPath));
+          if (_rate != 1.0) await _player.setRate(_rate);
+          if (resumeMs > 0) await _seekToResume(resumeMs);
+          ok = true;
+          _playbackUrl = null;
+          _isOffline = true;
+          _pausedByInterruption = false;
+        } catch (e) {
+          debugPrint('[BookPlayer] 本地缓存打开失败，回退在线: $e');
+          // 缓存文件损坏：删除记录后走在线
+          await _cache.remove(curBvid ?? '', chapter.cid);
+        }
       }
 
-      for (var i = 0; i < candidates.length; i++) {
-        final url = candidates[i];
-        try {
-          // 有续播位置时先打开再精确跳转，保证落点准确到秒
-          await _player.open(Media(url, httpHeaders: _streamHeaders()),
-              play: resumeMs <= 0);
-          // open 后倍速可能被播放器复位，这里显式恢复
-          if (_rate != 1.0) await _player.setRate(_rate);
-          if (resumeMs > 0) {
-            await _seekToResume(resumeMs);
-          }
-          if (_error != null) _error = null;
-          ok = true;
-          _playbackUrl = url;
-          _pausedByInterruption = false;
-          unawaited(AudioFocus.instance.request());
-          break;
-        } catch (e) {
-          debugPrint('[BookPlayer] 候选音轨 $i 打开失败: $e');
-          if (i < candidates.length - 1) {
-            await _player.stop();
+      if (!ok) {
+        final candidates = await _fetchStreamCandidates(chapter.cid);
+        if (candidates.isEmpty) {
+          throw StateError('获取音频链接失败（章节可能无法播放）');
+        }
+
+        for (var i = 0; i < candidates.length; i++) {
+          final url = candidates[i];
+          try {
+            // 有续播位置时先打开再精确跳转，保证落点准确到秒
+            await _player.open(Media(url, httpHeaders: _streamHeaders()),
+                play: resumeMs <= 0);
+            // open 后倍速可能被播放器复位，这里显式恢复
+            if (_rate != 1.0) await _player.setRate(_rate);
+            if (resumeMs > 0) {
+              await _seekToResume(resumeMs);
+            }
+            if (_error != null) _error = null;
+            ok = true;
+            _playbackUrl = url;
+            _isOffline = false;
+            _pausedByInterruption = false;
+            break;
+          } catch (e) {
+            debugPrint('[BookPlayer] 候选音轨 $i 打开失败: $e');
+            if (i < candidates.length - 1) {
+              await _player.stop();
+            }
           }
         }
       }
@@ -485,6 +567,8 @@ class BookPlayer extends ChangeNotifier {
       if (!ok) {
         throw StateError('无法播放该章节');
       }
+      // 在线与离线两条路径都要抢占音频焦点
+      unawaited(AudioFocus.instance.request());
       _index = index;
       _loaded = true;
       AppAnalytics.onEvent('play_start');
@@ -499,6 +583,7 @@ class BookPlayer extends ChangeNotifier {
         _loaded = prevLoaded;
         _playbackUrl = prevUrl;
         _lastAudio = prevAudio;
+        _isOffline = prevOffline;
       }
       _loading = false;
       _pushNowPlaying();
@@ -787,6 +872,41 @@ class BookPlayer extends ChangeNotifier {
     _shelf.markChapterDone(book.bvid, chapter.cid);
   }
 
+  /// 取某章节的下载候选地址（带 CDN 必需请求头）
+  Future<String?> streamUrlOf(int cid) async {
+    final local = await _cachedPathOf(_book?.bvid, cid);
+    if (local != null) return null; // 已缓存，无需下载
+    try {
+      final candidates = await _fetchStreamCandidates(cid);
+      return candidates.isEmpty ? null : candidates.first;
+    } catch (e) {
+      debugPrint('[BookPlayer] 取流地址失败: $e');
+      return null;
+    }
+  }
+
+  Map<String, String> get downloadHeaders => _streamHeaders();
+
+  /// 下载某个章节到本地（离线可听）
+  Future<bool> cacheChapter(Chapter c) async {
+    final book = _book;
+    if (book == null) return false;
+    if (_cache.isCached(book.bvid, c.cid)) return true;
+    final url = await streamUrlOf(c.cid);
+    if (url == null) return false;
+    return _cache.download(
+      bvid: book.bvid,
+      cid: c.cid,
+      url: url,
+      bookTitle: book.cleanTitle,
+      chapterTitle: '${c.page} · ${c.part}',
+      cover: book.pic,
+      durationSec: c.duration,
+      headers: _streamHeaders(),
+    );
+  }
+
+  /// 缓存播放位置（用于离线时恢复进度不依赖网络）
   Duration? get position => _player.state.duration > Duration.zero
       ? _player.state.position
       : null;

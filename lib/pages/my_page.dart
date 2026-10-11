@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_meta.dart';
+import '../core/storage/cache_store.dart';
 import '../core/storage/follow_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
@@ -13,6 +14,7 @@ import '../services/auth_store.dart';
 import '../services/umeng_analytics.dart';
 import '../widgets/book_cover.dart';
 import 'about_page.dart';
+import 'cache_page.dart';
 import 'favorites_page.dart';
 import 'follow_page.dart';
 import 'player_page.dart';
@@ -31,6 +33,9 @@ class MyPage extends StatelessWidget {
     final player = context.watch<BookPlayer>();
     final auth = context.watch<LoginStore>();
     final follows = context.watch<FollowStore>().length;
+    final cache = context.watch<CacheStore>();
+    final cacheCount = cache.entries.length;
+    final cacheSize = cache.totalSizeText;
     final books = shelf.books;
     final reading = books.where((b) => b.positionMs > 0).toList();
 
@@ -83,6 +88,16 @@ class MyPage extends StatelessWidget {
             subtitle:
                 reading.isEmpty ? '去发现找一本想听的书' : '共 ${reading.length} 本在听',
             onTap: () => _push(context, const RecentPage()),
+          ),
+          _menuTile(
+            context,
+            icon: Icons.download_for_offline_outlined,
+            color: AppTheme.toneIce,
+            title: '离线缓存',
+            subtitle: cacheCount == 0
+                ? '播放页可缓存选集，无网也能听'
+                : '已缓存 $cacheCount 集 · $cacheSize',
+            onTap: () => _push(context, const CachePage()),
           ),
           _menuTile(
             context,

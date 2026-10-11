@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 
 import 'core/network/bili_client.dart';
+import 'core/storage/cache_store.dart';
 import 'core/storage/follow_store.dart';
 import 'core/storage/search_history_store.dart';
 import 'core/storage/shelf_store.dart';
@@ -41,6 +42,7 @@ Future<void> _bootstrap() async {
       SearchHistoryStore.instance.load(),
       LoginStore.instance.load(),
       FollowStore.instance.load(),
+      CacheStore.instance.load(),
     ]).timeout(const Duration(seconds: 6));
   } catch (e) {
     debugPrint('[main] local init failed: $e');
@@ -131,6 +133,7 @@ class _AbTingShuAppState extends State<AbTingShuApp>
         ChangeNotifierProvider.value(value: LoginStore.instance),
         ChangeNotifierProvider.value(value: SearchHistoryStore.instance),
         ChangeNotifierProvider.value(value: FollowStore.instance),
+        ChangeNotifierProvider.value(value: CacheStore.instance),
       ],
       child: AnimatedBuilder(
         animation: tc,

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import '../models/chapter.dart';
 import '../player/book_player.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
+import 'cache_sheet.dart';
 
 /// 全屏播放页（PiliPlus 风格）
 class PlayerPage extends StatefulWidget {
@@ -114,9 +116,14 @@ class _PlayerPageState extends State<PlayerPage> {
         ),
         const SizedBox(width: 4),
         Text(
-          player.loading ? '加载中…' : '正在收听',
+          player.loading
+              ? '加载中…'
+              : player.isOffline
+                  ? '离线播放中'
+                  : '正在收听',
           style:  TextStyle(
-              fontSize: 14, color: AppTheme.textSub),
+              fontSize: 14,
+              color: player.isOffline ? AppTheme.accent : AppTheme.textSub),
         ),
         const Spacer(),
         IconButton(
@@ -540,10 +547,18 @@ class _PlayerPageState extends State<PlayerPage> {
             onPressed: () => _showSleepSheet(player),
           ),
           ActionChip(
-            avatar:  Icon(Icons.share_outlined,
-                size: 16, color: AppTheme.accent),
-            label: const Text('分享', style: TextStyle(fontSize: 12)),
-            onPressed: () => _share(player),
+            avatar:  Icon(Icons.download_for_offline_outlined,
+                size: 16,
+                color: player.currentCached ? AppTheme.accent : AppTheme.textSub),
+            label: Text(
+              player.currentCached ? '已缓存' : '缓存',
+              style: TextStyle(
+                fontSize: 12,
+                color: player.currentCached ? AppTheme.accent : null,
+                fontWeight: player.currentCached ? FontWeight.w700 : null,
+              ),
+            ),
+            onPressed: () => CacheSheet.show(context),
           ),
         ],
       ),
@@ -621,6 +636,7 @@ class _PlayerPageState extends State<PlayerPage> {
 }
 
 /// 快进/快退 15 秒图标：圆形箭头叠加数字
+/// forward 用同一个 replay 图标旋转 180°，保证两个方向外观一致
 class _Seek15Icon extends StatelessWidget {
   final bool forward;
   final Color color;
@@ -634,21 +650,17 @@ class _Seek15Icon extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Icon(
-            forward ? Icons.forward_rounded : Icons.replay_rounded,
-            size: 30,
-            color: color,
+          Transform.rotate(
+            angle: forward ? math.pi : 0,
+            child: Icon(Icons.replay_rounded, size: 30, color: color),
           ),
-          Padding(
-            padding: EdgeInsets.only(left: forward ? 1 : -1, top: 1),
-            child: Text(
-              '15',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: color,
-                height: 1,
-              ),
+          Text(
+            '15',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: color,
+              height: 1,
             ),
           ),
         ],
