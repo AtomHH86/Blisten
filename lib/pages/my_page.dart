@@ -271,60 +271,34 @@ class MyPage extends StatelessWidget {
 
   Widget _statCell(String value, String label, IconData icon,
       {VoidCallback? onTap}) {
-    final cell = Expanded(
-      child: Column(
-        children: [
-          Icon(icon, size: 18, color: AppTheme.accent),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textMain,
-            ),
+    final content = Column(
+      children: [
+        Icon(icon, size: 18, color: AppTheme.accent),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textMain,
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, color: AppTheme.textSub),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: AppTheme.textSub),
+        ),
+      ],
     );
-    if (onTap == null) return cell;
+    if (onTap == null) return Expanded(child: content);
+    // 可点击即可，不加箭头图标，保持干净
     return Expanded(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Column(
-            children: [
-              Icon(icon, size: 18, color: AppTheme.accent),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textMain,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(fontSize: 11, color: AppTheme.textSub),
-                  ),
-                  Icon(Icons.chevron_right_rounded,
-                      size: 13, color: AppTheme.textHint),
-                ],
-              ),
-            ],
-          ),
+          child: content,
         ),
       ),
     );

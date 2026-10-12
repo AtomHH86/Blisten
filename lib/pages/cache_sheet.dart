@@ -58,75 +58,57 @@ class _CacheSheetState extends State<CacheSheet> {
     });
   }
 
-  /// 缓存选中章节（不依赖播放器的当前状态，直接用列表里的书与章节）
+  /// 加入后台缓存队列：立刻返回，下载在后台继续（可离开本页面）
   Future<void> _start() async {
     if (_running || _selected.isEmpty) return;
     final book = _book;
     final chapters = _chapters;
     if (book == null || chapters.isEmpty) return;
 
-    final list = _selected.toList()..sort();
-    setState(() => _running = true);
-    AppAnalytics.onEvent('cache_start', {'count': list.length});
-
-    final cache = context.read<CacheStore>();
     final player = context.read<BookPlayer>();
-    final headers = player.downloadHeaders;
+    final cache = context.read<CacheStore>();
+    final list = _selected.toList()..sort();
 
-    int ok = 0;
+    final items = <({int cid, String chapterTitle, int durationSec})>[];
     for (final i in list) {
-      if (!mounted) return;
       if (i < 0 || i >= chapters.length) continue;
       final c = chapters[i];
-      if (cache.isCached(book.bvid, c.cid)) {
-        ok++;
-        continue;
-      }
-      final url = await player.resolveUrlFor(book.bvid, c.cid);
-      if (url == null) {
-        if (mounted) setState(() {});
-        continue;
-      }
-      final done = await cache.download(
-        bvid: book.bvid,
+      if (cache.isCached(book.bvid, c.cid)) continue;
+      items.add((
         cid: c.cid,
-        url: url,
-        bookTitle: book.cleanTitle,
         chapterTitle: '${c.page} · ${c.part}',
-        cover: book.pic,
         durationSec: c.duration,
-        headers: headers,
-        // 按 128kbps 粗估，一小时约 55MB
-        expectBytes: c.duration > 0 ? (c.duration * 16000 ~/ 8) + 1048576 : null,
-      );
-      if (done) ok++;
-      // 逐个下载，及时刷新进度
-      if (mounted) setState(() {});
-      await Future<void>.delayed(const Duration(milliseconds: 120));
+      ));
     }
+
+    final total = list.length;
+    final already = total - items.length;
+    if (items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('选中的 $total 集都已缓存'), duration: const Duration(seconds: 2)),
+      );
+      Navigator.of(context).pop();
+      return;
+    }
+
+    AppAnalytics.onEvent('cache_start', {'count': items.length});
+
+    await cache.enqueue(
+      bvid: book.bvid,
+      bookTitle: book.cleanTitle,
+      cover: book.pic,
+      items: items,
+      resolveUrl: (cid) => player.resolveUrlFor(book.bvid, cid),
+      headers: player.downloadHeaders,
+    );
 
     if (!mounted) return;
     setState(() => _running = false);
-    final total = list.length;
-    // 失败时把原因带出来（空间不足 / 链接失效 / 网络中断）
-    String? why;
-    if (ok < total) {
-      final firstErr = cache.tasks
-          .where((t) => t.failed && t.error != null)
-          .map((t) => t.error)
-          .firstOrNull;
-      why = firstErr;
-    }
-    final msg = ok == total
-        ? '已缓存 $ok 集，可离线收听'
-        : (why == null
-            ? '缓存完成 $ok/$total 集，部分失败请检查网络'
-            : '缓存完成 $ok/$total 集（$why）');
+    final msg = already > 0
+        ? '已开始后台缓存 ${items.length} 集（$already 集已缓存）'
+        : '已开始后台缓存 ${items.length} 集';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        duration: const Duration(seconds: 3),
-      ),
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 2)),
     );
     if (mounted) Navigator.of(context).pop();
   }
@@ -253,27 +235,30 @@ class _CacheSheetState extends State<CacheSheet> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: (running || _selected.isEmpty) ? null : _start,
-                  icon: running
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.download_rounded, size: 18),
-                  label: Text(
-                    running
-                        ? '正在缓存…'
-                        : '缓存选中的 ${_selected.length} 集',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: (_running || _selected.isEmpty) ? null : _start,
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: Text(
+                        running
+                            ? '正在后台缓存…'
+                            : '缓存选中的 ${_selected.length} 集（后台）',
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                    ),
                   ),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
+                  const SizedBox(height: 6),
+                  Text(
+                    '开始后可离开本页，下载会在后台继续，完成后可在「我的 → 离线缓存」查看',
+                    style: TextStyle(fontSize: 11, color: AppTheme.textHint),
                   ),
-                ),
+                ],
               ),
             ),
           ),

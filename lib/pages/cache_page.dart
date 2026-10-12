@@ -16,6 +16,8 @@ class CachePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cache = context.watch<CacheStore>();
     final all = cache.entries;
+    final tasks = cache.tasks.where((t) => !t.done).toList();
+    final caching = tasks.isNotEmpty || cache.queueLength > 0;
 
     // 按书分组（保持最近缓存的顺序）
     final grouped = <String, List<CacheEntry>>{};
@@ -40,17 +42,85 @@ class CachePage extends StatelessWidget {
             ),
         ],
       ),
-      body: all.isEmpty
+      body: all.isEmpty && !caching
           ? const _CacheEmpty()
           : ListView.builder(
               padding: const EdgeInsets.only(bottom: 24),
-              itemCount: books.length + 1,
+              itemCount: books.length + (caching ? 2 : 1),
               itemBuilder: (context, i) {
                 if (i == 0) return _buildSummary(context, cache, all.length);
-                final bvid = books[i - 1];
+                if (caching && i == 1) {
+                  return _buildProgressCard(context, cache, tasks);
+                }
+                final idx = i - (caching ? 2 : 1);
+                final bvid = books[idx];
                 return _buildBookCard(context, cache, bvid, grouped[bvid]!);
               },
             ),
+    );
+  }
+
+  /// 后台缓存进度卡片
+  Widget _buildProgressCard(
+      BuildContext context, CacheStore cache, List<CacheTask> tasks) {
+    final pct = (cache.queueProgress * 100).round();
+    final cur = tasks.isEmpty ? null : tasks.first;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 15,
+                height: 15,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppTheme.accent,
+                  value: cache.queueProgress > 0 ? cache.queueProgress : null,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '正在后台缓存',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+              ),
+              Text(
+                '$pct%',
+                style: TextStyle(fontSize: 13, color: AppTheme.accent),
+              ),
+            ],
+          ),
+          if (cur != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              cur.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            '共 ${tasks.length + cache.queueLength} 个任务待完成，'
+            '排队 ${cache.queueLength} 个 · 可离开本页',
+            style: TextStyle(fontSize: 11, color: AppTheme.textHint),
+          ),
+        ],
+      ),
     );
   }
 

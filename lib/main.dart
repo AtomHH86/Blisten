@@ -18,6 +18,7 @@ import 'pages/splash_screen.dart';
 import 'player/bili_audio_handler.dart';
 import 'player/book_player.dart';
 import 'services/auth_store.dart';
+import 'services/cache_notifier.dart';
 import 'services/umeng_analytics.dart';
 
 Future<void> main() async {
@@ -51,6 +52,8 @@ Future<void> _bootstrap() async {
   // 播放器初始化 + 系统媒体会话绑定（失败也进主界面，播放时自动降级）
   final player = BookPlayer.instance;
   player.setup();
+  // 离线缓存：后台队列 + 通知栏进度
+  CacheNotifier.wire(CacheStore.instance);
   try {
     final handler = await AudioService.init(
       builder: () => BiliAudioHandler(),

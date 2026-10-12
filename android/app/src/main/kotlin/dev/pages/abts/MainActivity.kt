@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.app.NotificationManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
@@ -19,9 +20,15 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : AudioServiceActivity() {
 
+    companion object {
+        private const val CACHE_CHANNEL_ID = "dev.pages.abts.channel.cache"
+        private const val CACHE_NOTIFY_ID = 4201
+    }
+
     private var audioManager: AudioManager? = null
     private var focusCallback: EventChannel.EventSink? = null
     private var focusRequest: AudioFocusRequest? = null
+    private var cacheNotifyManager: NotificationManager? = null
 
     /// 拔耳机 / 蓝牙断开：系统广播 AUDIO_BECOMING_NOISY，通知 Dart 侧暂停
     private val noisyReceiver = object : BroadcastReceiver() {
@@ -133,6 +140,29 @@ class MainActivity : AudioServiceActivity() {
                     } else {
                         result.success(openExternal(url))
                     }
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+
+        // 离线缓存进度通知（后台缓存时显示）
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "abts/cache_notify",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    val title = call.argument<String>("title") ?: "正在缓存"
+                    val text = call.argument<String>("text") ?: ""
+                    val progress = call.argument<Int>("progress") ?: -1
+                    updateCacheNotification(title, text, progress)
+                    result.success(true)
+                }
+
+                "cancel" -> {
+                    cacheNotifyManager?.cancel(CACHE_NOTIFY_ID)
+                    result.success(true)
                 }
 
                 else -> result.notImplemented()
@@ -254,6 +284,43 @@ class MainActivity : AudioServiceActivity() {
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    private fun updateCacheNotification(title: String, text: String, progress: Int) {
+        try {
+            val nm = cacheNotifyManager ?: run {
+                val n = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                createCacheChannel(n)
+                cacheNotifyManager = n
+                n
+            }
+            val b = android.app.Notification.Builder(this, CACHE_CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+            if (progress >= 0) {
+                b.setProgress(100, progress, false)
+            }
+            nm.notify(CACHE_NOTIFY_ID, b.build())
+        } catch (e: Exception) {
+            // 没有通知权限等情况，忽略即可，不影响下载
+        }
+    }
+
+    private fun createCacheChannel(nm: NotificationManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val ch = android.app.NotificationChannel(
+                CACHE_CHANNEL_ID,
+                "离线缓存",
+                NotificationManager.IMPORTANCE_LOW,
+            )
+            ch.setShowBadge(false)
+            ch.enableVibration(false)
+            ch.setSound(null, null)
+            nm.createNotificationChannel(ch)
         }
     }
 

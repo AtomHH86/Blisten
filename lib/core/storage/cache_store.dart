@@ -70,6 +70,25 @@ class CacheEntry {
       );
 }
 
+/// 队列中的一项下载任务
+class _QueueItem {
+  final String bvid;
+  final String bookTitle;
+  final String cover;
+  final int cid;
+  final String chapterTitle;
+  final int durationSec;
+
+  const _QueueItem({
+    required this.bvid,
+    required this.bookTitle,
+    required this.cover,
+    required this.cid,
+    required this.chapterTitle,
+    required this.durationSec,
+  });
+}
+
 /// 下载中的任务状态
 class CacheTask {
   final String bvid;
@@ -118,6 +137,149 @@ class CacheStore extends ChangeNotifier {
   List<CacheTask> get tasks => List.unmodifiable(_tasks.values);
 
   bool get busy => _tasks.values.any((t) => !t.done && !t.failed);
+
+  // ---------- 后台缓存队列 ----------
+
+  /// 队列中的待下载项（由页面入队，下载在 CacheStore 内串行执行，
+  /// 因此离开弹窗、切页面、回到桌面都不会中断）
+  final List<_QueueItem> _queue = [];
+  bool _draining = false;
+
+  /// 由入队方（播放/详情页）注入：解析下载地址与下载请求头
+  Future<String?> Function(int cid)? _resolveUrl;
+  Map<String, String> _headers = const {};
+
+  int get queueLength => _queue.length;
+  int get queueDone => _tasks.values.where((t) => t.done).length;
+  int get queueFailed => _tasks.values.where((t) => t.failed).length;
+
+  /// 队列总进度（0~1）；没有任务时为 0
+  double get queueProgress {
+    final list = _tasks.values.toList();
+    if (list.isEmpty) return 0;
+    final total = list.length;
+    var acc = 0.0;
+    for (final t in list) {
+      if (t.done) {
+        acc += 1;
+      } else if (!t.failed) {
+        acc += t.progress;
+      }
+    }
+    return (acc / total).clamp(0.0, 1.0);
+  }
+
+  /// 入队一批下载任务并立即在后台开始执行
+  Future<void> enqueue({
+    required String bvid,
+    required String bookTitle,
+    required String cover,
+    required List<({int cid, String chapterTitle, int durationSec})> items,
+    required Future<String?> Function(int cid) resolveUrl,
+    required Map<String, String> headers,
+  }) async {
+    if (items.isEmpty) return;
+    _resolveUrl = resolveUrl;
+    _headers = headers;
+    for (final it in items) {
+      if (isCached(bvid, it.cid)) continue;
+      final key = '$bvid-${it.cid}';
+      if (_tasks.containsKey(key)) continue;
+      _tasks[key] = CacheTask(
+        bvid: bvid,
+        cid: it.cid,
+        title: it.chapterTitle,
+      );
+      _queue.add(_QueueItem(
+        bvid: bvid,
+        bookTitle: bookTitle,
+        cover: cover,
+        cid: it.cid,
+        chapterTitle: it.chapterTitle,
+        durationSec: it.durationSec,
+      ));
+    }
+    notifyListeners();
+    unawaited(_drain());
+  }
+
+  /// 取消排队中（尚未开始）的任务
+  void cancelQueued(String bvid, int cid) {
+    _queue.removeWhere((e) => e.bvid == bvid && e.cid == cid);
+    _tasks.remove('$bvid-$cid');
+    notifyListeners();
+  }
+
+  /// 清空任务记录（全部完成后调用，避免列表里堆积）
+  void clearFinishedTasks() {
+    _tasks.removeWhere((_, t) => t.done || t.failed);
+    notifyListeners();
+  }
+
+  Future<void> _drain() async {
+    if (_draining) return;
+    _draining = true;
+    try {
+      while (_queue.isNotEmpty) {
+        final item = _queue.removeAt(0);
+        final task = _tasks['${item.bvid}-${item.cid}'];
+        if (task == null) continue; // 已被取消
+        task
+          ..done = false
+          ..failed = false
+          ..progress = 0
+          ..error = null;
+        notifyListeners();
+
+        final url = await _resolveUrl?.call(item.cid);
+        if (url == null) {
+          debugPrint('[CacheStore] 获取下载地址失败 ${item.bvid}/${item.cid}');
+          // 失败的任务不留在队列里，避免进度卡片上一直挂着
+          _tasks.remove('${item.bvid}-${item.cid}');
+          notifyListeners();
+          _onQueueProgress();
+          continue;
+        }
+        final ok = await download(
+          bvid: item.bvid,
+          cid: item.cid,
+          url: url,
+          bookTitle: item.bookTitle,
+          chapterTitle: item.chapterTitle,
+          cover: item.cover,
+          durationSec: item.durationSec,
+          headers: _headers,
+          expectBytes: item.durationSec > 0
+              ? (item.durationSec * 16000 ~/ 8) + 1048576
+              : null,
+          onProgress: (p) {
+            task.progress = p;
+            notifyListeners();
+            _onQueueProgress();
+          },
+        );
+        if (!ok) {
+          debugPrint('[CacheStore] 下载未完成 ${item.bvid}/${item.cid}: '
+              '${task.error}');
+        }
+        // 完成/失败都清掉任务，避免进度卡片残留
+        _tasks.remove('${item.bvid}-${item.cid}');
+        notifyListeners();
+        _onQueueProgress();
+      }
+    } finally {
+      _draining = false;
+      _onQueueDone();
+    }
+  }
+
+  /// 队列进度变化回调（用于刷新通知栏）
+  void Function()? onProgressChanged;
+  /// 队列全部结束回调
+  void Function()? onQueueFinished;
+
+  void _onQueueProgress() => onProgressChanged?.call();
+  void _onQueueDone() => onQueueFinished?.call();
 
   int get totalSize => _entries.fold(0, (s, e) => s + e.sizeBytes);
 
@@ -244,7 +406,10 @@ class CacheStore extends ChangeNotifier {
     }
   }
 
-  /// 旧版本把音频放在外部目录，这里尽量搬回内部目录，避免更新后缓存作废
+  /// 旧版本把音频放在外部目录，这里搬到内部目录。
+  ///
+  /// 安全策略：**先复制 → 校验大小一致 → 才删除源文件**。
+  /// 任何一步失败都保留源文件，绝不做「移动失败但源也没了」的操作。
   Future<void> _migrateFromExternal() async {
     try {
       final extBase = await getExternalStorageDirectory();
@@ -257,6 +422,7 @@ class CacheStore extends ChangeNotifier {
 
       final newDir = await audioDir();
       var moved = 0;
+      final failed = <String>[];
       for (final f in files) {
         final name = _basename(f.path);
         if (name.endsWith('.part')) {
@@ -266,28 +432,73 @@ class CacheStore extends ChangeNotifier {
           continue;
         }
         final target = File('${newDir.path}/$name');
-        if (await target.exists()) continue;
-        try {
-          await f.rename(target.path);
-          moved++;
-        } catch (_) {
-          // 跨分区重命名失败则复制
+        if (await target.exists()) {
+          // 目标已存在且大小一致，源文件可以安全丢弃
           try {
-            await f.copy(target.path);
-            await f.delete();
-            moved++;
-          } catch (_) {}
+            final s1 = await f.length();
+            final s2 = await target.length();
+            if (s1 == s2) {
+              await f.delete();
+              moved++;
+            } else {
+              failed.add(name);
+            }
+          } catch (_) {
+            failed.add(name);
+          }
+          continue;
+        }
+        try {
+          final srcSize = await f.length();
+          await f.copy(target.path);
+          final dstSize = await target.length();
+          if (dstSize != srcSize || srcSize <= 0) {
+            // 校验不通过：删掉半成品，保留源文件
+            try {
+              await target.delete();
+            } catch (_) {}
+            failed.add(name);
+            debugPrint('[CacheStore] 迁移校验失败 $name（$srcSize -> $dstSize）');
+            continue;
+          }
+          await f.delete();
+          moved++;
+        } catch (e) {
+          failed.add(name);
+          debugPrint('[CacheStore] 迁移失败 $name: $e');
         }
       }
-      if (moved > 0) {
-        debugPrint('[CacheStore] 已从外部目录迁移 $moved 个缓存文件');
-      }
-      if (oldDir.listSync().isEmpty) {
+      debugPrint('[CacheStore] 迁移完成：成功 $moved，失败 ${failed.length}');
+      // 只有全部搬完才删除旧目录
+      if (moved > 0 && oldDir.listSync().isEmpty) {
         try {
           await oldDir.delete(recursive: true);
         } catch (_) {}
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[CacheStore] 迁移异常: $e');
+    }
+  }
+
+  /// 缓存目录的实际路径（展示给用户排查用）
+  Future<String> dirPath() async => (await audioDir()).path;
+
+  /// 磁盘上真实的缓存文件数量与体积（用于与索引对账展示）
+  Future<({int count, int bytes})> diskUsage() async {
+    try {
+      final dir = await audioDir();
+      var count = 0;
+      var bytes = 0;
+      for (final f in dir.listSync()) {
+        if (f is File) {
+          count++;
+          bytes += f.lengthSync();
+        }
+      }
+      return (count: count, bytes: bytes);
+    } catch (_) {
+      return (count: 0, bytes: 0);
+    }
   }
 
   static String _basename(String p) => p.split(Platform.pathSeparator).last;
@@ -325,6 +536,8 @@ class CacheStore extends ChangeNotifier {
     required Map<String, String> headers,
     /// 预计大小（字节），用于下载前的空间检查
     int? expectBytes,
+    /// 下载进度回调（0~1）
+    void Function(double progress)? onProgress,
   }) async {
     if (isCached(bvid, cid)) return true;
 
@@ -363,7 +576,10 @@ class CacheStore extends ChangeNotifier {
           receiveTimeout: const Duration(minutes: 10),
         ),
         onReceiveProgress: (r, t) {
-          if (t > 0) task.progress = (r / t).clamp(0.0, 1.0);
+          if (t > 0) {
+            task.progress = (r / t).clamp(0.0, 1.0);
+            onProgress?.call(task.progress);
+          }
           notifyListeners();
         },
       );
