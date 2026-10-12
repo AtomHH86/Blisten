@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart' hide AudioTrack;
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -115,19 +114,14 @@ class BookPlayer extends ChangeNotifier {
     final name = _cache.pathOf(bvid, cid);
     if (name == null) return null;
     try {
-      final dir = await _audioDir();
+      // 目录来源统一交给 CacheStore，避免和下载写盘时用的目录不一致
+      final dir = await _cache.audioDir();
       final f = File('$dir/$name');
       if (await f.exists()) return f.path;
       // 文件丢了：清掉索引
       await _cache.remove(bvid, cid);
     } catch (_) {}
     return null;
-  }
-
-  Future<Directory> _audioDir() async {
-    final base = await getExternalStorageDirectory() ??
-        await getApplicationDocumentsDirectory();
-    return Directory('${base.path}/audio_cache');
   }
 
   /// 倍速显示文本（如 1.5 → "1.5x"）

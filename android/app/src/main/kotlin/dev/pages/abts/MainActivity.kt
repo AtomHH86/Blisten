@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
+import android.os.StatFs
 import android.provider.Settings
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -131,6 +132,30 @@ class MainActivity : AudioServiceActivity() {
                         result.success(false)
                     } else {
                         result.success(openExternal(url))
+                    }
+                }
+
+                else -> result.notImplemented()
+            }
+        }
+
+        // 存储可用空间（缓存前预检，避免下到一半才失败）
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "abts/storage",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "freeBytes" -> {
+                    try {
+                        val stat = StatFs(filesDir.absolutePath)
+                        result.success(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                            stat.availableBytes
+                        } else {
+                            @Suppress("DEPRECATION")
+                            stat.availableBlocks.toLong() * stat.blockSize.toLong()
+                        })
+                    } catch (e: Exception) {
+                        result.success(-1L)
                     }
                 }
 

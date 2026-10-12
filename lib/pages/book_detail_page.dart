@@ -569,6 +569,8 @@ Text(
       cover: book.pic,
       durationSec: c.duration,
       headers: player.downloadHeaders,
+      // 按 128kbps 粗估，一小时约 55MB
+      expectBytes: c.duration > 0 ? (c.duration * 16000 ~/ 8) + 1048576 : null,
     );
     if (!mounted) return;
     messenger.showSnackBar(

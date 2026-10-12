@@ -96,6 +96,8 @@ class _CacheSheetState extends State<CacheSheet> {
         cover: book.pic,
         durationSec: c.duration,
         headers: headers,
+        // 按 128kbps 粗估，一小时约 55MB
+        expectBytes: c.duration > 0 ? (c.duration * 16000 ~/ 8) + 1048576 : null,
       );
       if (done) ok++;
       // 逐个下载，及时刷新进度
@@ -106,12 +108,24 @@ class _CacheSheetState extends State<CacheSheet> {
     if (!mounted) return;
     setState(() => _running = false);
     final total = list.length;
+    // 失败时把原因带出来（空间不足 / 链接失效 / 网络中断）
+    String? why;
+    if (ok < total) {
+      final firstErr = cache.tasks
+          .where((t) => t.failed && t.error != null)
+          .map((t) => t.error)
+          .firstOrNull;
+      why = firstErr;
+    }
+    final msg = ok == total
+        ? '已缓存 $ok 集，可离线收听'
+        : (why == null
+            ? '缓存完成 $ok/$total 集，部分失败请检查网络'
+            : '缓存完成 $ok/$total 集（$why）');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok == total
-            ? '已缓存 $ok 集，可离线收听'
-            : '缓存完成 $ok/$total 集，部分失败请检查网络'),
-        duration: const Duration(seconds: 2),
+        content: Text(msg),
+        duration: const Duration(seconds: 3),
       ),
     );
     if (mounted) Navigator.of(context).pop();
