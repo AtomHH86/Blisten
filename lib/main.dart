@@ -53,7 +53,13 @@ Future<void> _bootstrap() async {
   final player = BookPlayer.instance;
   player.setup();
   // 离线缓存：后台队列 + 通知栏进度
-  CacheNotifier.wire(CacheStore.instance);
+  final cache = CacheStore.instance;
+  CacheNotifier.wire(cache);
+  // 进程被杀/用户划掉重进后，自动接着下上次没下完的缓存
+  cache.enableResume(
+    resolver: (bvid, cid) => player.resolveUrlFor(bvid, cid),
+    headers: player.downloadHeaders,
+  );
   try {
     final handler = await AudioService.init(
       builder: () => BiliAudioHandler(),

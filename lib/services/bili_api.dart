@@ -245,23 +245,53 @@ class BiliApi {
   }
 
   /// 取音频流
+  ///
+  /// 短时间连续取地址会触发 B 站风控（-412 / -352），这里内置退避重试；
+  /// 另外把「响应里没有可用音轨」也当作失败重试，
+  /// 避免上层拿到空地址后把这一集静默跳过（批量缓存时尤其致命）。
   Future<BookAudio> playUrl(String bvid, int cid) async {
-    final res = await _client.get(
-      BiliEndpoints.playUrl,
-      query: {
-        'bvid': bvid,
-        'cid': cid,
-        'qn': 80,
-        'fnval': 4048,
-        'fnver': 0,
-        'fourk': 1,
-        'try_look': 1,
-        'gaia_source': 'prefer-ua',
-      },
-      useWbi: true,
-    );
-    final data = res.data as Map;
-    return BookAudio.fromMap((data['data'] as Map).cast<String, dynamic>());
+    BiliApiException? last;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(Duration(milliseconds: 1800 * attempt));
+      }
+      try {
+        final res = await _client.get(
+          BiliEndpoints.playUrl,
+          query: {
+            'bvid': bvid,
+            'cid': cid,
+            'qn': 80,
+            'fnval': 4048,
+            'fnver': 0,
+            'fourk': 1,
+            'try_look': 1,
+            'gaia_source': 'prefer-ua',
+          },
+          useWbi: true,
+        );
+        final data = res.data as Map;
+        final audio =
+            BookAudio.fromMap((data['data'] as Map).cast<String, dynamic>());
+        if (_hasPlayableUrl(audio)) return audio;
+        last = BiliApiException(-1, '未返回可用音频地址');
+      } on BiliApiException catch (e) {
+        last = e;
+        // 只有风控类错误值得重试，404 之类重试同样会失败
+        if (e.code != -412 && e.code != -352 && e.code != -509) rethrow;
+      }
+    }
+    throw last ?? BiliApiException(-1, '获取音频地址失败');
+  }
+
+  /// 响应里是否至少有一条可用的音频地址
+  static bool _hasPlayableUrl(BookAudio a) {
+    if ((a.flac?.baseUrl.isNotEmpty ?? false)) return true;
+    if ((a.dolby?.baseUrl.isNotEmpty ?? false)) return true;
+    for (final t in a.tracks) {
+      if (t.baseUrl.isNotEmpty || t.backupUrls.isNotEmpty) return true;
+    }
+    return false;
   }
 
   // ---------- UP 主 ----------

@@ -118,8 +118,8 @@ class BookPlayer extends ChangeNotifier {
       final dir = await _cache.audioDir();
       final f = File('$dir/$name');
       if (await f.exists()) return f.path;
-      // 文件丢了：清掉索引
-      await _cache.remove(bvid, cid);
+      // 文件真的没了：清掉索引
+      await _cache.dropIfBroken(bvid, cid);
     } catch (_) {}
     return null;
   }
@@ -350,7 +350,7 @@ class BookPlayer extends ChangeNotifier {
           return true;
         } catch (e) {
           debugPrint('[BookPlayer] 本地重开失败: $e');
-          await _cache.remove(_book?.bvid ?? '', chapter.cid);
+          await _cache.dropIfBroken(_book?.bvid ?? '', chapter.cid);
         }
       }
 
@@ -574,7 +574,16 @@ class BookPlayer extends ChangeNotifier {
           await _player.open(Media(localPath));
           opened = true;
         } catch (e) {
-          debugPrint('[BookPlayer] 本地缓存打开失败，回退在线: $e');
+          // open 在播放器忙（比如刚被通知栏/耳机事件打断）时会抛瞬时异常，
+          // 重试一次再决定，否则白白回退在线、浪费流量还丢掉离线播放的意义
+          debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: $e');
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+          try {
+            await _player.open(Media(localPath));
+            opened = true;
+          } catch (e2) {
+            debugPrint('[BookPlayer] 本地缓存打开仍失败，回退在线: $e2');
+          }
         }
         if (opened) {
           // 只有「打开文件」本身失败才认为缓存坏了；
@@ -591,8 +600,8 @@ class BookPlayer extends ChangeNotifier {
           _isOffline = true;
           _pausedByInterruption = false;
         } else {
-          // 文件确实打不开：清掉索引回退在线
-          await _cache.remove(curBvid ?? '', chapter.cid);
+          // 打开失败先确认文件是否真的坏了，不能因为一次 open 异常就删掉离线文件
+          await _cache.dropIfBroken(curBvid ?? '', chapter.cid);
         }
       }
 

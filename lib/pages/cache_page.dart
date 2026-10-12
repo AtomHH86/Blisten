@@ -16,8 +16,10 @@ class CachePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cache = context.watch<CacheStore>();
     final all = cache.entries;
-    final tasks = cache.tasks.where((t) => !t.done).toList();
-    final caching = tasks.isNotEmpty || cache.queueLength > 0;
+    final tasks = cache.tasks.where((t) => !t.done && !t.failed).toList();
+    final failures = cache.failures;
+    final caching = cache.pendingCount > 0;
+    final showFail = failures.isNotEmpty;
 
     // 按书分组（保持最近缓存的顺序）
     final grouped = <String, List<CacheEntry>>{};
@@ -42,17 +44,22 @@ class CachePage extends StatelessWidget {
             ),
         ],
       ),
-      body: all.isEmpty && !caching
+      body: all.isEmpty && !caching && !showFail
           ? const _CacheEmpty()
           : ListView.builder(
               padding: const EdgeInsets.only(bottom: 24),
-              itemCount: books.length + (caching ? 2 : 1),
+              itemCount: books.length + 1 + (caching ? 1 : 0) + (showFail ? 1 : 0),
               itemBuilder: (context, i) {
                 if (i == 0) return _buildSummary(context, cache, all.length);
-                if (caching && i == 1) {
+                var idx = i - 1;
+                if (caching && idx == 0) {
                   return _buildProgressCard(context, cache, tasks);
                 }
-                final idx = i - (caching ? 2 : 1);
+                if (caching) idx--;
+                if (showFail && idx == 0) {
+                  return _buildFailureCard(context, cache, failures);
+                }
+                if (showFail) idx--;
                 final bvid = books[idx];
                 return _buildBookCard(context, cache, bvid, grouped[bvid]!);
               },
@@ -115,8 +122,98 @@ class CachePage extends StatelessWidget {
           ],
           const SizedBox(height: 6),
           Text(
-            '共 ${tasks.length + cache.queueLength} 个任务待完成，'
-            '排队 ${cache.queueLength} 个 · 可离开本页',
+            () {
+              final stat = cache.batchStat;
+              if (stat.total > 0) {
+                return '本批共 ${stat.total} 集，已完成 ${stat.done} 集'
+                    '${stat.failed > 0 ? ' · 失败 ${stat.failed} 集' : ''}'
+                    '${cache.queueLength > 0 ? ' · 排队 ${cache.queueLength} 集' : ''}'
+                    ' · 可离开本页';
+              }
+              return '排队 ${cache.queueLength} 集 · 可离开本页';
+            }(),
+            style: TextStyle(fontSize: 11, color: AppTheme.textHint),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 失败清单：以前失败只写日志（release 包里日志是空实现），
+  /// 用户只看到「少了一集」，这里把原因亮出来并支持一键重试。
+  Widget _buildFailureCard(
+      BuildContext context, CacheStore cache, List<CacheFailure> failures) {
+    final player = context.read<BookPlayer>();
+    final danger = Theme.of(context).colorScheme.error;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: danger.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: danger.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.error_outline_rounded, size: 16, color: danger),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${failures.length} 集缓存失败',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await cache.retryFailed(
+                    resolveUrl: (bvid, cid) => player.resolveUrlFor(bvid, cid),
+                    headers: player.downloadHeaders,
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('已重新加入缓存队列（${failures.length} 集）'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Text(
+                  '全部重试',
+                  style: TextStyle(fontSize: 13, color: AppTheme.accent),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ...failures.take(5).map(
+                (f) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '${f.chapterTitle} · ${f.reason}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                  ),
+                ),
+              ),
+          if (failures.length > 5)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '还有 ${failures.length - 5} 集失败…',
+                style: TextStyle(fontSize: 11, color: AppTheme.textHint),
+              ),
+            ),
+          const SizedBox(height: 6),
+          Text(
+            '通常是网络波动或 B 站限流，稍后重试即可',
             style: TextStyle(fontSize: 11, color: AppTheme.textHint),
           ),
         ],

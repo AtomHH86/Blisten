@@ -98,7 +98,7 @@ class _CacheSheetState extends State<CacheSheet> {
       bookTitle: book.cleanTitle,
       cover: book.pic,
       items: items,
-      resolveUrl: (cid) => player.resolveUrlFor(book.bvid, cid),
+      resolveUrl: (bvid, cid) => player.resolveUrlFor(bvid, cid),
       headers: player.downloadHeaders,
     );
 

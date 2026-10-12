@@ -21,7 +21,7 @@ class CacheNotifier {
 
     store.onProgressChanged = () {
       final tasks = store.tasks;
-      final pending = tasks.length + store.queueLength;
+      final pending = store.pendingCount;
       if (pending <= 0) {
         _cancel();
         lastPct = -1;
@@ -32,9 +32,15 @@ class CacheNotifier {
       // 进度变化不足 1% 就不重复刷新通知
       if (pct == lastPct) return;
       lastPct = pct;
+      final stat = store.batchStat;
+      final counter = stat.total > 0 ? '${stat.done + 1}/${stat.total}' : '';
       _update(
         cur == null ? '正在缓存 · 剩余 $pending 集' : '正在缓存：${cur.title}',
-        '$pct%',
+        [
+          if (counter.isNotEmpty) counter,
+          '$pct%',
+          if (pending > 1) '剩 $pending 集',
+        ].join(' · '),
         pct,
       );
     };

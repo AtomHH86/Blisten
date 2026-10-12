@@ -87,6 +87,24 @@ class _QueueItem {
     required this.chapterTitle,
     required this.durationSec,
   });
+
+  Map<String, dynamic> toJson() => {
+        'bvid': bvid,
+        'bookTitle': bookTitle,
+        'cover': cover,
+        'cid': cid,
+        'chapterTitle': chapterTitle,
+        'durationSec': durationSec,
+      };
+
+  factory _QueueItem.fromJson(Map<String, dynamic> m) => _QueueItem(
+        bvid: m['bvid'] as String? ?? '',
+        bookTitle: m['bookTitle'] as String? ?? '',
+        cover: m['cover'] as String? ?? '',
+        cid: int.tryParse('${m['cid'] ?? 0}') ?? 0,
+        chapterTitle: m['chapterTitle'] as String? ?? '',
+        durationSec: int.tryParse('${m['durationSec'] ?? 0}') ?? 0,
+      );
 }
 
 /// 下载中的任务状态
@@ -112,15 +130,72 @@ class CacheTask {
   String get key => '$bvid-$cid';
 }
 
+/// 一集缓存失败后的记录（页面展示 + 一键重试）
+///
+/// 之前失败只写 debugPrint，而 debugPrint 在 release 包里是空实现，
+/// 批量缓存失败时用户和开发者都看不到任何痕迹，这一集就「人间蒸发」了。
+class CacheFailure {
+  final String bvid;
+  final int cid;
+  final String bookTitle;
+  final String chapterTitle;
+  final String reason;
+  final int at;
+
+  const CacheFailure({
+    required this.bvid,
+    required this.cid,
+    required this.bookTitle,
+    required this.chapterTitle,
+    required this.reason,
+    required this.at,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'bvid': bvid,
+        'cid': cid,
+        'bookTitle': bookTitle,
+        'chapterTitle': chapterTitle,
+        'reason': reason,
+        'at': at,
+      };
+
+  factory CacheFailure.fromJson(Map<String, dynamic> m) => CacheFailure(
+        bvid: m['bvid'] as String? ?? '',
+        cid: int.tryParse('${m['cid'] ?? 0}') ?? 0,
+        bookTitle: m['bookTitle'] as String? ?? '',
+        chapterTitle: m['chapterTitle'] as String? ?? '',
+        reason: m['reason'] as String? ?? '缓存失败',
+        at: int.tryParse('${m['at'] ?? 0}') ?? 0,
+      );
+}
+
 /// 离线缓存：下载音频到应用私有目录 + 元数据持久化
 class CacheStore extends ChangeNotifier {
   CacheStore._();
   static final CacheStore instance = CacheStore._();
 
   static const _key = 'abts_cache_index';
+  static const _pendingKey = 'abts_cache_pending';
 
   final List<CacheEntry> _entries = [];
   final Map<String, CacheTask> _tasks = {};
+
+  /// 本批次已完成 / 失败的集数，用于让进度条在一整批里单调递增
+  /// （之前只统计「当前还挂在 _tasks 里的任务」，每下完一集进度就会掉回 0）
+  int _batchTotal = 0;
+  int _batchDone = 0;
+  int _batchFailed = 0;
+
+  /// 本批次失败的集（可一键重试）
+  final List<CacheFailure> _failures = [];
+  List<CacheFailure> get failures => List.unmodifiable(_failures);
+
+  /// 跨进程重启后仍需下载的项
+  final List<_QueueItem> _pendingOnDisk = [];
+
+  /// 正在下载的那一项（出队但未完成），落盘时用它保住书名等信息
+  _QueueItem? _active;
 
   /// 缓存根目录
   ///
@@ -146,28 +221,40 @@ class CacheStore extends ChangeNotifier {
   bool _draining = false;
 
   /// 由入队方（播放/详情页）注入：解析下载地址与下载请求头
-  Future<String?> Function(int cid)? _resolveUrl;
+  Future<String?> Function(String bvid, int cid)? _resolveUrl;
   Map<String, String> _headers = const {};
 
-  int get queueLength => _queue.length;
-  int get queueDone => _tasks.values.where((t) => t.done).length;
-  int get queueFailed => _tasks.values.where((t) => t.failed).length;
+  /// 启动后续传用（由 main 注入，避免 core 层依赖网络层）
+  Future<String?> Function(String bvid, int cid)? resumeResolver;
+  Map<String, String> resumeHeaders = const {};
 
-  /// 队列总进度（0~1）；没有任务时为 0
+  /// 两集之间至少间隔这么久，连续取 playurl 容易被风控
+  static const _itemGap = Duration(milliseconds: 1500);
+  /// 解析地址失败后的重试次数
+  static const _urlAttempts = 2;
+
+  int get queueLength => _queue.length;
+  int get queueDone => _batchDone;
+  int get queueFailed => _batchFailed;
+
+  /// 仍在进行中的数量：排队中的 + 正在下载的 1 个
+  int get pendingCount =>
+      _queue.length + (_tasks.values.any((t) => !t.done && !t.failed) ? 1 : 0);
+
+  /// 队列总进度（0~1）；一批任务内单调递增，没有任务时为 0
   double get queueProgress {
-    final list = _tasks.values.toList();
-    if (list.isEmpty) return 0;
-    final total = list.length;
-    var acc = 0.0;
-    for (final t in list) {
-      if (t.done) {
-        acc += 1;
-      } else if (!t.failed) {
-        acc += t.progress;
-      }
+    final total = _batchTotal;
+    if (total <= 0) return 0;
+    var acc = _batchDone.toDouble();
+    for (final t in _tasks.values) {
+      if (!t.done && !t.failed) acc += t.progress;
     }
     return (acc / total).clamp(0.0, 1.0);
   }
+
+  /// 批量进度描述，用于页面与通知栏
+  ({int done, int total, int failed}) get batchStat =>
+      (done: _batchDone, total: _batchTotal, failed: _batchFailed);
 
   /// 入队一批下载任务并立即在后台开始执行
   Future<void> enqueue({
@@ -175,16 +262,18 @@ class CacheStore extends ChangeNotifier {
     required String bookTitle,
     required String cover,
     required List<({int cid, String chapterTitle, int durationSec})> items,
-    required Future<String?> Function(int cid) resolveUrl,
+    required Future<String?> Function(String bvid, int cid) resolveUrl,
     required Map<String, String> headers,
   }) async {
     if (items.isEmpty) return;
     _resolveUrl = resolveUrl;
     _headers = headers;
+    var added = 0;
     for (final it in items) {
       if (isCached(bvid, it.cid)) continue;
       final key = '$bvid-${it.cid}';
       if (_tasks.containsKey(key)) continue;
+      if (_queue.any((e) => e.bvid == bvid && e.cid == it.cid)) continue;
       _tasks[key] = CacheTask(
         bvid: bvid,
         cid: it.cid,
@@ -198,15 +287,58 @@ class CacheStore extends ChangeNotifier {
         chapterTitle: it.chapterTitle,
         durationSec: it.durationSec,
       ));
+      added++;
     }
+    if (added == 0) return;
+    // 合并到同一批统计里，保证进度条不因多次入队而归零
+    _batchTotal += added;
+    // 同批次重试时清掉这些集的失败记录
+    _failures.removeWhere(
+        (f) => f.bvid == bvid && items.any((i) => i.cid == f.cid));
+    await _persistPending();
     notifyListeners();
     unawaited(_drain());
+  }
+
+  /// 一键重试本批次失败的集
+  Future<void> retryFailed({
+    required Future<String?> Function(String bvid, int cid) resolveUrl,
+    required Map<String, String> headers,
+  }) async {
+    if (_failures.isEmpty) return;
+    final grouped = <String, List<({int cid, String chapterTitle, int durationSec})>>{};
+    final titles = <String, String>{};
+    for (final f in _failures) {
+      grouped.putIfAbsent(f.bvid, () => []).add((
+            cid: f.cid,
+            chapterTitle: f.chapterTitle,
+            durationSec: 0,
+          ));
+      titles[f.bvid] = f.bookTitle;
+    }
+    _failures.clear();
+    for (final e in grouped.entries) {
+      await enqueue(
+        bvid: e.key,
+        bookTitle: titles[e.key] ?? '',
+        cover: '',
+        items: e.value,
+        resolveUrl: resolveUrl,
+        headers: headers,
+      );
+    }
+  }
+
+  void clearFailures() {
+    if (_failures.isEmpty) return;
+    _failures.clear();
+    notifyListeners();
   }
 
   /// 取消排队中（尚未开始）的任务
   void cancelQueued(String bvid, int cid) {
     _queue.removeWhere((e) => e.bvid == bvid && e.cid == cid);
-    _tasks.remove('$bvid-$cid');
+    if (_tasks.remove('$bvid-$cid') != null) _batchTotal--;
     notifyListeners();
   }
 
@@ -220,10 +352,17 @@ class CacheStore extends ChangeNotifier {
     if (_draining) return;
     _draining = true;
     try {
+      var first = true;
       while (_queue.isNotEmpty) {
+        if (!first) {
+          // 两集之间留出间隔，降低连续请求 playurl 触发风控的概率
+          await Future<void>.delayed(_itemGap);
+        }
+        first = false;
         final item = _queue.removeAt(0);
         final task = _tasks['${item.bvid}-${item.cid}'];
         if (task == null) continue; // 已被取消
+        _active = item;
         task
           ..done = false
           ..failed = false
@@ -231,12 +370,16 @@ class CacheStore extends ChangeNotifier {
           ..error = null;
         notifyListeners();
 
-        final url = await _resolveUrl?.call(item.cid);
+        final url = await _resolveWithRetry(item);
         if (url == null) {
           debugPrint('[CacheStore] 获取下载地址失败 ${item.bvid}/${item.cid}');
-          // 失败的任务不留在队列里，避免进度卡片上一直挂着
+          _recordFailure(
+            item,
+            '网络繁忙，未能获取下载地址，请重试',
+          );
           _tasks.remove('${item.bvid}-${item.cid}');
           notifyListeners();
+          await _persistPending();
           _onQueueProgress();
           continue;
         }
@@ -249,8 +392,10 @@ class CacheStore extends ChangeNotifier {
           cover: item.cover,
           durationSec: item.durationSec,
           headers: _headers,
+          // 按 132kbps 音轨估算（B 站默认档 qn=80 对应 132K），
+          // 之前按 16kbps 估算，空间预检形同虚设，下载到一半才会 ENOSPC
           expectBytes: item.durationSec > 0
-              ? (item.durationSec * 16000 ~/ 8) + 1048576
+              ? item.durationSec * 16500 + 2097152
               : null,
           onProgress: (p) {
             task.progress = p;
@@ -261,16 +406,53 @@ class CacheStore extends ChangeNotifier {
         if (!ok) {
           debugPrint('[CacheStore] 下载未完成 ${item.bvid}/${item.cid}: '
               '${task.error}');
+          _recordFailure(item, task.error ?? '缓存失败，请重试');
+        } else {
+          _batchDone++;
         }
         // 完成/失败都清掉任务，避免进度卡片残留
         _tasks.remove('${item.bvid}-${item.cid}');
+        _active = null;
         notifyListeners();
+        await _persistPending();
         _onQueueProgress();
       }
     } finally {
       _draining = false;
+      _active = null;
+      // 整批跑完且没有失败项时清零，下一批从 0% 重新计
+      if (_queue.isEmpty && _tasks.isEmpty && _failures.isEmpty) {
+        _batchTotal = 0;
+        _batchDone = 0;
+        _batchFailed = 0;
+        notifyListeners();
+      }
       _onQueueDone();
     }
+  }
+
+  /// 解析下载地址，失败重试 [_urlAttempts] 次
+  Future<String?> _resolveWithRetry(_QueueItem item) async {
+    for (var i = 0; i < _urlAttempts; i++) {
+      if (i > 0) await Future<void>.delayed(Duration(milliseconds: 2000 * i));
+      final url = await _resolveUrl?.call(item.bvid, item.cid);
+      if (url != null && url.isNotEmpty) return url;
+    }
+    return null;
+  }
+
+  void _recordFailure(_QueueItem item, String reason) {
+    _failures.removeWhere(
+        (f) => f.bvid == item.bvid && f.cid == item.cid);
+    _failures.add(CacheFailure(
+      bvid: item.bvid,
+      cid: item.cid,
+      bookTitle: item.bookTitle,
+      chapterTitle: item.chapterTitle,
+      reason: reason,
+      at: DateTime.now().millisecondsSinceEpoch,
+    ));
+    _batchFailed++;
   }
 
   /// 队列进度变化回调（用于刷新通知栏）
@@ -340,8 +522,88 @@ class CacheStore extends ChangeNotifier {
               (e) => CacheEntry.fromJson((e as Map).cast<String, dynamic>())));
       } catch (_) {}
     }
+    // 读取上次没下完的队列，等 main 注入 resolver 后自动续传
+    final rawPending = prefs.getString(_pendingKey);
+    if (rawPending != null) {
+      try {
+        final arr = jsonDecode(rawPending) as List;
+        _pendingOnDisk.addAll(arr.map(
+            (e) => _QueueItem.fromJson((e as Map).cast<String, dynamic>())));
+      } catch (_) {}
+    }
     // 清理磁盘上已被删掉的孤儿文件 + 校验索引与文件一致
     unawaited(_reconcile());
+  }
+
+  /// 注入续传所需的地址解析器与请求头，并在有未完成队列时自动开始
+  void enableResume({
+    required Future<String?> Function(String bvid, int cid) resolver,
+    required Map<String, String> headers,
+  }) {
+    resumeResolver = resolver;
+    resumeHeaders = headers;
+    unawaited(_resumePending());
+  }
+
+  /// 启动后自动续传上次未完成的缓存队列
+  ///
+  /// 进程被杀 / 用户划掉重进时队列不会丢，联网后接着下。
+  Future<void> _resumePending() async {
+    if (_pendingOnDisk.isEmpty || _queue.isNotEmpty) return;
+    // 等 WBI 签名 / buvid 预热完成再请求，否则首单容易失败
+    await Future<void>.delayed(const Duration(seconds: 4));
+    if (_pendingOnDisk.isEmpty || _queue.isNotEmpty) return;
+    final items = _pendingOnDisk.toList();
+    _pendingOnDisk.clear();
+    var added = 0;
+    for (final it in items) {
+      if (it.bvid.isEmpty || it.cid == 0) continue;
+      if (isCached(it.bvid, it.cid)) continue;
+      if (_queue.any((e) => e.bvid == it.bvid && e.cid == it.cid)) continue;
+      _tasks['${it.bvid}-${it.cid}'] =
+          CacheTask(bvid: it.bvid, cid: it.cid, title: it.chapterTitle);
+      _queue.add(it);
+      added++;
+    }
+    if (added == 0) return;
+    _batchTotal += added;
+    _resolveUrl = resumeResolver;
+    _headers = resumeHeaders;
+    debugPrint('[CacheStore] 续传上次未完成的 $added 集缓存');
+    await _persistPending();
+    notifyListeners();
+    unawaited(_drain());
+  }
+
+  /// 把尚未完成的队列落盘，保证重启后能续传
+  Future<void> _persistPending() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // 正在下载的（已出队但未完成）也要算上，否则崩溃后这一集会丢
+      final all = <_QueueItem>[..._queue];
+      for (final t in _tasks.values) {
+        if (t.done || t.failed) continue;
+        if (all.any((e) => e.bvid == t.bvid && e.cid == t.cid)) continue;
+        all.add(_QueueItem(
+          bvid: t.bvid,
+          bookTitle: _active?.bvid == t.bvid ? _active?.bookTitle ?? '' : '',
+          cover: _active?.bvid == t.bvid ? _active?.cover ?? '' : '',
+          cid: t.cid,
+          chapterTitle: t.title,
+          durationSec: _active?.cid == t.cid ? _active?.durationSec ?? 0 : 0,
+        ));
+      }
+      if (all.isEmpty) {
+        await prefs.remove(_pendingKey);
+        return;
+      }
+      await prefs.setString(
+        _pendingKey,
+        jsonEncode(all.map((e) => e.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('[CacheStore] 队列落盘失败: $e');
+    }
   }
 
   Future<void> _save() async {
@@ -369,7 +631,9 @@ class CacheStore extends ChangeNotifier {
       final alive = <CacheEntry>[];
       for (final e in _entries) {
         try {
-          if (await File('${dir.path}/${e.fileName}').exists()) {
+          final f = File('${dir.path}/${e.fileName}');
+          // 0 字节同样算损坏（多半是写盘被打断留下的残次品）
+          if (await f.exists() && await f.length() > 0) {
             alive.add(e);
           } else {
             debugPrint('[CacheStore] 缓存文件已丢失，移除记录 ${e.bvid}/${e.cid}');
@@ -551,8 +815,10 @@ class CacheStore extends ChangeNotifier {
       }
     }
 
-    final task = CacheTask(bvid: bvid, cid: cid, title: chapterTitle);
-    _tasks[task.key] = task;
+    final task = _tasks.putIfAbsent(
+      '$bvid-$cid',
+      () => CacheTask(bvid: bvid, cid: cid, title: chapterTitle),
+    );
     notifyListeners();
 
     File? tmp;
@@ -658,6 +924,28 @@ class CacheStore extends ChangeNotifier {
           '${dir.path}/${CacheEntry(bvid: bvid, cid: cid, bookTitle: '', chapterTitle: '').fileName}');
       if (await f.exists()) await f.delete();
     } catch (_) {}
+  }
+
+  /// 播放本地缓存失败时的处理：**只有文件确实损毁（不存在或 0 字节）才删索引**
+  ///
+  /// 之前这里直接 `remove`，导致播放器 `open()` 抛一个瞬时异常就会把用户
+  /// 几百 MB 的离线文件删掉——实测真机上《三体》一集 194MB 缓存就是这样
+  /// 凭空消失的。打开失败绝大多数是播放器瞬时状态问题，文件本身是好的，
+  /// 保留它最多下次多回退一次在线播放，代价远小于误删数据。
+  Future<void> dropIfBroken(String bvid, int cid) async {
+    if (bvid.isEmpty || cid == 0) return;
+    try {
+      final dir = await audioDir();
+      final f = File(
+          '${dir.path}/${CacheEntry(bvid: bvid, cid: cid, bookTitle: '', chapterTitle: '').fileName}');
+      if (await f.exists() && await f.length() > 0) {
+        return; // 文件完好，保留用户的离线缓存
+      }
+    } catch (_) {
+      // 拿不到目录就保守处理：不删
+      return;
+    }
+    await remove(bvid, cid);
   }
 
   /// 删除某本书的全部缓存
