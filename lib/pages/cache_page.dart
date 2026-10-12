@@ -145,6 +145,11 @@ class CachePage extends StatelessWidget {
       BuildContext context, CacheStore cache, List<CacheFailure> failures) {
     final player = context.read<BookPlayer>();
     final danger = Theme.of(context).colorScheme.error;
+    // 失败项同样按作品原顺序展示
+    final sorted = failures.toList()
+      ..sort((a, b) => a.order == b.order
+          ? a.cid.compareTo(b.cid)
+          : a.order.compareTo(b.order));
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       padding: const EdgeInsets.all(14),
@@ -192,7 +197,7 @@ class CachePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          ...failures.take(5).map(
+          ...sorted.take(5).map(
                 (f) => Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
@@ -386,7 +391,8 @@ class _BookChaptersSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cache = context.watch<CacheStore>();
-    final list = cache.entriesOf(bvid);
+    // 按作品原本的章节顺序展示，而不是缓存发生的先后顺序
+    final list = cache.entriesOf(bvid)..sort(CacheEntry.compareByOrder);
     final size = list.fold<int>(0, (s, e) => s + e.sizeBytes);
 
     return SizedBox(

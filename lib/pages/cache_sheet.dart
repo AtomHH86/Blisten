@@ -69,7 +69,8 @@ class _CacheSheetState extends State<CacheSheet> {
     final cache = context.read<CacheStore>();
     final list = _selected.toList()..sort();
 
-    final items = <({int cid, String chapterTitle, int durationSec})>[];
+    final items =
+        <({int cid, String chapterTitle, int durationSec, int page, int order})>[];
     for (final i in list) {
       if (i < 0 || i >= chapters.length) continue;
       final c = chapters[i];
@@ -78,6 +79,8 @@ class _CacheSheetState extends State<CacheSheet> {
         cid: c.cid,
         chapterTitle: '${c.page} · ${c.part}',
         durationSec: c.duration,
+        page: c.page,
+        order: i + 1,
       ));
     }
 

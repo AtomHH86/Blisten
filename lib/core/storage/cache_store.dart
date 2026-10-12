@@ -19,6 +19,16 @@ class CacheEntry {
   final int sizeBytes;
   final int cachedAt;
 
+  /// 分P序号（第几章）
+  final int page;
+
+  /// 该集在作品章节列表中的原始序号（**1 起**，0 表示老数据没有这个字段）。
+  ///
+  /// 缓存页要按「作品原本的顺序」展示，而 _entries 是按缓存先后追加的，
+  /// 直接渲染会变成「先缓存的排前面」。用 1 起而不是 0 起，是为了让 0
+  /// 能唯一表示「未知」，第一集本身序号是 1 而不是 0。
+  final int order;
+
   const CacheEntry({
     required this.bvid,
     required this.cid,
@@ -28,9 +38,21 @@ class CacheEntry {
     this.durationSec = 0,
     this.sizeBytes = 0,
     this.cachedAt = 0,
+    this.page = 0,
+    this.order = 0,
   });
 
   String get fileName => '$bvid-$cid.m4a';
+
+  /// 同一本书内的章节排序
+  ///
+  /// 双方都有原始序号就按序号；只要有一方是老数据（order == 0），
+  /// 就整体退回「分P序号 → cid」，避免新老混排时顺序忽前忽后。
+  static int compareByOrder(CacheEntry a, CacheEntry b) {
+    if (a.order > 0 && b.order > 0) return a.order.compareTo(b.order);
+    if (a.page != b.page) return a.page.compareTo(b.page);
+    return a.cid.compareTo(b.cid);
+  }
 
   String get sizeText {
     if (sizeBytes <= 0) return '';
@@ -56,6 +78,8 @@ class CacheEntry {
         'durationSec': durationSec,
         'sizeBytes': sizeBytes,
         'cachedAt': cachedAt,
+        'page': page,
+        'order': order,
       };
 
   factory CacheEntry.fromJson(Map<String, dynamic> m) => CacheEntry(
@@ -67,6 +91,8 @@ class CacheEntry {
         durationSec: int.tryParse('${m['durationSec'] ?? 0}') ?? 0,
         sizeBytes: int.tryParse('${m['sizeBytes'] ?? 0}') ?? 0,
         cachedAt: int.tryParse('${m['cachedAt'] ?? 0}') ?? 0,
+        page: int.tryParse('${m['page'] ?? 0}') ?? 0,
+        order: int.tryParse('${m['order'] ?? 0}') ?? 0,
       );
 }
 
@@ -78,6 +104,8 @@ class _QueueItem {
   final int cid;
   final String chapterTitle;
   final int durationSec;
+  final int page;
+  final int order;
 
   const _QueueItem({
     required this.bvid,
@@ -86,6 +114,8 @@ class _QueueItem {
     required this.cid,
     required this.chapterTitle,
     required this.durationSec,
+    this.page = 0,
+    this.order = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -95,6 +125,8 @@ class _QueueItem {
         'cid': cid,
         'chapterTitle': chapterTitle,
         'durationSec': durationSec,
+        'page': page,
+        'order': order,
       };
 
   factory _QueueItem.fromJson(Map<String, dynamic> m) => _QueueItem(
@@ -104,6 +136,8 @@ class _QueueItem {
         cid: int.tryParse('${m['cid'] ?? 0}') ?? 0,
         chapterTitle: m['chapterTitle'] as String? ?? '',
         durationSec: int.tryParse('${m['durationSec'] ?? 0}') ?? 0,
+        page: int.tryParse('${m['page'] ?? 0}') ?? 0,
+        order: int.tryParse('${m['order'] ?? 0}') ?? 0,
       );
 }
 
@@ -141,6 +175,8 @@ class CacheFailure {
   final String chapterTitle;
   final String reason;
   final int at;
+  final int page;
+  final int order;
 
   const CacheFailure({
     required this.bvid,
@@ -149,6 +185,8 @@ class CacheFailure {
     required this.chapterTitle,
     required this.reason,
     required this.at,
+    this.page = 0,
+    this.order = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -158,6 +196,8 @@ class CacheFailure {
         'chapterTitle': chapterTitle,
         'reason': reason,
         'at': at,
+        'page': page,
+        'order': order,
       };
 
   factory CacheFailure.fromJson(Map<String, dynamic> m) => CacheFailure(
@@ -167,6 +207,8 @@ class CacheFailure {
         chapterTitle: m['chapterTitle'] as String? ?? '',
         reason: m['reason'] as String? ?? '缓存失败',
         at: int.tryParse('${m['at'] ?? 0}') ?? 0,
+        page: int.tryParse('${m['page'] ?? 0}') ?? 0,
+        order: int.tryParse('${m['order'] ?? 0}') ?? 0,
       );
 }
 
@@ -261,7 +303,8 @@ class CacheStore extends ChangeNotifier {
     required String bvid,
     required String bookTitle,
     required String cover,
-    required List<({int cid, String chapterTitle, int durationSec})> items,
+    required List<({int cid, String chapterTitle, int durationSec, int page, int order})>
+        items,
     required Future<String?> Function(String bvid, int cid) resolveUrl,
     required Map<String, String> headers,
   }) async {
@@ -286,6 +329,8 @@ class CacheStore extends ChangeNotifier {
         cid: it.cid,
         chapterTitle: it.chapterTitle,
         durationSec: it.durationSec,
+        page: it.page,
+        order: it.order,
       ));
       added++;
     }
@@ -306,13 +351,16 @@ class CacheStore extends ChangeNotifier {
     required Map<String, String> headers,
   }) async {
     if (_failures.isEmpty) return;
-    final grouped = <String, List<({int cid, String chapterTitle, int durationSec})>>{};
+    final grouped = <String,
+        List<({int cid, String chapterTitle, int durationSec, int page, int order})>>{};
     final titles = <String, String>{};
     for (final f in _failures) {
       grouped.putIfAbsent(f.bvid, () => []).add((
             cid: f.cid,
             chapterTitle: f.chapterTitle,
             durationSec: 0,
+            page: f.page,
+            order: f.order,
           ));
       titles[f.bvid] = f.bookTitle;
     }
@@ -392,6 +440,8 @@ class CacheStore extends ChangeNotifier {
           cover: item.cover,
           durationSec: item.durationSec,
           headers: _headers,
+          page: item.page,
+          order: item.order,
           // 按 132kbps 音轨估算（B 站默认档 qn=80 对应 132K），
           // 之前按 16kbps 估算，空间预检形同虚设，下载到一半才会 ENOSPC
           expectBytes: item.durationSec > 0
@@ -451,6 +501,8 @@ class CacheStore extends ChangeNotifier {
       chapterTitle: item.chapterTitle,
       reason: reason,
       at: DateTime.now().millisecondsSinceEpoch,
+      page: item.page,
+      order: item.order,
     ));
     _batchFailed++;
   }
@@ -798,6 +850,10 @@ class CacheStore extends ChangeNotifier {
     required String cover,
     required int durationSec,
     required Map<String, String> headers,
+    /// 分P序号，用于缓存页按作品原顺序展示
+    int page = 0,
+    /// 在章节列表中的原始下标，用于缓存页排序
+    int order = 0,
     /// 预计大小（字节），用于下载前的空间检查
     int? expectBytes,
     /// 下载进度回调（0~1）
@@ -868,6 +924,8 @@ class CacheStore extends ChangeNotifier {
           durationSec: durationSec,
           sizeBytes: size,
           cachedAt: DateTime.now().millisecondsSinceEpoch,
+          page: page,
+          order: order,
         ),
       );
       await _save();

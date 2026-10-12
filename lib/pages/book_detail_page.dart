@@ -560,6 +560,8 @@ Text(
       );
       return;
     }
+    final chapters = book.chapters ?? const <Chapter>[];
+    final idx = chapters.indexWhere((x) => x.cid == c.cid);
     final ok = await cache.download(
       bvid: book.bvid,
       cid: c.cid,
@@ -569,8 +571,10 @@ Text(
       cover: book.pic,
       durationSec: c.duration,
       headers: player.downloadHeaders,
-      // 按 128kbps 粗估，一小时约 55MB
-      expectBytes: c.duration > 0 ? (c.duration * 16000 ~/ 8) + 1048576 : null,
+      page: c.page,
+      order: idx >= 0 ? idx + 1 : 0,
+      // 按 132kbps 音轨粗估（一小时约 60MB），与批量缓存保持一致
+      expectBytes: c.duration > 0 ? (c.duration * 16500) + 2097152 : null,
     );
     if (!mounted) return;
     messenger.showSnackBar(
