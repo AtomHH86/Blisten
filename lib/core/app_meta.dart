@@ -11,8 +11,8 @@ class AppMeta {
   /// 开源仓库
   static const String repoUrl = 'https://github.com/fengqiao57/abts';
 
-  /// 官网（部署后把这里换成自己的域名即可）
-  static const String siteUrl = 'https://fengqiao57.github.io/abts/';
+  /// 官网
+  static const String siteUrl = 'https://abts.pages.dev/';
 
   /// 开源协议
   static const String licenseUrl = '$repoUrl/blob/main/LICENSE';
