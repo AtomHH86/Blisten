@@ -117,17 +117,10 @@ class BookPlayer extends ChangeNotifier {
   /// 查本地缓存文件路径；文件不在则视为未缓存
   Future<String?> _cachedPathOf(String? bvid, int cid) async {
     if (bvid == null || bvid.isEmpty || cid == 0) return null;
-    final name = _cache.pathOf(bvid, cid);
-    if (name == null) return null;
-    try {
-      // 目录来源统一交给 CacheStore，避免和下载写盘时用的目录不一致
-      final dir = await _cache.audioDir();
-      final f = File('$dir/$name');
-      if (await f.exists()) return f.path;
-      // 文件真的没了：清掉索引
-      await _cache.dropIfBroken(bvid, cid);
-    } catch (_) {}
-    return null;
+    // 路径解析与「文件是否真的在」统一交给 CacheStore 判断，
+    // 这里不要自己拼路径查 exists()，否则两处结论会不一致
+    if (!_cache.isCached(bvid, cid)) return null;
+    return _cache.cacheFilePath(bvid, cid);
   }
 
   /// 倍速显示文本（如 1.5 → "1.5x"）

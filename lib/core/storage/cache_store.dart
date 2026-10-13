@@ -1049,6 +1049,40 @@ class CacheStore extends ChangeNotifier {
     } catch (_) {}
   }
 
+  /// 某集的缓存文件对象（路径与下载写盘时完全一致）
+  Future<File?> _fileOf(String bvid, int cid) async {
+    if (bvid.isEmpty || cid == 0) return null;
+    final name =
+        CacheEntry(bvid: bvid, cid: cid, bookTitle: '', chapterTitle: '').fileName;
+    final dir = await audioDir();
+    return File('${dir.path}/$name');
+  }
+
+  /// 取某集的缓存音频绝对路径；文件不存在或为空字节则返回 null（并按需摘掉失效记录）
+  ///
+  /// 这是**唯一**判断「缓存文件在不在」的地方。之前播放器自己拼路径查一次
+  /// `exists()`、CacheStore 里又拼一次查一次，两处结论会相反——真机上出现过
+  /// 同一秒内「文件不存在」和「文件完好」两条记录，因为播放器那处的异常被
+  /// `catch (_) {}` 吞掉后直接当成文件丢了。现在只保留这一处判断，且失败原因
+  /// 一定写进事件日志。
+  Future<String?> cacheFilePath(String bvid, int cid) async {
+    if (bvid.isEmpty || cid == 0) return null;
+    try {
+      final f = await _fileOf(bvid, cid);
+      if (f == null) return null;
+      final exists = await f.exists();
+      final len = exists ? await f.length() : 0;
+      if (exists && len > 0) return f.path;
+      logEvent('缓存缺失 $bvid/$cid：${f.path}（存在=$exists 长度=$len）');
+    } catch (e) {
+      // 检查不出来就当作「不知道」，绝不能因此删用户的缓存
+      logEvent('缓存检查异常 $bvid/$cid：$e');
+      return null;
+    }
+    await dropIfBroken(bvid, cid);
+    return null;
+  }
+
   /// 播放本地缓存失败时的处理：**只有文件确实损毁（不存在或 0 字节）才删索引**
   ///
   /// 之前这里直接 `remove`，导致播放器 `open()` 抛一个瞬时异常就会把用户
@@ -1058,10 +1092,8 @@ class CacheStore extends ChangeNotifier {
   Future<void> dropIfBroken(String bvid, int cid) async {
     if (bvid.isEmpty || cid == 0) return;
     try {
-      final dir = await audioDir();
-      final f = File(
-          '${dir.path}/${CacheEntry(bvid: bvid, cid: cid, bookTitle: '', chapterTitle: '').fileName}');
-      if (await f.exists() && await f.length() > 0) {
+      final f = await _fileOf(bvid, cid);
+      if (f != null && await f.exists() && await f.length() > 0) {
         logEvent('文件完好，保留缓存 $bvid/$cid');
         return; // 文件完好，保留用户的离线缓存
       }
