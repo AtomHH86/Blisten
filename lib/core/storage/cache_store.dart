@@ -212,6 +212,23 @@ class CacheFailure {
       );
 }
 
+/// 缓存相关的一条事件记录
+///
+/// release 包里 `debugPrint` 是空实现，出问题手机上没有任何日志，
+/// 只能靠这个把「索引/磁盘/播放器」到底发生了什么显示给用户看。
+class CacheEvent {
+  final int at;
+  final String text;
+  const CacheEvent(this.at, this.text);
+
+  Map<String, dynamic> toJson() => {'at': at, 'text': text};
+
+  factory CacheEvent.fromJson(Map<String, dynamic> m) => CacheEvent(
+        int.tryParse('${m['at'] ?? 0}') ?? 0,
+        m['text'] as String? ?? '',
+      );
+}
+
 /// 离线缓存：下载音频到应用私有目录 + 元数据持久化
 class CacheStore extends ChangeNotifier {
   CacheStore._();
@@ -219,6 +236,46 @@ class CacheStore extends ChangeNotifier {
 
   static const _key = 'abts_cache_index';
   static const _pendingKey = 'abts_cache_pending';
+  static const _eventsKey = 'abts_cache_events';
+
+  /// 最近的缓存事件（排查用，跨重启保留）
+  final List<CacheEvent> _events = [];
+  List<CacheEvent> get events => List.unmodifiable(_events);
+
+  /// 记一条事件；只记关键动作，不记下载进度，避免刷屏和频繁写盘
+  void logEvent(String text) {
+    _events.insert(0, CacheEvent(
+        DateTime.now().millisecondsSinceEpoch, text));
+    if (_events.length > 60) _events.removeLast();
+    unawaited(_persistEvents());
+  }
+
+  void clearEvents() {
+    _events.clear();
+    unawaited(_persistEvents());
+  }
+
+  Future<void> _persistEvents() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _eventsKey,
+        jsonEncode(_events.map((e) => e.toJson()).toList()),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_eventsKey);
+      if (raw == null) return;
+      final arr = jsonDecode(raw) as List;
+      _events
+        ..clear()
+        ..addAll(arr.map((e) => CacheEvent.fromJson((e as Map).cast<String, dynamic>())));
+    } catch (_) {}
+  }
 
   final List<CacheEntry> _entries = [];
   final Map<String, CacheTask> _tasks = {};
@@ -565,6 +622,7 @@ class CacheStore extends ChangeNotifier {
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
+    await _loadEvents();
     if (raw != null) {
       try {
         final arr = jsonDecode(raw) as List;
@@ -701,24 +759,31 @@ class CacheStore extends ChangeNotifier {
 
       // ③ 磁盘 → 索引：孤儿文件清掉（含 .part 下载残片）
       final keep = _entries.map((e) => e.fileName).toSet();
+      var orphans = 0;
       for (final f in dir.listSync()) {
         if (f is File && !keep.contains(_basename(f.path))) {
           try {
             f.deleteSync();
+            orphans++;
           } catch (_) {}
         }
       }
+      if (orphans > 0) logEvent('清理孤儿文件 $orphans 个');
 
       if (dropped > 0) {
         debugPrint('[CacheStore] 清理失效缓存记录 $dropped 条');
+        logEvent('启动对账：${_entries.length} 条记录中 $dropped 条文件已丢失，已移除');
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
           _key,
           jsonEncode(_entries.map((e) => e.toJson()).toList()),
         );
+      } else if (_entries.isNotEmpty) {
+        logEvent('启动对账：${_entries.length} 条记录与磁盘一致');
       }
     } catch (e) {
       debugPrint('[CacheStore] 对账失败: $e');
+      logEvent('启动对账异常：$e');
     }
   }
 
@@ -997,10 +1062,13 @@ class CacheStore extends ChangeNotifier {
       final f = File(
           '${dir.path}/${CacheEntry(bvid: bvid, cid: cid, bookTitle: '', chapterTitle: '').fileName}');
       if (await f.exists() && await f.length() > 0) {
+        logEvent('文件完好，保留缓存 $bvid/$cid');
         return; // 文件完好，保留用户的离线缓存
       }
-    } catch (_) {
+      logEvent('文件确实丢失，移除记录 $bvid/$cid');
+    } catch (e) {
       // 拿不到目录就保守处理：不删
+      logEvent('检查文件异常，保留缓存 $bvid/$cid：$e');
       return;
     }
     await remove(bvid, cid);

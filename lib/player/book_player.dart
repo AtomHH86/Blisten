@@ -17,6 +17,12 @@ import '../services/audio_focus.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 
+/// 从缓存页播放一集的结果
+///
+/// 「文件不存在」和「文件在但打不开」是两回事：前者要提示重新缓存，
+/// 后者缓存是好的，只需要告诉用户这次改成了在线播放。
+enum CachePlayOutcome { okOffline, okOnline, fileMissing, failed }
+
 /// 听书播放器：按"章节"连播 + 断点续播 + 睡眠定时 + 系统媒体会话
 class BookPlayer extends ChangeNotifier {
   BookPlayer._();
@@ -960,11 +966,37 @@ class BookPlayer extends ChangeNotifier {
 
   Map<String, String> get downloadHeaders => _streamHeaders();
 
+  /// 打开本地缓存文件，失败重试一次
+  ///
+  /// 播放器在忙（刚被通知栏/来电/耳机事件打断、或上一段音频还在打开中）时
+  /// `open()` 会抛瞬时异常，重试一次通常就好了。
+  Future<bool> _openLocal(String path) async {
+    try {
+      await _player.open(Media(path));
+      return true;
+    } catch (e) {
+      debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: $e');
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      try {
+        await _player.open(Media(path));
+        return true;
+      } catch (e2) {
+        debugPrint('[BookPlayer] 本地缓存打开仍失败: $e2');
+        _cache.logEvent('本地音频打开失败（已重试）：$e2');
+        return false;
+      }
+    }
+  }
+
   /// 直接播放缓存里的一集（离线入口，缓存页调用）
   ///
   /// 从缓存页进来时只有 bvid/cid，没有完整章节列表；
   /// 先尝试拉章节列表（失败也不阻塞，缓存页只有一集时用单集占位）。
-  Future<bool> playCachedEntry(String bvid, int cid, Book book) async {
+  ///
+  /// 返回结果要区分「文件真的没了」和「文件在但打不开」——
+  /// 两者对用户是完全不同的处境，不能一律提示「缓存文件已失效，请重新缓存」。
+  Future<CachePlayOutcome> playCachedEntry(
+      String bvid, int cid, Book book) async {
     _ensureNotificationPermission();
     List<Chapter> chapters;
     try {
@@ -983,7 +1015,11 @@ class BookPlayer extends ChangeNotifier {
     }
 
     final local = await _cachedPathOf(bvid, cid);
-    if (local == null) return false;
+    // 文件确实不在了（_cachedPathOf 内部已按需摘掉失效记录）
+    if (local == null) {
+      _cache.logEvent('播放缓存失败：文件不存在 $bvid/$cid');
+      return CachePlayOutcome.fileMissing;
+    }
 
     final prevBook = _book;
     final prevChapters = _chapters;
@@ -998,19 +1034,45 @@ class BookPlayer extends ChangeNotifier {
     notifyListeners();
 
     var ok = false;
+    var online = false;
     try {
-      await _player.open(Media(local));
-      if (_rate != 1.0) await _player.setRate(_rate);
-      _playbackUrl = null;
-      _isOffline = true;
-      ok = true;
+      ok = await _openLocal(local);
+      if (ok) {
+        if (_rate != 1.0) await _player.setRate(_rate);
+        _playbackUrl = null;
+        _isOffline = true;
+      } else {
+        // 文件是好的，只是播放器这次没打开：别把用户堵死在离线入口，
+        // 直接回退在线播放，用户照样能听，缓存也保留着
+        _cache.logEvent('离线播放失败，回退在线 $bvid/$cid');
+        final candidates = await _fetchStreamCandidates(cid);
+        for (final url in candidates) {
+          try {
+            await _player.open(Media(url, httpHeaders: _streamHeaders()),
+                play: false);
+            if (_rate != 1.0) await _player.setRate(_rate);
+            await _player.play();
+            ok = true;
+            online = true;
+            _isOffline = false;
+            _playbackUrl = url;
+            break;
+          } catch (_) {
+            // 换下一个候选地址
+          }
+        }
+      }
     } catch (e) {
-      debugPrint('[BookPlayer] 缓存播放失败: $e');
-      _book = prevBook;
-      _chapters = prevChapters;
-      _index = prevIndex;
-      _loaded = prevLoaded;
+      debugPrint('[BookPlayer] 缓存播放异常: $e');
+      _cache.logEvent('缓存播放异常：$e');
+      ok = false;
     } finally {
+      if (!ok) {
+        _book = prevBook;
+        _chapters = prevChapters;
+        _index = prevIndex;
+        _loaded = prevLoaded;
+      }
       _loading = false;
       if (ok) {
         _loaded = true;
@@ -1019,7 +1081,8 @@ class BookPlayer extends ChangeNotifier {
       }
       notifyListeners();
     }
-    return ok;
+    if (!ok) return CachePlayOutcome.failed;
+    return online ? CachePlayOutcome.okOnline : CachePlayOutcome.okOffline;
   }
 
   /// 取任意 (bvid, cid) 的下载地址（详情页缓存单集时用）
