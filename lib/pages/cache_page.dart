@@ -227,45 +227,40 @@ class CachePage extends StatelessWidget {
   }
 
   Widget _buildSummary(BuildContext context, CacheStore cache, int count) {
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.divider),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.sd_storage_rounded, size: 22, color: AppTheme.accent),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '已缓存 $count 集',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textMain,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '占用 ${cache.totalSizeText} · 点击书籍查看已缓存章节',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSub),
-                    ),
-                  ],
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.divider),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.sd_storage_rounded, size: 22, color: AppTheme.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '已缓存 $count 集',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMain,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  '占用 ${cache.totalSizeText} · 点击书籍查看已缓存章节',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                ),
+              ],
+            ),
           ),
-        ),
-        _Diagnostics(cache: cache),
-      ],
+        ],
+      ),
     );
   }
 
@@ -384,141 +379,6 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
       ),
     );
     if (ok == true) await cache.clearAll();
-  }
-}
-
-/// 缓存诊断：目录路径 + 索引与磁盘对账 + 最近事件
-///
-/// release 包里 `debugPrint` 是空实现，出问题没有日志可查，
-/// 这里把「索引说有、磁盘上没有」这类分歧直接显示出来。
-class _Diagnostics extends StatefulWidget {
-  final CacheStore cache;
-  const _Diagnostics({required this.cache});
-
-  @override
-  State<_Diagnostics> createState() => _DiagnosticsState();
-}
-
-class _DiagnosticsState extends State<_Diagnostics> {
-  String? _dir;
-  int _files = 0;
-  int _bytes = 0;
-  bool _loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _probe());
-  }
-
-  Future<void> _probe() async {
-    final dir = await widget.cache.dirPath();
-    final u = await widget.cache.diskUsage();
-    if (!mounted) return;
-    setState(() {
-      _dir = dir;
-      _files = u.count;
-      _bytes = u.bytes;
-      _loaded = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cache = context.watch<CacheStore>();
-    final indexCount = cache.entries.length;
-    final indexBytes = cache.totalSize;
-    final mismatch = _loaded && _files != indexCount;
-    final events = cache.events.take(12).toList();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-        decoration: BoxDecoration(
-          color: AppTheme.surface.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: mismatch
-                  ? Theme.of(context).colorScheme.error.withValues(alpha: 0.5)
-                  : AppTheme.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.fact_check_outlined,
-                    size: 14,
-                    color: mismatch
-                        ? Theme.of(context).colorScheme.error
-                        : AppTheme.textHint),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '缓存诊断${mismatch ? ' · 索引与磁盘不一致' : ''}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: mismatch
-                          ? Theme.of(context).colorScheme.error
-                          : AppTheme.textSub,
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    cache.clearEvents();
-                    _probe();
-                  },
-                  child: Text('刷新',
-                      style:
-                          TextStyle(fontSize: 11, color: AppTheme.accent)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '索引 $indexCount 条 / ${_mb(indexBytes)}'
-              '${_loaded ? '　磁盘 $_files 个 / ${_mb(_bytes)}' : ''}',
-              style: TextStyle(fontSize: 11, color: AppTheme.textSub),
-            ),
-            if (_dir != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  '目录 ${_dir!.replaceAll(RegExp(r'^.*?/files'), '…/files')}',
-                  style: TextStyle(fontSize: 10, color: AppTheme.textHint),
-                ),
-              ),
-            if (events.isNotEmpty) ...[
-              const Divider(height: 12),
-              ...events.map((e) => Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      '${_hms(e.at)}  ${e.text}',
-                      style: TextStyle(fontSize: 10, color: AppTheme.textHint),
-                    ),
-                  )),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String _mb(int bytes) {
-    if (bytes <= 0) return '0 MB';
-    final mb = bytes / 1024 / 1024;
-    if (mb >= 1024) return '${(mb / 1024).toStringAsFixed(2)} GB';
-    return '${mb.toStringAsFixed(1)} MB';
-  }
-
-  static String _hms(int ms) {
-    final d = DateTime.fromMillisecondsSinceEpoch(ms);
-    return '${d.hour.toString().padLeft(2, '0')}:'
-        '${d.minute.toString().padLeft(2, '0')}:'
-        '${d.second.toString().padLeft(2, '0')}';
   }
 }
 
