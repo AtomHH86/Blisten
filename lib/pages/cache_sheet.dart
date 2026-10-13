@@ -70,7 +70,7 @@ class _CacheSheetState extends State<CacheSheet> {
     final list = _selected.toList()..sort();
 
     final items =
-        <({int cid, String chapterTitle, int durationSec, int page, int order})>[];
+        <({int cid, String chapterTitle, int durationSec, int page, String part, int order})>[];
     for (final i in list) {
       if (i < 0 || i >= chapters.length) continue;
       final c = chapters[i];
@@ -80,6 +80,7 @@ class _CacheSheetState extends State<CacheSheet> {
         chapterTitle: '${c.page} · ${c.part}',
         durationSec: c.duration,
         page: c.page,
+        part: c.part,
         order: i + 1,
       ));
     }

@@ -572,6 +572,7 @@ Text(
       durationSec: c.duration,
       headers: player.downloadHeaders,
       page: c.page,
+      part: c.part,
       order: idx >= 0 ? idx + 1 : 0,
       // 按 132kbps 音轨粗估（一小时约 60MB），与批量缓存保持一致
       expectBytes: c.duration > 0 ? (c.duration * 16500) + 2097152 : null,

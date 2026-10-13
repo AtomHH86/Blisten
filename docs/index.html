@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>阿B听书 — 免登录、无广告、专注收听的 B 站有声小说播放器</title>
-<meta name="description" content="阿B听书是一个免登录、无广告、专注收听的第三方 B 站有声小说播放器。有声小说、评书、相声、广播剧，点开即听；支持后台播放、断点续播、睡眠定时。">
+<meta name="description" content="阿B听书是一个免登录、无广告、专注收听的第三方 B 站有声小说播放器。有声小说、评书、相声、广播剧，点开即听；支持后台播放、断点续播、睡眠定时与批量离线缓存。">
 <meta name="theme-color" content="#040F30">
 <link rel="icon" href="logo.png">
 <meta property="og:type" content="website">
@@ -189,6 +189,16 @@ section[id]{scroll-margin-top:72px}
 .dl-row .size{margin-left:auto;color:var(--ice);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .note{margin-top:18px;color:var(--hint);font-size:13.5px;line-height:1.9}
 
+.chg{margin-top:26px;border-top:1px solid var(--line-soft);padding-top:22px}
+.chg-head{margin:0 0 14px;font-size:13px;color:var(--hint);letter-spacing:.08em}
+.chg ul{margin:0;padding:0;list-style:none}
+.chg li{position:relative;padding-left:20px;margin:9px 0;color:var(--ice);font-size:14px;line-height:1.8}
+.chg li::before{
+  content:"";position:absolute;left:2px;top:.7em;width:6px;height:6px;border-radius:50%;
+  background:linear-gradient(135deg,var(--sky),var(--blue));
+}
+.chg li b{color:var(--moon);font-weight:600}
+
 .dl-pan{margin-top:22px;border-top:1px solid var(--line-soft);padding-top:22px}
 .pan-head{margin:0 0 15px;font-size:13px;color:var(--hint);letter-spacing:.08em}
 .pan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -352,8 +362,17 @@ footer{
           <h4>怎么听</h4>
           <ul>
             <li>分P连播、上/下一章、±15 秒快进退</li>
-            <li>倍速 0.5x~3.0x 可自定义；播完本集可自动暂停</li>
+            <li>倍速 0.5x~3.0x 共 11 档预设，点一下即切</li>
             <li>选集离线缓存，无网也能听</li>
+          </ul>
+        </div>
+        <div class="feat">
+          <h4>离线缓存</h4>
+          <ul>
+            <li>勾选多集批量缓存，开始后可离开页面</li>
+            <li>通知栏实时显示缓存到第几集、百分比</li>
+            <li>中途退出也不丢，重进自动接着下</li>
+            <li>失败会列出来并能一键重试</li>
           </ul>
         </div>
         <div class="feat">
@@ -361,7 +380,8 @@ footer{
           <ul>
             <li>长音频断流自动重连、来电暂停、拔耳机暂停</li>
             <li>断点续播精确到秒，已听章节打 ✓</li>
-            <li>书架点一下直接续播</li>
+            <li>书架右上角续播角标：上次在听那本的封面，正在播放时自动旋转</li>
+            <li>书架显示整本书的进度，点一下直接续播</li>
           </ul>
         </div>
       </div>
@@ -377,7 +397,7 @@ footer{
       <div class="sec-body dl">
         <div class="dl-top">
           <div>
-            <h3>阿B听书 v0.1.0</h3>
+            <h3>阿B听书 v1.2.0</h3>
             <p>Android 7.0+ · 已签名 · 包名 dev.pages.abts · 安装包彼此可覆盖升级</p>
           </div>
           <a class="btn btn-primary" href="https://github.com/fengqiao57/abts/releases/latest" target="_blank" rel="noopener">
@@ -390,6 +410,15 @@ footer{
           <div class="dl-row"><code>armeabi-v7a</code><span class="dev">较老的 32 位手机 / 低端设备</span><span class="size">约 23 MB</span></div>
           <div class="dl-row"><code>x86_64</code><span class="dev">x86_64 模拟器 / 平板 / 部分盒子</span><span class="size">约 28 MB</span></div>
           <div class="dl-row"><code>universal</code><span class="dev">不确定架构时选它，兼容所有架构</span><span class="size">约 73 MB</span></div>
+        </div>
+        <div class="chg">
+          <p class="chg-head">v1.2.0 更新要点</p>
+          <ul>
+            <li><b>书架右上角续播角标</b>：上次在听那本的圆形封面做底叠加播放图标，点一下续播；正在播放时角标换成当前封面并像唱片一样旋转，点一下直接进播放页、不再重新加载</li>
+            <li><b>离线与在线统一</b>：目录、上下章、断点续播、进度保存共用同一套逻辑；没网自动退回已缓存章节，发现页无网时列出已缓存书籍</li>
+            <li><b>书架显示整本书的进度</b>，不再是某一章的百分比；每章可看收听进度</li>
+            <li><b>修复「点开就退会丢进度」</b>；长音频断流自动重连；修复多处缓存丢失 / 误报失效</li>
+          </ul>
         </div>
         <div class="dl-pan">
           <p class="pan-head">网盘分流 · 国内直连（免访问 GitHub）</p>

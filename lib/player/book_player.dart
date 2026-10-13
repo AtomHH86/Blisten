@@ -23,6 +23,12 @@ import '../services/umeng_analytics.dart';
 /// 后者缓存是好的，只需要告诉用户这次改成了在线播放。
 enum CachePlayOutcome { okOffline, okOnline, fileMissing, failed }
 
+/// 从书架播放一本书的结果
+///
+/// 「没网」和「作品已下架」要分开：前者应该退回离线缓存/提示网络，
+/// 后者要问用户是否把这本已经听不了的书移出书架。
+enum ShelfPlayOutcome { ok, bookGone, loadFailed }
+
 /// 听书播放器：按"章节"连播 + 断点续播 + 睡眠定时 + 系统媒体会话
 class BookPlayer extends ChangeNotifier {
   BookPlayer._();
@@ -38,6 +44,10 @@ class BookPlayer extends ChangeNotifier {
 
   Book? _book;
   List<Chapter> _chapters = [];
+
+  /// _chapters 是否来自完整目录（在线/书里带的）。
+  /// 离线时目录可能是从缓存索引拼的，只有已缓存的那几集。
+  bool _chaptersComplete = true;
   int _index = 0;
 
   bool _ready = false;
@@ -520,6 +530,73 @@ class BookPlayer extends ChangeNotifier {
         resumeMs: resumeMs, newBook: book, newChapters: chapters);
   }
 
+  /// 从书架/离线入口播放一本书：在线优先，取不到就退回本地缓存
+  ///
+  /// 三种结局分得很清楚，UI 才能给出对的提示：
+  /// - [ShelfPlayOutcome.ok]：播上了（可能是在线，也可能是本地缓存）
+  /// - [ShelfPlayOutcome.bookGone]：**网络正常但接口返回空**，说明作品被删/下架
+  /// - [ShelfPlayOutcome.loadFailed]：请求本身失败（多半没网）且没有离线数据
+  Future<ShelfPlayOutcome> playBookWithFallback(ShelfBook sb) async {
+    _ensureNotificationPermission();
+    final book = sb.book;
+
+    // ① 拿章节列表：已加载的 → 书里带的 → 在线接口
+    var chapters = const <Chapter>[];
+    var networkOk = false;
+    try {
+      if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
+        chapters = _chapters;
+        networkOk = true;
+      } else if (book.chapters != null && book.chapters!.isNotEmpty) {
+        chapters = book.chapters!;
+        networkOk = true;
+      } else {
+        chapters = await _api.pageList(book.bvid);
+        networkOk = true; // 请求成功（哪怕是空列表）
+      }
+    } catch (_) {
+      networkOk = false; // 网络不可用 / 请求异常
+    }
+
+    // ② 在线拿到了章节：正常播放（命中缓存的集自动播本地文件）
+    if (chapters.isNotEmpty) {
+      final idx = sb.lastChapterIndex >= 0 && sb.lastChapterIndex < chapters.length
+          ? sb.lastChapterIndex
+          : 0;
+      final ok = await _loadTarget(idx,
+          resumeMs: sb.positionMs, newBook: book, newChapters: chapters);
+      if (ok) return ShelfPlayOutcome.ok;
+      // 没播起来（多半是没网，且要续听的那一集没缓存）→ 退回本地已缓存的集
+    }
+
+    // ③ 看本地有没有离线数据，有就直接离线听
+    final cached = _cache.chaptersOf(book.bvid);
+    if (cached.isNotEmpty) {
+      // 上次听的那一集优先；它文件没了就依次试其它已缓存的集
+      final ordered = <Chapter>[
+        ...cached.where((c) => c.cid == sb.lastCid),
+        ...cached.where((c) => c.cid != sb.lastCid),
+      ];
+      for (final c in ordered) {
+        final r = await playCachedEntry(book.bvid, c.cid, book);
+        if (r == CachePlayOutcome.okOffline || r == CachePlayOutcome.okOnline) {
+          return ShelfPlayOutcome.ok;
+        }
+        if (r == CachePlayOutcome.failed) return ShelfPlayOutcome.loadFailed;
+        // fileMissing：这一集文件没了，继续试下一集
+      }
+      return ShelfPlayOutcome.loadFailed;
+    }
+
+    // ④ 在线没有、本地也没有：让播放页显示这本书和可读的原因
+    _book = book;
+    _chapters = const [];
+    _loaded = false;
+    _error = networkOk ? '作品已下架或无法播放' : '网络不可用，且没有离线缓存';
+    notifyListeners();
+    return networkOk ? ShelfPlayOutcome.bookGone : ShelfPlayOutcome.loadFailed;
+  }
+
   /// 从书架进度继续收听
   Future<bool> resumeShelf(ShelfBook sb) async {
     return playBook(
@@ -541,6 +618,9 @@ class BookPlayer extends ChangeNotifier {
     int resumeMs = 0,
     Book? newBook,
     List<Chapter>? newChapters,
+    /// 本次传入的章节列表是否是**完整目录**（在线列表＝完整；
+    /// 离线时从缓存索引拼出来的只有已缓存的那几集，不能当整本书的章节数）
+    bool chaptersComplete = true,
   }) async {
     final prevBook = _book;
     final prevChapters = _chapters;
@@ -551,7 +631,10 @@ class BookPlayer extends ChangeNotifier {
     final prevOffline = _isOffline;
 
     if (newBook != null) _book = newBook;
-    if (newChapters != null) _chapters = newChapters;
+    if (newChapters != null) {
+      _chapters = newChapters;
+      _chaptersComplete = chaptersComplete;
+    }
     _loading = true;
     _error = null;
     notifyListeners();
@@ -959,123 +1042,91 @@ class BookPlayer extends ChangeNotifier {
 
   Map<String, String> get downloadHeaders => _streamHeaders();
 
-  /// 打开本地缓存文件，失败重试一次
+  /// 取某本书的章节列表：在线取全书，取不到就用本地数据兜底
   ///
-  /// 播放器在忙（刚被通知栏/来电/耳机事件打断、或上一段音频还在打开中）时
-  /// `open()` 会抛瞬时异常，重试一次通常就好了。
-  Future<bool> _openLocal(String path) async {
-    try {
-      await _player.open(Media(path));
-      return true;
-    } catch (e) {
-      debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: $e');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
-      try {
-        await _player.open(Media(path));
-        return true;
-      } catch (e2) {
-        debugPrint('[BookPlayer] 本地缓存打开仍失败: $e2');
-        _cache.logEvent('本地音频打开失败（已重试）：$e2');
-        return false;
-      }
+  /// 离线不是另一套逻辑，只是数据源换了。所以这里的顺序是
+  /// 「已加载的完整列表 → 在线接口 → 书架里存的 → 缓存索引」，
+  /// 保证任何情况下目录里都是**真实章节**，而不是一条占位项。
+  Future<({List<Chapter> chapters, bool complete})> resolveChapters(
+      String bvid) async {
+    if (_book?.bvid == bvid && _chapters.isNotEmpty) {
+      return (chapters: [..._chapters], complete: _chaptersComplete);
     }
+
+    try {
+      final list = await _api.pageList(bvid);
+      if (list.isNotEmpty) return (chapters: list, complete: true);
+    } catch (_) {
+      // 无网络 / 接口失败，继续用本地数据兜底
+    }
+
+    final saved = _shelf.byBvid(bvid)?.book.chapters;
+    if (saved != null && saved.isNotEmpty) {
+      return (chapters: [...saved], complete: true);
+    }
+
+    // 缓存索引里只有已缓存的那几集，不是完整目录
+    return (chapters: _cache.chaptersOf(bvid), complete: false);
   }
 
-  /// 直接播放缓存里的一集（离线入口，缓存页调用）
+  /// 从离线缓存入口播放某一集
   ///
-  /// 从缓存页进来时只有 bvid/cid，没有完整章节列表；
-  /// 先尝试拉章节列表（失败也不阻塞，缓存页只有一集时用单集占位）。
+  /// **刻意不自己 open 文件**：直接复用 [_loadTarget]，和在线播放走同一条路。
+  /// 这样章节列表、上一篇/下一篇、倍速、断点续播、进度保存全部与在线一致，
+  /// 离线仅仅是「这一集的音源恰好在本地」。
   ///
-  /// 返回结果要区分「文件真的没了」和「文件在但打不开」——
-  /// 两者对用户是完全不同的处境，不能一律提示「缓存文件已失效，请重新缓存」。
+  /// 返回结果要区分「文件真的没了」和「其它原因打不开」——
+  /// 两者对用户是完全不同的处境，不能一律提示「缓存文件已失效」。
   Future<CachePlayOutcome> playCachedEntry(
       String bvid, int cid, Book book) async {
     _ensureNotificationPermission();
-    List<Chapter> chapters;
-    try {
-      chapters = await _api.pageList(bvid);
-    } catch (_) {
-      chapters = const [];
-    }
 
-    var index = chapters.indexWhere((c) => c.cid == cid);
-    if (index < 0) {
-      // 列表里没有这一集（可能是多 P 的某一集），补一个占位章节
-      chapters = [
-        Chapter(cid: cid, page: 1, part: book.cleanTitle),
-      ];
-      index = 0;
-    }
-
+    // 文件得真的在，否则没有「离线播放」这回事
     final local = await _cachedPathOf(bvid, cid);
-    // 文件确实不在了（_cachedPathOf 内部已按需摘掉失效记录）
     if (local == null) {
       _cache.logEvent('播放缓存失败：文件不存在 $bvid/$cid');
       return CachePlayOutcome.fileMissing;
     }
 
-    final prevBook = _book;
-    final prevChapters = _chapters;
-    final prevIndex = _index;
-    final prevLoaded = _loaded;
-
-    _book = book;
-    _chapters = chapters;
-    _index = index;
-    _loading = true;
-    _error = null;
-    notifyListeners();
-
-    var ok = false;
-    var online = false;
-    try {
-      ok = await _openLocal(local);
-      if (ok) {
-        if (_rate != 1.0) await _player.setRate(_rate);
-        _playbackUrl = null;
-        _isOffline = true;
-      } else {
-        // 文件是好的，只是播放器这次没打开：别把用户堵死在离线入口，
-        // 直接回退在线播放，用户照样能听，缓存也保留着
-        _cache.logEvent('离线播放失败，回退在线 $bvid/$cid');
-        final candidates = await _fetchStreamCandidates(cid);
-        for (final url in candidates) {
-          try {
-            await _player.open(Media(url, httpHeaders: _streamHeaders()),
-                play: false);
-            if (_rate != 1.0) await _player.setRate(_rate);
-            await _player.play();
-            ok = true;
-            online = true;
-            _isOffline = false;
-            _playbackUrl = url;
-            break;
-          } catch (_) {
-            // 换下一个候选地址
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('[BookPlayer] 缓存播放异常: $e');
-      _cache.logEvent('缓存播放异常：$e');
-      ok = false;
-    } finally {
-      if (!ok) {
-        _book = prevBook;
-        _chapters = prevChapters;
-        _index = prevIndex;
-        _loaded = prevLoaded;
-      }
-      _loading = false;
-      if (ok) {
-        _loaded = true;
-        unawaited(AudioFocus.instance.request());
-        _pushNowPlaying();
-      }
-      notifyListeners();
+    final resolved = await resolveChapters(bvid);
+    final chapters = resolved.chapters;
+    var index = chapters.indexWhere((c) => c.cid == cid);
+    if (index < 0) {
+      // 离线时列表来自缓存索引，理论上必然包含这一集；兜底补一条，
+      // 免得出现「目录里找不到自己点的这一集」
+      final fromCache = _cache.entriesOf(bvid)
+          .firstWhere((e) => e.cid == cid, orElse: () => CacheEntry(
+              bvid: bvid, cid: cid, bookTitle: book.cleanTitle, chapterTitle: ''));
+      chapters.add(fromCache.toChapter());
+      index = chapters.length - 1;
     }
-    if (!ok) return CachePlayOutcome.failed;
-    return online ? CachePlayOutcome.okOnline : CachePlayOutcome.okOffline;
+
+    // 优先用书架里存的完整书籍信息（合成的 Book 缺作者/章节等字段）
+    var shelf = _shelf.byBvid(bvid);
+    final target = shelf?.book ?? book;
+    // 书架里没有这本书时补一条：否则 updateProgress 会直接返回，
+    // 离线听了几十秒退出再进来又从头开始，等于没有续播
+    if (shelf == null) {
+      await _shelf.add(target);
+      shelf = _shelf.byBvid(bvid);
+    }
+    // 离线播放同样要续播：只有当书架记录的就是这一集时才恢复进度
+    final resumeMs = (shelf != null && shelf.lastCid == cid) ? shelf.positionMs : 0;
+
+    // 交给统一加载路径：这一集命中缓存就播本地，否则照常走在线
+    final ok = await _loadTarget(index,
+        resumeMs: resumeMs,
+        newBook: target,
+        newChapters: chapters,
+        chaptersComplete: resolved.complete);
+
+    if (!ok) {
+      // 文件在却没能起播：交给统一路径已经尝试过在线回退，这里只报「没播成」
+      _cache.logEvent('缓存入口播放失败 $bvid/$cid');
+      return CachePlayOutcome.failed;
+    }
+    // 能起播时，用实际音源判断是离线还是在线（回退成功也算正常收听）
+    return _isOffline ? CachePlayOutcome.okOffline : CachePlayOutcome.okOnline;
   }
 
   /// 取任意 (bvid, cid) 的下载地址（详情页缓存单集时用）
@@ -1131,7 +1182,6 @@ class BookPlayer extends ChangeNotifier {
   Timer? _lastSaveTimer;
   void _tickSave() {
     if (currentChapter == null || _book == null) return;
-    if (currentDuration <= Duration.zero) return;
     _lastSaveTimer?.cancel();
     _lastSaveTimer = Timer(const Duration(seconds: 2), _saveNow);
   }
@@ -1142,14 +1192,19 @@ class BookPlayer extends ChangeNotifier {
     final book = _book;
     if (chapter == null || book == null) return;
     final pos = currentPosition;
-    final dur = currentDuration;
-    if (dur <= Duration.zero) return;
+    // 媒体时长可能还没解析出来（刚点开就退出）。这时用章节列表里带的
+    // 时长兜底，否则这一章的进度会被整条丢弃——「点开就退，进度不存」。
+    var durMs = currentDuration.inMilliseconds;
+    if (durMs <= 0) durMs = chapter.duration * 1000;
+    if (durMs <= 0) return;
     _shelf.updateProgress(
       book.bvid,
       cid: chapter.cid,
       chapterIndex: _index,
       positionMs: pos.inMilliseconds,
-      chapterDurationMs: dur.inMilliseconds,
+      chapterDurationMs: durMs,
+      // 目录不全时不要写总章节数，否则整本进度会被算歪
+      totalChapters: _chaptersComplete ? _chapters.length : 0,
     );
   }
 

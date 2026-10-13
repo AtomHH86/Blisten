@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/chapter.dart';
+
 /// 一条离线缓存记录（一个章节一个文件）
 class CacheEntry {
   final String bvid;
@@ -21,6 +23,12 @@ class CacheEntry {
 
   /// 分P序号（第几章）
   final int page;
+
+  /// 章节标题（不含「第 N 章 · 」前缀）
+  ///
+  /// 离线时要用缓存索引重建出这一集的章节名，chapterTitle 是拼好的展示串，
+  /// 拆不回原始标题，所以单独存一份。
+  final String part;
 
   /// 该集在作品章节列表中的原始序号（**1 起**，0 表示老数据没有这个字段）。
   ///
@@ -39,10 +47,32 @@ class CacheEntry {
     this.sizeBytes = 0,
     this.cachedAt = 0,
     this.page = 0,
+    this.part = '',
     this.order = 0,
   });
 
   String get fileName => '$bvid-$cid.m4a';
+
+  /// 还原成播放器的 Chapter（离线重建章节列表用）
+  ///
+  /// 老缓存记录没有单独存 part/page（那是后来才加的），只能从展示串
+  /// 「2 · 第二季」里拆回来，否则会拼出「第 0 章 · 2 · 第二季」这种鬼东西。
+  Chapter toChapter() {
+    var p = page;
+    var t = part;
+    if (t.isEmpty) {
+      final s = chapterTitle;
+      final i = s.indexOf(' · ');
+      if (i > 0) {
+        t = s.substring(i + 3).trim();
+        if (p <= 0) p = int.tryParse(s.substring(0, i).trim()) ?? 0;
+      } else {
+        t = s;
+      }
+    }
+    if (p <= 0) p = 1;
+    return Chapter(cid: cid, page: p, part: t, duration: durationSec);
+  }
 
   /// 同一本书内的章节排序
   ///
@@ -79,6 +109,7 @@ class CacheEntry {
         'sizeBytes': sizeBytes,
         'cachedAt': cachedAt,
         'page': page,
+        'part': part,
         'order': order,
       };
 
@@ -92,6 +123,7 @@ class CacheEntry {
         sizeBytes: int.tryParse('${m['sizeBytes'] ?? 0}') ?? 0,
         cachedAt: int.tryParse('${m['cachedAt'] ?? 0}') ?? 0,
         page: int.tryParse('${m['page'] ?? 0}') ?? 0,
+        part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
       );
 }
@@ -105,6 +137,7 @@ class _QueueItem {
   final String chapterTitle;
   final int durationSec;
   final int page;
+  final String part;
   final int order;
 
   const _QueueItem({
@@ -115,6 +148,7 @@ class _QueueItem {
     required this.chapterTitle,
     required this.durationSec,
     this.page = 0,
+    this.part = '',
     this.order = 0,
   });
 
@@ -126,6 +160,7 @@ class _QueueItem {
         'chapterTitle': chapterTitle,
         'durationSec': durationSec,
         'page': page,
+        'part': part,
         'order': order,
       };
 
@@ -137,6 +172,7 @@ class _QueueItem {
         chapterTitle: m['chapterTitle'] as String? ?? '',
         durationSec: int.tryParse('${m['durationSec'] ?? 0}') ?? 0,
         page: int.tryParse('${m['page'] ?? 0}') ?? 0,
+        part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
       );
 }
@@ -176,6 +212,7 @@ class CacheFailure {
   final String reason;
   final int at;
   final int page;
+  final String part;
   final int order;
 
   const CacheFailure({
@@ -186,6 +223,7 @@ class CacheFailure {
     required this.reason,
     required this.at,
     this.page = 0,
+    this.part = '',
     this.order = 0,
   });
 
@@ -197,6 +235,7 @@ class CacheFailure {
         'reason': reason,
         'at': at,
         'page': page,
+        'part': part,
         'order': order,
       };
 
@@ -208,6 +247,7 @@ class CacheFailure {
         reason: m['reason'] as String? ?? '缓存失败',
         at: int.tryParse('${m['at'] ?? 0}') ?? 0,
         page: int.tryParse('${m['page'] ?? 0}') ?? 0,
+        part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
       );
 }
@@ -360,7 +400,7 @@ class CacheStore extends ChangeNotifier {
     required String bvid,
     required String bookTitle,
     required String cover,
-    required List<({int cid, String chapterTitle, int durationSec, int page, int order})>
+    required List<({int cid, String chapterTitle, int durationSec, int page, String part, int order})>
         items,
     required Future<String?> Function(String bvid, int cid) resolveUrl,
     required Map<String, String> headers,
@@ -387,6 +427,7 @@ class CacheStore extends ChangeNotifier {
         chapterTitle: it.chapterTitle,
         durationSec: it.durationSec,
         page: it.page,
+        part: it.part,
         order: it.order,
       ));
       added++;
@@ -409,7 +450,7 @@ class CacheStore extends ChangeNotifier {
   }) async {
     if (_failures.isEmpty) return;
     final grouped = <String,
-        List<({int cid, String chapterTitle, int durationSec, int page, int order})>>{};
+        List<({int cid, String chapterTitle, int durationSec, int page, String part, int order})>>{};
     final titles = <String, String>{};
     for (final f in _failures) {
       grouped.putIfAbsent(f.bvid, () => []).add((
@@ -417,6 +458,7 @@ class CacheStore extends ChangeNotifier {
             chapterTitle: f.chapterTitle,
             durationSec: 0,
             page: f.page,
+            part: f.part,
             order: f.order,
           ));
       titles[f.bvid] = f.bookTitle;
@@ -498,6 +540,7 @@ class CacheStore extends ChangeNotifier {
           durationSec: item.durationSec,
           headers: _headers,
           page: item.page,
+          part: item.part,
           order: item.order,
           // 按 132kbps 音轨估算（B 站默认档 qn=80 对应 132K），
           // 之前按 16kbps 估算，空间预检形同虚设，下载到一半才会 ENOSPC
@@ -559,6 +602,7 @@ class CacheStore extends ChangeNotifier {
       reason: reason,
       at: DateTime.now().millisecondsSinceEpoch,
       page: item.page,
+      part: item.part,
       order: item.order,
     ));
     _batchFailed++;
@@ -891,6 +935,40 @@ class CacheStore extends ChangeNotifier {
   List<CacheEntry> entriesOf(String bvid) =>
       _entries.where((e) => e.bvid == bvid).toList();
 
+  /// 用缓存索引重建某本书的章节列表（**离线时的兜底数据源**）
+  ///
+  /// 离线不是另一套播放逻辑，只是「取不到在线数据源时改用本地索引」。
+  /// 这里返回这本书已缓存的所有集，按作品原始章节顺序排列，
+  /// 让目录、上一篇/下一篇在无网时依然可用。
+  List<Chapter> chaptersOf(String bvid) {
+    final list = entriesOf(bvid)..sort(CacheEntry.compareByOrder);
+    return list.map((e) => e.toChapter()).toList();
+  }
+
+  /// 缓存里出现过的所有书籍（离线时给发现页/书架页兜底）
+  ///
+  /// 按最近缓存时间倒序，并带出该书已缓存的集数。
+  List<({String bvid, String title, String cover, int count, int bytes, int cachedAt})>
+      cachedBooks() {
+    final g = <String, List<CacheEntry>>{};
+    for (final e in _entries) {
+      g.putIfAbsent(e.bvid, () => []).add(e);
+    }
+    final out = g.entries.map((kv) {
+      final list = kv.value..sort(CacheEntry.compareByOrder);
+      return (
+        bvid: kv.key,
+        title: list.first.bookTitle,
+        cover: list.first.cover,
+        count: list.length,
+        bytes: list.fold<int>(0, (s, e) => s + e.sizeBytes),
+        cachedAt: list.last.cachedAt,
+      );
+    }).toList();
+    out.sort((a, b) => b.cachedAt.compareTo(a.cachedAt));
+    return out;
+  }
+
   int countOf(String bvid) => entriesOf(bvid).length;
 
   String? pathOf(String bvid, int cid) {
@@ -917,6 +995,8 @@ class CacheStore extends ChangeNotifier {
     required Map<String, String> headers,
     /// 分P序号，用于缓存页按作品原顺序展示
     int page = 0,
+    /// 章节标题（不含「第 N 章 · 」前缀），离线重建章节列表时要用
+    String part = '',
     /// 在章节列表中的原始下标，用于缓存页排序
     int order = 0,
     /// 预计大小（字节），用于下载前的空间检查
@@ -990,6 +1070,7 @@ class CacheStore extends ChangeNotifier {
           sizeBytes: size,
           cachedAt: DateTime.now().millisecondsSinceEpoch,
           page: page,
+          part: part,
           order: order,
         ),
       );

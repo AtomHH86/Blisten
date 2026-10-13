@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/storage/cache_store.dart';
+import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../models/book.dart';
 import '../player/book_player.dart';
@@ -447,29 +448,85 @@ class _BookChaptersSheet extends StatelessWidget {
                     itemCount: list.length,
                     itemBuilder: (context, i) {
                       final e = list[i];
+                      final st = _statusOf(context, e);
                       return ListTile(
                         dense: true,
-                        leading: Icon(Icons.offline_pin_rounded,
-                            size: 20, color: AppTheme.accent),
+                        leading: Icon(
+                          st.done
+                              ? Icons.check_circle_rounded
+                              : Icons.offline_pin_rounded,
+                          size: 20,
+                          color: st.done ? AppTheme.textHint : AppTheme.accent,
+                        ),
                         title: Text(
                           e.chapterTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 14, color: AppTheme.textMain),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                st.done ? AppTheme.textHint : AppTheme.textMain,
+                          ),
                         ),
-                        subtitle: Text(
-                          [e.durationText, e.sizeText]
-                              .where((s) => s.isNotEmpty)
-                              .join(' · '),
-                          style:
-                              TextStyle(fontSize: 11, color: AppTheme.textHint),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              [e.durationText, e.sizeText]
+                                  .where((s) => s.isNotEmpty)
+                                  .join(' · '),
+                              style: TextStyle(
+                                  fontSize: 11, color: AppTheme.textHint),
+                            ),
+                            if (st.text.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 3),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      st.done
+                                          ? Icons.task_alt_rounded
+                                          : Icons.timelapse_rounded,
+                                      size: 12,
+                                      color: st.done
+                                          ? AppTheme.accent
+                                          : AppTheme.textSub,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      st.text,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: st.done
+                                            ? AppTheme.accent
+                                            : AppTheme.textSub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (!st.done && st.progress > 0)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 4, right: 8),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(3),
+                                  child: LinearProgressIndicator(
+                                    value: st.progress,
+                                    minHeight: 3,
+                                    backgroundColor: AppTheme.divider,
+                                    color: AppTheme.accent,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         onTap: () => _playEntry(context, cache, e),
                         trailing: IconButton(
                           tooltip: '删除',
                           icon: Icon(Icons.delete_outline,
                               size: 20, color: AppTheme.textSub),
-                          onPressed: () => cache.remove(e.bvid, e.cid),
+                          onPressed: () => _confirmDeleteOne(context, cache, e),
                         ),
                       );
                     },
@@ -478,6 +535,76 @@ class _BookChaptersSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 这一集的收听状态：是否听完 / 听到哪了
+  ({bool done, String text, double progress}) _statusOf(
+      BuildContext context, CacheEntry e) {
+    final shelf = context.watch<ShelfStore>().byBvid(e.bvid);
+    if (shelf == null) return (done: false, text: '未听', progress: 0);
+    // 播放器已标记听完
+    if (shelf.doneCids.contains(e.cid)) {
+      return (done: true, text: '已听完', progress: 1);
+    }
+    if (shelf.lastCid == e.cid && shelf.positionMs > 0) {
+      // 章节时长优先用进度里记录的，没有就退回缓存时的时长
+      final durMs = shelf.chapterDurationMs > 0
+          ? shelf.chapterDurationMs
+          : e.durationSec * 1000;
+      final pos = shelf.positionMs;
+      if (durMs <= 0) {
+        return (done: false, text: '听到 ${_fmtMs(pos)}', progress: 0);
+      }
+      final p = (pos / durMs).clamp(0.0, 1.0);
+      // 和播放器一致：到 95% 以上就算听完
+      if (p >= 0.95) return (done: true, text: '已听完', progress: 1);
+      return (
+        done: false,
+        text: '听到 ${(p * 100).round()}% · ${_fmtMs(pos)} / ${_fmtMs(durMs)}',
+        progress: p,
+      );
+    }
+    return (done: false, text: '未听', progress: 0);
+  }
+
+  static String _fmtMs(int ms) {
+    final d = Duration(milliseconds: ms);
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  /// 删除单集缓存前的二次确认
+  Future<void> _confirmDeleteOne(
+      BuildContext context, CacheStore cache, CacheEntry e) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        title: const Text('删除这一集的缓存'),
+        content: Text(
+          '「${e.chapterTitle}」${e.sizeText.isEmpty ? '' : '（${e.sizeText}）'}\n'
+          '删除后需要重新缓存才能离线收听。',
+          style: TextStyle(color: AppTheme.textMain, fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('取消', style: TextStyle(color: AppTheme.textSub)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('删除',
+                style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await cache.remove(e.bvid, e.cid);
   }
 
   /// 直接播放这一集（离线）

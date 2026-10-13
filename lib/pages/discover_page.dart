@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../core/storage/cache_store.dart';
+import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../data/seed_books.dart';
 import '../models/book.dart';
+import '../player/book_player.dart';
 import '../services/bili_api.dart';
 import '../widgets/book_cards.dart';
+import '../widgets/book_cover.dart';
 import 'book_detail_page.dart';
+import 'cache_page.dart';
+import 'player_page.dart';
 import 'search_page.dart';
 
 /// 发现：分类浏览（热门/广播剧/评书…）+ 搜索入口 + 精选推荐兜底
@@ -234,18 +241,17 @@ class _DiscoverPageState extends State<DiscoverPage> {
       ];
     }
     return [
-      if (_browseError != null)
+      if (_browseError != null) ...[
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             children: [
-Icon(Icons.cloud_off_outlined,
-                size: 40, color: AppTheme.textHint),
+              Icon(Icons.cloud_off_outlined, size: 36, color: AppTheme.textHint),
               const SizedBox(height: 8),
               Text(
-                '加载失败，请稍后重试',
+                '检测到当前无网络，已自动切换离线播放',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: AppTheme.textHint),
+                style: TextStyle(fontSize: 13, color: AppTheme.textSub),
               ),
               const SizedBox(height: 12),
               FilledButton(
@@ -254,10 +260,47 @@ Icon(Icons.cloud_off_outlined,
               ),
             ],
           ),
-        )
-      else if (_browseBooks.isNotEmpty)
+        ),
+        ..._buildOfflineSection(),
+      ] else if (_browseBooks.isNotEmpty)
         ..._buildRealResults(cat),
       ..._buildAnchorsSection(cat),
+    ];
+  }
+
+  /// 无网络时用已缓存的书籍兜底，让用户还能继续听已下载的内容
+  List<Widget> _buildOfflineSection() {
+    final cached = context.watch<CacheStore>().cachedBooks();
+    if (cached.isEmpty) return const [];
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
+        child: Row(
+          children: [
+            Icon(Icons.download_done_rounded, size: 17, color: AppTheme.accent),
+            const SizedBox(width: 6),
+            Text('已缓存的书籍',
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textMain)),
+            const Spacer(),
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CachePage())),
+              child: Text('全部 ${cached.length} 本',
+                  style: TextStyle(fontSize: 13, color: AppTheme.accent)),
+            ),
+          ],
+        ),
+      ),
+      ...cached.take(12).map((b) {
+        final book = Book(bvid: b.bvid, aid: 0, title: b.title, pic: b.cover);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _OfflineBookTile(book: book, count: b.count),
+        );
+      }),
     ];
   }
 
@@ -447,6 +490,91 @@ class _AnchorTile extends StatelessWidget {
               style: TextStyle(fontSize: 10, color: AppTheme.textHint),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+/// 无网络时展示的「已缓存书籍」卡片，点一下直接离线播放
+class _OfflineBookTile extends StatelessWidget {
+  final Book book;
+  final int count;
+  const _OfflineBookTile({required this.book, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    return Material(
+      color: AppTheme.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () async {
+          final cache = context.read<CacheStore>();
+          final entries = cache.entriesOf(book.bvid)
+            ..sort(CacheEntry.compareByOrder);
+          if (entries.isEmpty) return;
+          // 有续播记录且那一集还在缓存里，就接着上次的位置听
+          final shelf = ShelfStore.instance.byBvid(book.bvid);
+          final cid = (shelf != null &&
+                  entries.any((e) => e.cid == shelf.lastCid))
+              ? shelf.lastCid
+              : entries.first.cid;
+          final r = await BookPlayer.instance
+              .playCachedEntry(book.bvid, cid, book);
+          if (!context.mounted) return;
+          switch (r) {
+            case CachePlayOutcome.okOffline:
+            case CachePlayOutcome.okOnline:
+              navigator.push(
+                  MaterialPageRoute(builder: (_) => const PlayerPage()));
+              return;
+            case CachePlayOutcome.fileMissing:
+              messenger.showSnackBar(const SnackBar(
+                  content: Text('缓存文件已丢失，请重新缓存')));
+              return;
+            case CachePlayOutcome.failed:
+              messenger.showSnackBar(const SnackBar(
+                  content: Text('当前无网络，且该集无法播放')));
+              return;
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              BookCover(url: book.pic, width: 48, height: 48),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(book.cleanTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textMain)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.offline_pin_rounded,
+                            size: 13, color: AppTheme.accent),
+                        const SizedBox(width: 4),
+                        Text('已缓存 $count 集 · 离线可听',
+                            style: TextStyle(
+                                fontSize: 11.5, color: AppTheme.textSub)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.play_arrow_rounded,
+                  size: 26, color: AppTheme.accent),
+            ],
+          ),
         ),
       ),
     );
