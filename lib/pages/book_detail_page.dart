@@ -6,6 +6,7 @@ import '../core/storage/cache_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../models/book.dart';
+import '../models/content_mode.dart';
 import '../models/chapter.dart';
 import '../models/up_user.dart';
 import '../player/book_player.dart';
@@ -20,14 +21,21 @@ import 'up_home_page.dart';
 /// 书籍详情页：书籍信息 + 章节目录 + 收听入口
 class BookDetailPage extends StatefulWidget {
   final String bvid;
-  const BookDetailPage({super.key, required this.bvid});
+  final ContentMode contentMode;
+  final int? initialPage;
+  final Book? initialBook;
+  final BiliApi? api;
+  const BookDetailPage({super.key, required this.bvid,
+    this.contentMode = ContentMode.audiobook, this.initialPage,
+    this.initialBook, this.api});
 
   @override
   State<BookDetailPage> createState() => _BookDetailPageState();
 }
 
 class _BookDetailPageState extends State<BookDetailPage> {
-  final _bili = BiliApi.instance;
+  late final _bili = widget.api ?? BiliApi.instance;
+  int _requestId = 0;
 
   Book? _book;
   bool _loading = true;
@@ -39,23 +47,29 @@ class _BookDetailPageState extends State<BookDetailPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    if (widget.initialBook != null) {
+      _book = widget.initialBook!.withContentMode(widget.contentMode);
+      _loading = false;
+    } else {
+      _load();
+    }
   }
 
   Future<void> _load() async {
+    final requestId = ++_requestId;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final book = await _bili.detail(widget.bvid);
-      if (!mounted) return;
+      final book = await _bili.detail(widget.bvid, mode: widget.contentMode);
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _book = book;
         _loading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _loading = false;
         _error = e is BiliApiException ? e.message : '加载失败，请稍后重试';
@@ -66,7 +80,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('书籍详情')),
+      appBar: AppBar(title: Text('${widget.contentMode.label}详情')),
       body: _loading
           ?  Center(
               child: CircularProgressIndicator(color: AppTheme.accent),
@@ -98,14 +112,18 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final player = context.watch<BookPlayer>();
     final shelf = context.watch<ShelfStore>();
     final onShelf = shelf.isOnShelf(book.bvid);
-    final shelfBook = shelf.byBvid(book.bvid);
+    final shelfBook = shelf.progressByBvid(book.bvid);
     final chapters = book.chapters ?? [];
 
-    final isCurrentBook = player.book?.bvid == book.bvid;
+    final isCurrentBook = player.book?.bvid == book.bvid &&
+        player.book?.contentMode == book.contentMode;
     final currentIdx = isCurrentBook ? player.index : -1;
     final resumeIndex = shelfBook?.lastChapterIndex ?? 0;
     final resumeMs = shelfBook?.positionMs ?? 0;
-    final hasProgress = (shelfBook?.positionMs ?? 0) > 0;
+    final hasProgress = book.contentMode.resumesPosition &&
+        widget.initialPage == null &&
+        ((shelfBook?.positionMs ?? 0) > 0 ||
+            (shelfBook?.lastChapterIndex ?? 0) > 0);
     // 已听章节：优先用逐章记录（听满 95% 或播完即打标），
     // 旧版本没有逐章数据时回退到「上次听到的章节序号」
     final hasDoneRecords = (shelfBook?.doneCids.isNotEmpty ?? false);
@@ -142,7 +160,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                           size: 18, color: AppTheme.accent),
                       const SizedBox(width: 8),
 Text(
-                          '目录（${chapters.length} 章）',
+                          '目录（${chapters.length} ${book.contentMode.unitLabel}）',
                           style:  TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -202,7 +220,7 @@ Text(
                     index: i,
                     chapter: chapters[i],
                     listened: listened,
-                    isCurrent: i == currentIdx,
+                    isCurrent: i == currentIdx || chapters[i].page == widget.initialPage,
                     isPlaying:
                         i == currentIdx && isCurrentBook && player.isPlaying,
                     bvid: book.bvid,
@@ -247,7 +265,7 @@ Text(
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    _meta('${book.pages} 章', Icons.library_books_outlined),
+                    _meta('${book.pages} ${book.contentMode.unitLabel}', Icons.library_books_outlined),
                     const SizedBox(width: 12),
                     _meta(book.durationText, Icons.schedule),
                   ],
@@ -280,7 +298,7 @@ Text(
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          book.author.isEmpty ? '未知UP主' : book.author,
+                          book.author.isEmpty ? '未知 UP 主' : 'UP 主 · ${book.author}',
                           style: TextStyle(
                               fontSize: 13, color: AppTheme.textSub),
                         ),
@@ -327,7 +345,10 @@ Text(
     bool hasProgress,
     List chapters,
   ) {
-    final nowPlaying = player.loaded && player.book?.bvid == book.bvid;
+    final nowPlaying = player.loaded && player.book?.bvid == book.bvid &&
+        player.book?.contentMode == book.contentMode &&
+        book.contentMode != ContentMode.music && widget.initialPage == null;
+    final requestedPage = widget.initialPage;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -366,7 +387,9 @@ Text(
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                hasProgress ? '继续收听' : '开始收听',
+                                requestedPage != null
+                                    ? '播放第 $requestedPage ${book.contentMode.unitLabel}'
+                                    : (hasProgress ? '继续收听' : '开始收听'),
                                 style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.w600),
                               ),
@@ -374,7 +397,7 @@ Text(
                           ),
                           if (hasProgress)
                             Text(
-                              '第 ${resumeIndex + 1} 章 · ${_msText(resumeMs)}',
+                              '第 ${resumeIndex + 1} ${book.contentMode.unitLabel} · ${_msText(resumeMs)}',
                               style: const TextStyle(
                                   fontSize: 11, fontWeight: FontWeight.w400),
                             ),
@@ -424,7 +447,7 @@ Text(
                     Text(
                       chapter == null
                           ? book.cleanTitle
-                          : '第 ${chapter.page} 章 · ${chapter.part}',
+                          : '第 ${chapter.page} ${book.contentMode.unitLabel} · ${chapter.part}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -472,7 +495,7 @@ Text(
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(onShelf ? '已从书架移除' : '已加入书架'),
+          content: Text(onShelf ? '已移除收藏' : '已加入收藏'),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -490,6 +513,8 @@ Text(
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => UpHomePage(
+          contentMode: book.contentMode,
+          api: _bili,
           up: UpUser(
             mid: book.mid,
             name: book.author,
@@ -522,7 +547,13 @@ Text(
   Future<void> _startPlay(bool hasProgress, int resumeIndex, int resumeMs) async {
     final player = context.read<BookPlayer>();
     player.flushProgress();
-    if (hasProgress) {
+    final requestedIndex = (_book!.chapters ?? <Chapter>[])
+        .indexWhere((chapter) => chapter.page == widget.initialPage);
+    if (requestedIndex >= 0) {
+      await player.playBook(_book!, resumeIndex: requestedIndex);
+    } else if (!_book!.contentMode.resumesPosition) {
+      await player.playBook(_book!, resume: false);
+    } else if (hasProgress) {
       await player.playBook(_book!, resumeIndex: resumeIndex, resumeMs: resumeMs);
     } else {
       await player.playBook(_book!);
@@ -541,7 +572,7 @@ Text(
     if (cache.isCached(book.bvid, c.cid)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('第 ${c.page} 章已缓存'),
+          content: Text('第 ${c.page} ${book.contentMode.unitLabel}已缓存'),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -564,6 +595,7 @@ Text(
     final idx = chapters.indexWhere((x) => x.cid == c.cid);
     final ok = await cache.download(
       bvid: book.bvid,
+      contentMode: book.contentMode,
       cid: c.cid,
       url: url,
       bookTitle: book.cleanTitle,
@@ -580,7 +612,7 @@ Text(
     if (!mounted) return;
     messenger.showSnackBar(
       SnackBar(
-        content: Text(ok ? '第 ${c.page} 章已缓存，可离线收听' : '缓存失败，请稍后重试'),
+        content: Text(ok ? '第 ${c.page} ${book.contentMode.unitLabel}已缓存，可离线收听' : '缓存失败，请稍后重试'),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -593,7 +625,7 @@ Text(
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('正在播放第 ${index + 1} 章…'),
+        content: Text('正在播放第 ${index + 1} ${_book!.contentMode.unitLabel}…'),
         duration: const Duration(milliseconds: 800),
       ),
     );

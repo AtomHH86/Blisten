@@ -5,7 +5,6 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart' hide AudioTrack;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/network/api_config.dart';
 import '../core/storage/cache_store.dart';
@@ -13,9 +12,11 @@ import '../core/storage/shelf_store.dart';
 import '../models/audio_stream.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
+import '../models/content_mode.dart';
 import '../services/audio_focus.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
+import 'playback_preferences.dart';
 
 /// 从缓存页播放一集的结果
 ///
@@ -69,7 +70,7 @@ class BookPlayer extends ChangeNotifier {
   ];
   static const double minRate = 0.5;
   static const double maxRate = 3.0;
-  static const _prefRate = 'abts_rate';
+  final PlaybackPreferences _preferences = PlaybackPreferences();
   double _rate = 1.0;
 
   // ---------- 断流自动重连（长音频） ----------
@@ -139,26 +140,25 @@ class BookPlayer extends ChangeNotifier {
     return '${r % 1 == 0 ? r.toStringAsFixed(1) : r.toStringAsFixed(2).replaceAll(RegExp(r'0$'), '')}x';
   }
 
-  /// 载入持久化的倍速（启动时调用）
+  /// 启动时载入听书倍速；选定作品后的倍率由加载音源路径负责。
   Future<void> loadRate() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final v = prefs.getDouble(_prefRate);
-      if (v != null && v >= 0.5 && v <= 3.0) {
-        _rate = v;
-        await _player.setRate(v);
-      }
+      final rate = await _preferences.rateFor(ContentMode.audiobook);
+      // setup 是异步的，晚到的启动设置不能覆盖已选作品的模式。
+      if (_book != null || _loading) return;
+      _rate = rate;
+      await _player.setRate(rate);
     } catch (e) {
       debugPrint('[BookPlayer] load rate failed: $e');
     }
   }
 
-  /// 设置倍速并持久化（听书常用 1.25~1.5）
+  /// 为当前内容模式设置并记忆倍速。
   Future<void> setRate(double v) async {
     _rate = v.clamp(0.5, 3.0);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble(_prefRate, _rate);
+      await _preferences.saveRate(
+          _book?.contentMode ?? ContentMode.audiobook, _rate);
     } catch (_) {}
     await _player.setRate(_rate);
     _pushState(force: true);
@@ -340,12 +340,12 @@ class BookPlayer extends ChangeNotifier {
       final local = await _cachedPathOf(_book?.bvid, chapter.cid);
       if (local != null) {
         try {
-          await _player.open(Media(local));
+          await _player.open(Media(local), play: false);
           if (mySession != _session) {
             await _player.stop();
             return false;
           }
-          if (_rate != 1.0) await _player.setRate(_rate);
+          await _player.setRate(_rate);
           await _seekToResume(resumeMs);
           _isOffline = true;
           _mediaReady = true;
@@ -379,7 +379,7 @@ class BookPlayer extends ChangeNotifier {
             return false;
           }
           // open 之后倍速可能被复位，显式恢复
-          if (_rate != 1.0) await _player.setRate(_rate);
+          await _player.setRate(_rate);
           await _seekToResume(resumeMs);
           opened = true;
           _playbackUrl = url;
@@ -414,12 +414,13 @@ class BookPlayer extends ChangeNotifier {
   void _advanceSavedProgress() {
     final book = _book;
     if (book == null || !hasNext) return;
-    if (!_shelf.isOnShelf(book.bvid)) return;
+    if (_shelf.progressByBvid(book.bvid) == null) return;
     final nextIndex = _index + 1;
     if (nextIndex < 0 || nextIndex >= _chapters.length) return;
     final nextChapter = _chapters[nextIndex];
     unawaited(_shelf.updateProgress(
       book.bvid,
+      book: book,
       cid: nextChapter.cid,
       chapterIndex: nextIndex,
       positionMs: 0,
@@ -497,9 +498,10 @@ class BookPlayer extends ChangeNotifier {
     }());
   }
 
-  /// 开始听书：自动从上次进度继续。失败时回滚，保持原播放状态
+  /// 播放指定作品；resume:false 从首个分P开头播放，显式分P可直接传入位置。
   /// 返回是否成功进入播放
-  Future<bool> playBook(Book book, {int resumeIndex = 0, int resumeMs = 0}) async {
+  Future<bool> playBook(Book book,
+      {int resumeIndex = 0, int resumeMs = 0, bool resume = true}) async {
     _ensureNotificationPermission();
     List<Chapter> chapters;
     if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
@@ -509,7 +511,7 @@ class BookPlayer extends ChangeNotifier {
     }
 
     if (chapters.isEmpty) {
-      _error = '这本书没有可播放的分P';
+      _error = '这个资源没有可播放的分P';
       _book = book;
       _loaded = false;
       notifyListeners();
@@ -517,17 +519,18 @@ class BookPlayer extends ChangeNotifier {
     }
 
     // 换本书时重置「播放 1 分钟自动入书架」的累计
-    if (_playTallyBook?.bvid != book.bvid) {
+    if (_playTallyBook?.bvid != book.bvid ||
+        _playTallyBook?.contentMode != book.contentMode) {
       _playTally = Duration.zero;
       _playTallyBook = book;
       _autoShelved = false;
     }
 
-    final idx = resumeIndex >= 0 && resumeIndex < chapters.length
+    final idx = resume && resumeIndex >= 0 && resumeIndex < chapters.length
         ? resumeIndex
         : 0;
     return _loadTarget(idx,
-        resumeMs: resumeMs, newBook: book, newChapters: chapters);
+        resumeMs: resume ? resumeMs : 0, newBook: book, newChapters: chapters);
   }
 
   /// 从书架/离线入口播放一本书：在线优先，取不到就退回本地缓存
@@ -539,6 +542,8 @@ class BookPlayer extends ChangeNotifier {
   Future<ShelfPlayOutcome> playBookWithFallback(ShelfBook sb) async {
     _ensureNotificationPermission();
     final book = sb.book;
+    final start = PlaybackPreferences.selectionStart(book.contentMode,
+        index: sb.lastChapterIndex, positionMs: sb.positionMs);
 
     // ① 拿章节列表：已加载的 → 书里带的 → 在线接口
     var chapters = const <Chapter>[];
@@ -560,11 +565,11 @@ class BookPlayer extends ChangeNotifier {
 
     // ② 在线拿到了章节：正常播放（命中缓存的集自动播本地文件）
     if (chapters.isNotEmpty) {
-      final idx = sb.lastChapterIndex >= 0 && sb.lastChapterIndex < chapters.length
-          ? sb.lastChapterIndex
+      final idx = start.index >= 0 && start.index < chapters.length
+          ? start.index
           : 0;
       final ok = await _loadTarget(idx,
-          resumeMs: sb.positionMs, newBook: book, newChapters: chapters);
+          resumeMs: start.positionMs, newBook: book, newChapters: chapters);
       if (ok) return ShelfPlayOutcome.ok;
       // 没播起来（多半是没网，且要续听的那一集没缓存）→ 退回本地已缓存的集
     }
@@ -573,10 +578,12 @@ class BookPlayer extends ChangeNotifier {
     final cached = _cache.chaptersOf(book.bvid);
     if (cached.isNotEmpty) {
       // 上次听的那一集优先；它文件没了就依次试其它已缓存的集
-      final ordered = <Chapter>[
-        ...cached.where((c) => c.cid == sb.lastCid),
-        ...cached.where((c) => c.cid != sb.lastCid),
-      ];
+      final ordered = book.contentMode.resumesPosition
+          ? <Chapter>[
+              ...cached.where((c) => c.cid == sb.lastCid),
+              ...cached.where((c) => c.cid != sb.lastCid),
+            ]
+          : cached;
       for (final c in ordered) {
         final r = await playCachedEntry(book.bvid, c.cid, book);
         if (r == CachePlayOutcome.okOffline || r == CachePlayOutcome.okOnline) {
@@ -603,6 +610,7 @@ class BookPlayer extends ChangeNotifier {
       sb.book,
       resumeIndex: sb.lastChapterIndex,
       resumeMs: sb.positionMs,
+      resume: sb.book.contentMode.resumesPosition,
     );
   }
 
@@ -629,6 +637,7 @@ class BookPlayer extends ChangeNotifier {
     final prevUrl = _playbackUrl;
     final prevAudio = _lastAudio;
     final prevOffline = _isOffline;
+    final prevRate = _rate;
 
     if (newBook != null) _book = newBook;
     if (newChapters != null) {
@@ -644,6 +653,8 @@ class BookPlayer extends ChangeNotifier {
       if (_chapters.isEmpty || index < 0 || index >= _chapters.length) {
         throw StateError('章节索引越界：$index');
       }
+      _rate = await _preferences.rateFor(
+          _book?.contentMode ?? ContentMode.audiobook);
       final chapter = _chapters[index];
       // 注意：换章时 newBook 为 null，必须用已提交的 _book 判定缓存
       final curBvid = _book?.bvid;
@@ -653,7 +664,8 @@ class BookPlayer extends ChangeNotifier {
         // 已缓存：直接播本地文件，不需要网络地址
         var opened = false;
         try {
-          await _player.open(Media(localPath));
+          await _player.setRate(_rate);
+          await _player.open(Media(localPath), play: false);
           opened = true;
         } catch (e) {
           // open 在播放器忙（比如刚被通知栏/耳机事件打断）时会抛瞬时异常，
@@ -661,20 +673,20 @@ class BookPlayer extends ChangeNotifier {
           debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: $e');
           await Future<void>.delayed(const Duration(milliseconds: 350));
           try {
-            await _player.open(Media(localPath));
+            await _player.setRate(_rate);
+            await _player.open(Media(localPath), play: false);
             opened = true;
           } catch (e2) {
             debugPrint('[BookPlayer] 本地缓存打开仍失败，回退在线: $e2');
           }
         }
         if (opened) {
-          // 只有「打开文件」本身失败才认为缓存坏了；
-          // 之后的设置倍速/跳转失败都可能是瞬时问题，不能删用户的离线文件。
-          try {
-            if (_rate != 1.0) await _player.setRate(_rate);
-            if (resumeMs > 0) await _seekToResume(resumeMs);
-          } catch (e) {
-            debugPrint('[BookPlayer] 缓存播放参数设置失败: $e');
+          // 先应用当前模式倍速再起播；设置失败也不删除有效的缓存文件。
+          await _player.setRate(_rate);
+          if (resumeMs > 0) {
+            await _seekToResume(resumeMs);
+          } else {
+            await _player.play();
           }
           ok = true;
           _playbackUrl = null;
@@ -697,12 +709,15 @@ class BookPlayer extends ChangeNotifier {
           final url = candidates[i];
           try {
             // 有续播位置时先打开再精确跳转，保证落点准确到秒
+            await _player.setRate(_rate);
             await _player.open(Media(url, httpHeaders: _streamHeaders()),
-                play: resumeMs <= 0);
+                play: false);
             // open 后倍速可能被播放器复位，这里显式恢复
-            if (_rate != 1.0) await _player.setRate(_rate);
+            await _player.setRate(_rate);
             if (resumeMs > 0) {
               await _seekToResume(resumeMs);
+            } else {
+              await _player.play();
             }
             if (_error != null) _error = null;
             ok = true;
@@ -740,6 +755,10 @@ class BookPlayer extends ChangeNotifier {
         _playbackUrl = prevUrl;
         _lastAudio = prevAudio;
         _isOffline = prevOffline;
+        _rate = prevRate;
+        try {
+          await _player.setRate(prevRate);
+        } catch (_) {}
         _mediaReady = false;
       }
       _loading = false;
@@ -834,7 +853,7 @@ class BookPlayer extends ChangeNotifier {
     h.mediaItem.add(
       MediaItem(
         id: '${_book!.bvid}/${chapter.cid}',
-        title: '第 ${chapter.page} 章 · ${chapter.part}',
+        title: '第 ${chapter.page} ${_book!.contentMode.unitLabel} · ${chapter.part}',
         artist: _book!.cleanTitle,
         album: _book!.cleanTitle,
         artUri: pic.isEmpty ? null : Uri.tryParse(pic),
@@ -992,7 +1011,7 @@ class BookPlayer extends ChangeNotifier {
   /// 累计真实播放时长；满 1 分钟且不在书架上时自动加入
   void _tallyPlayTime() {
     final book = _book;
-    if (book == null || !_loaded) return;
+    if (book == null || !_loaded || !book.contentMode.autoShelf) return;
     if (currentDuration <= Duration.zero) return;
 
     final pos = currentPosition;
@@ -1060,7 +1079,7 @@ class BookPlayer extends ChangeNotifier {
       // 无网络 / 接口失败，继续用本地数据兜底
     }
 
-    final saved = _shelf.byBvid(bvid)?.book.chapters;
+    final saved = _shelf.progressByBvid(bvid)?.book.chapters;
     if (saved != null && saved.isNotEmpty) {
       return (chapters: [...saved], complete: true);
     }
@@ -1096,26 +1115,29 @@ class BookPlayer extends ChangeNotifier {
       // 免得出现「目录里找不到自己点的这一集」
       final fromCache = _cache.entriesOf(bvid)
           .firstWhere((e) => e.cid == cid, orElse: () => CacheEntry(
-              bvid: bvid, cid: cid, bookTitle: book.cleanTitle, chapterTitle: ''));
+              bvid: bvid, cid: cid, bookTitle: book.cleanTitle, chapterTitle: '',
+              contentMode: book.contentMode));
       chapters.add(fromCache.toChapter());
       index = chapters.length - 1;
     }
 
     // 优先用书架里存的完整书籍信息（合成的 Book 缺作者/章节等字段）
-    var shelf = _shelf.byBvid(bvid);
-    final target = shelf?.book ?? book;
-    // 书架里没有这本书时补一条：否则 updateProgress 会直接返回，
-    // 离线听了几十秒退出再进来又从头开始，等于没有续播
-    if (shelf == null) {
+    var progress = _shelf.progressByBvid(bvid);
+    final target = progress?.book ?? book;
+    // 保留听书缓存入口自动入架；其他类型只保存独立收听记录。
+    if (!_shelf.isOnShelf(bvid) && target.contentMode.autoShelf) {
       await _shelf.add(target);
-      shelf = _shelf.byBvid(bvid);
+      progress = _shelf.progressByBvid(bvid);
     }
     // 离线播放同样要续播：只有当书架记录的就是这一集时才恢复进度
-    final resumeMs = (shelf != null && shelf.lastCid == cid) ? shelf.positionMs : 0;
+    final start = PlaybackPreferences.selectionStart(target.contentMode,
+        index: index,
+        positionMs: (progress != null && progress.lastCid == cid) ? progress.positionMs : 0,
+        explicitPart: true);
 
     // 交给统一加载路径：这一集命中缓存就播本地，否则照常走在线
-    final ok = await _loadTarget(index,
-        resumeMs: resumeMs,
+    final ok = await _loadTarget(start.index,
+        resumeMs: start.positionMs,
         newBook: target,
         newChapters: chapters,
         chaptersComplete: resolved.complete);
@@ -1199,6 +1221,7 @@ class BookPlayer extends ChangeNotifier {
     if (durMs <= 0) return;
     _shelf.updateProgress(
       book.bvid,
+      book: book,
       cid: chapter.cid,
       chapterIndex: _index,
       positionMs: pos.inMilliseconds,

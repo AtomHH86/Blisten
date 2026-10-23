@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
+import '../models/content_mode.dart';
+
 /// 发现页分类与精选主播（本地种子数据，确保无网络时也有内容可看）
 class DiscoverCategory {
   final String label;
   final String keyword;
   final IconData icon;
   final List<AnchorPick> anchors;
+  final ContentMode mode;
 
   const DiscoverCategory({
     required this.label,
     required this.keyword,
     required this.icon,
     required this.anchors,
+    this.mode = ContentMode.audiobook,
   });
 }
 
@@ -76,6 +80,20 @@ class DiscoverSeeds {
           color: Color(0xFF5C4E8F),
         ),
       ],
+    ),
+    DiscoverCategory(
+      label: '歌曲',
+      keyword: '歌曲 现场 MV',
+      icon: Icons.music_note_rounded,
+      mode: ContentMode.music,
+      anchors: [],
+    ),
+    DiscoverCategory(
+      label: '演唱会',
+      keyword: '演唱会 完整版',
+      icon: Icons.stadium_rounded,
+      mode: ContentMode.concert,
+      anchors: [],
     ),
     DiscoverCategory(
       label: '广播剧',
@@ -336,6 +354,12 @@ class DiscoverSeeds {
       ],
     ),
   ];
+
+  static List<String> hotKeysFor(ContentMode mode) => switch (mode) {
+    ContentMode.audiobook => hotKeys,
+    ContentMode.music => const ['歌曲', '音乐现场', '经典歌曲', '翻唱', '纯音乐', 'MV'],
+    ContentMode.concert => const ['演唱会 完整版', '巡回演唱会', '音乐节 现场', 'Live 演唱会'],
+  };
 
   static const List<String> hotKeys = [
     '三体',

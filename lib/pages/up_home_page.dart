@@ -5,6 +5,7 @@ import '../core/storage/follow_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../models/book.dart';
+import '../models/content_mode.dart';
 import '../models/up_user.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
@@ -16,14 +17,18 @@ import 'search_page.dart';
 /// UP 主主页：关注 + 只看这一个人的作品（分页上拉加载）
 class UpHomePage extends StatefulWidget {
   final UpUser up;
-  const UpHomePage({super.key, required this.up});
+  final ContentMode contentMode;
+  final BiliApi? api;
+  const UpHomePage({super.key, required this.up,
+    this.contentMode = ContentMode.audiobook, this.api});
 
   @override
   State<UpHomePage> createState() => _UpHomePageState();
 }
 
 class _UpHomePageState extends State<UpHomePage> {
-  final _bili = BiliApi.instance;
+  late final _bili = widget.api ?? BiliApi.instance;
+  int _requestId = 0;
   final _scroll = ScrollController();
 
   List<Book> _books = [];
@@ -53,8 +58,10 @@ class _UpHomePageState extends State<UpHomePage> {
   }
 
   Future<void> _load() async {
+    final requestId = ++_requestId;
     setState(() {
       _loading = true;
+      _loadingMore = false;
       _error = null;
       _books = [];
       _page = 1;
@@ -62,17 +69,17 @@ class _UpHomePageState extends State<UpHomePage> {
     });
     try {
       final res = await _bili.upAudios(widget.up,
-          page: 1, pageSize: _pageSize);
-      if (!mounted) return;
+          page: 1, pageSize: _pageSize, mode: widget.contentMode);
+      if (!mounted || requestId != _requestId) return;
       setState(() {
-        _books = res.books;
+        _books = res.books.map((book) => book.withContentMode(widget.contentMode)).toList();
         _loading = false;
         // 是否还有更多由接口给出，不能按返回条数猜
         _noMore = !res.hasMore;
       });
       AppAnalytics.onEvent('up_open', {'count': res.books.length});
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _loading = false;
         _error = '加载失败，请稍后重试';
@@ -82,24 +89,26 @@ class _UpHomePageState extends State<UpHomePage> {
 
   Future<void> _loadMore() async {
     if (_loading || _loadingMore || _noMore) return;
+    final requestId = _requestId;
     setState(() => _loadingMore = true);
     try {
       final next = _page + 1;
       final res =
-          await _bili.upAudios(widget.up, page: next, pageSize: _pageSize);
-      if (!mounted) return;
+          await _bili.upAudios(widget.up, page: next, pageSize: _pageSize, mode: widget.contentMode);
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _page = next;
         final seen = _books.map((b) => b.bvid).toSet();
         _books = [
           ..._books,
-          ...res.books.where((b) => seen.add(b.bvid)),
+          ...res.books.where((b) => seen.add(b.bvid))
+              .map((book) => book.withContentMode(widget.contentMode)),
         ];
         _loadingMore = false;
         if (res.books.isEmpty || !res.hasMore) _noMore = true;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() => _loadingMore = false);
     }
   }
@@ -296,7 +305,7 @@ class _UpHomePageState extends State<UpHomePage> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SearchPage(
-                  initialKeyword: widget.up.name, autofocus: false),
+                  initialKeyword: widget.up.name, autofocus: false, initialMode: widget.contentMode, api: _bili),
             ),
           );
         },
@@ -322,7 +331,7 @@ class _UpHomePageState extends State<UpHomePage> {
                       size: 16, color: AppTheme.accent),
                   const SizedBox(width: 6),
                   Text(
-                    '投稿内容',
+                    '投稿内容 · ${widget.contentMode.label}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -348,7 +357,7 @@ class _UpHomePageState extends State<UpHomePage> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => BookDetailPage(bvid: b.bvid),
+                  builder: (_) => BookDetailPage(bvid: b.bvid, contentMode: b.contentMode, api: _bili),
                 ),
               );
             },
@@ -399,7 +408,7 @@ class _UpHomePageState extends State<UpHomePage> {
                                       .withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text('书架',
+                                child: Text('已收藏',
                                     style: TextStyle(
                                         fontSize: 10,
                                         color: AppTheme.accent)),

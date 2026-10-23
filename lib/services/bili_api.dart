@@ -5,6 +5,7 @@ import '../core/network/bili_client.dart';
 import '../models/audio_stream.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
+import '../models/content_mode.dart';
 import '../models/up_user.dart';
 
 /// UP 合集摊平游标：把该 UP 的多个合集当一条长列表顺序翻页
@@ -27,10 +28,10 @@ class _UpCursor {
 
 /// B 站听书数据访问层
 class BiliApi {
-  BiliApi._();
-  static final BiliApi instance = BiliApi._();
+  BiliApi({BiliClient? client}) : _client = client ?? BiliClient.instance;
+  static final BiliApi instance = BiliApi();
 
-  final BiliClient _client = BiliClient.instance;
+  final BiliClient _client;
 
   /// 听书特征词：命中即视为有声内容
   static const _audioHints = <String>[
@@ -80,7 +81,7 @@ class BiliApi {
     return false;
   }
 
-  /// 原始搜索：不做关键词改写，但结果一律过滤为非听书内容
+  /// 原始搜索：不改写关键词，按调用入口决定是否启用听书筛选。
   Future<List<Book>> _searchRaw(
     String keyword, {
     int page = 1,
@@ -91,6 +92,7 @@ class BiliApi {
     Function(int rawCount)? onRawCount,
     /// 关闭听书过滤（UP 主场景：已按 mid 精确过滤，不需要再按题材筛）
     bool applyAudioFilter = true,
+    ContentMode mode = ContentMode.audiobook,
   }) async {
     var attempt = 0;
     while (true) {
@@ -131,7 +133,7 @@ class BiliApi {
           if (item is! Map) continue;
           final m = item.cast<String, dynamic>();
           if (applyAudioFilter && !_isAudiobookItem(m, keyword)) continue;
-          final b = Book.fromSearch(m);
+          final b = Book.fromSearch(m, mode: mode);
           if (b.bvid.isEmpty || b.aid == 0) continue;
           books.add(b);
         }
@@ -148,13 +150,14 @@ class BiliApi {
     }
   }
 
-  /// 搜索（只返回有声小说）
+  /// 按收听模式搜索。只有听书需要题材过滤和补搜。
   ///
   /// 先用原关键词搜（标题相关性最好），命中太少时再用
   /// 「关键词 有声小说」补搜一次并合并去重。
   /// 补搜只在第 1 页做，避免翻页时请求翻倍触发风控。
   Future<List<Book>> search(
     String keyword, {
+    ContentMode mode = ContentMode.audiobook,
     int page = 1,
     int pageSize = 20,
     String? order,
@@ -165,13 +168,15 @@ class BiliApi {
     if (kw.isEmpty) return [];
     final primary = await _searchRaw(
       kw,
+      mode: mode,
+      applyAudioFilter: mode == ContentMode.audiobook,
       page: page,
       pageSize: pageSize,
       order: order,
       onFirstPage: onFirstPage,
       onRawCount: onRawCount,
     );
-    if (page > 1) return primary;
+    if (page > 1 || mode != ContentMode.audiobook) return primary;
     if (primary.length >= 6 || _hasAudioHint(kw)) return primary;
 
     try {
@@ -219,7 +224,8 @@ class BiliApi {
   }
 
   /// 书籍详情（含分P章节）
-  Future<Book> detail(String bvid) async {
+  Future<Book> detail(String bvid,
+      {ContentMode mode = ContentMode.audiobook}) async {
     final res = await _client.get(
       BiliEndpoints.view,
       query: {'bvid': bvid},
@@ -228,7 +234,7 @@ class BiliApi {
     if (data['data'] is! Map) {
       throw BiliApiException(-404, '视频不存在或已被删除');
     }
-    return Book.fromView((data['data'] as Map).cast<String, dynamic>());
+    return Book.fromView((data['data'] as Map).cast<String, dynamic>(), mode: mode);
   }
 
   /// 纯分P列表
@@ -346,13 +352,17 @@ class BiliApi {
   /// 每次只发「尽量少的请求」凑够一页。
   Future<({List<Book> books, bool hasMore})> upAudios(
     UpUser up, {
+    ContentMode mode = ContentMode.audiobook,
     int page = 1,
     int pageSize = 30,
   }) async {
     if (up.mid == 0) return (books: <Book>[], hasMore: false);
     try {
       final r = await _upFromCollections(up, page: page, pageSize: pageSize);
-      if (r.books.isNotEmpty) return r;
+      if (r.books.isNotEmpty) {
+        return (books: r.books.map((b) => b.withContentMode(mode)).toList(),
+            hasMore: r.hasMore);
+      }
     } catch (e) {
       debugPrint('[BiliApi] 合集取数失败: $e');
     }
@@ -360,7 +370,7 @@ class BiliApi {
     // 空间投稿（登录后才稳）
     try {
       final bySpace =
-          await _upWorksFromSpace(up, page: page, pageSize: pageSize);
+          await _upWorksFromSpace(up, page: page, pageSize: pageSize, mode: mode);
       if (bySpace.isNotEmpty) {
         return (books: bySpace, hasMore: bySpace.length >= pageSize);
       }
@@ -372,6 +382,7 @@ class BiliApi {
     try {
       final list = await _searchRaw(
         up.name,
+        mode: mode,
         page: page,
         pageSize: pageSize * 2,
         applyAudioFilter: false,
@@ -545,6 +556,7 @@ class BiliApi {
   /// UP 空间投稿（需要登录，未登录大概率风控）
   Future<List<Book>> _upWorksFromSpace(
     UpUser up, {
+    ContentMode mode = ContentMode.audiobook,
     int page = 1,
     int pageSize = 30,
   }) async {
@@ -573,8 +585,10 @@ class BiliApi {
       if (item is! Map) continue;
       final b = _bookFromArchive(item.cast<String, dynamic>(), up);
       if (b == null) continue;
-      if (b.duration > 0 && b.duration < 180) continue; // 过滤短视频
-      out.add(b);
+      if (mode == ContentMode.audiobook && b.duration > 0 && b.duration < 180) {
+        continue; // 保留原听书入口的短视频过滤，歌曲不受此门槛限制。
+      }
+      out.add(b.withContentMode(mode));
     }
     return out;
   }

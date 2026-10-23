@@ -16,7 +16,7 @@ class RecentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shelf = context.watch<ShelfStore>();
-    final items = shelf.books.where((b) => b.positionMs > 0).toList();
+    final items = shelf.recentBooks.where((b) => b.hasProgress).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('最近收听')),
@@ -24,7 +24,7 @@ class RecentPage extends StatelessWidget {
           ? const EmptyShelfView(
               icon: Icons.headphones_outlined,
               title: '还没有收听记录',
-              subtitle: '开始收听一本书后，这里会显示续听进度',
+              subtitle: '开始收听后，这里会显示最近进度',
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -47,7 +47,8 @@ class _RecentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final player = context.watch<BookPlayer>();
-    final isCurrent = player.book?.bvid == sb.book.bvid;
+    final isCurrent = player.book?.bvid == sb.book.bvid &&
+        player.book?.contentMode == sb.book.contentMode;
     final chapter = sb.lastChapterIndex + 1;
 
     return InkWell(
@@ -55,7 +56,7 @@ class _RecentTile extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => BookDetailPage(bvid: sb.book.bvid),
+            builder: (_) => BookDetailPage(bvid: sb.book.bvid, contentMode: sb.book.contentMode),
           ),
         );
       },
@@ -83,7 +84,7 @@ class _RecentTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '第 $chapter 章 · ${sb.progressText}',
+                    '第 $chapter ${sb.book.contentMode.unitLabel} · ${sb.progressText}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12, color: AppTheme.textSub),
@@ -104,7 +105,9 @@ class _RecentTile extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
-              tooltip: isCurrent ? '打开播放页' : '继续收听',
+              tooltip: !sb.book.contentMode.resumesPosition
+                  ? '从头播放'
+                  : isCurrent ? '打开播放页' : '继续收听',
               onPressed: () => _resume(context, player),
               icon: Icon(
                 isCurrent && player.isPlaying
@@ -121,7 +124,9 @@ class _RecentTile extends StatelessWidget {
   }
 
   Future<void> _resume(BuildContext context, BookPlayer player) async {
-    if (player.book?.bvid == sb.book.bvid && player.loaded) {
+    if (player.book?.bvid == sb.book.bvid &&
+        player.book?.contentMode == sb.book.contentMode &&
+        player.loaded && sb.book.contentMode.resumesPosition) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const PlayerPage()),
       );

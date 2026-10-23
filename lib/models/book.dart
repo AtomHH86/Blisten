@@ -1,4 +1,5 @@
 import 'chapter.dart';
+import 'content_mode.dart';
 
 /// 一本书（B 站视频），picture/bvid/作者/统计/多P章节
 class Book {
@@ -18,6 +19,7 @@ class Book {
   final int favorite;
   final int pubdate;
   final String upName;
+  final ContentMode contentMode;
 
   final List<Chapter>? chapters;
 
@@ -39,7 +41,15 @@ class Book {
     this.pubdate = 0,
     this.upName = '',
     this.chapters,
+    this.contentMode = ContentMode.audiobook,
   });
+
+  Book withContentMode(ContentMode mode) => Book(
+    bvid: bvid, aid: aid, title: title, pic: pic, pages: pages,
+    duration: duration, author: author, mid: mid, authorFace: authorFace,
+    desc: desc, play: play, like: like, coin: coin, favorite: favorite,
+    pubdate: pubdate, upName: upName, chapters: chapters, contentMode: mode,
+  );
 
   String get cleanTitle => title
       .replaceAll('<em class="keyword">', '')
@@ -82,7 +92,8 @@ class Book {
   }
 
   /// 从搜索结果构造
-  factory Book.fromSearch(Map<String, dynamic> m) {
+  factory Book.fromSearch(Map<String, dynamic> m,
+      {ContentMode mode = ContentMode.audiobook}) {
     return Book(
       bvid: m['bvid'] as String? ?? '',
       aid: int.tryParse('${m['aid'] ?? 0}') ?? 0,
@@ -95,11 +106,13 @@ class Book {
       play: int.tryParse('${m['play'] ?? 0}') ?? 0,
       pubdate: int.tryParse('${m['pubdate'] ?? 0}') ?? 0,
       desc: m['description'] as String? ?? '',
+      contentMode: mode,
     );
   }
 
   /// 从详情（view）构造
-  factory Book.fromView(Map<String, dynamic> m) {
+  factory Book.fromView(Map<String, dynamic> m,
+      {ContentMode mode = ContentMode.audiobook}) {
     final owner = m['owner'] as Map? ?? {};
     final stat = m['stat'] as Map? ?? {};
     final pages = m['pages'] as List? ?? [];
@@ -120,6 +133,7 @@ class Book {
       favorite: int.tryParse('${stat['favorite'] ?? 0}') ?? 0,
       pubdate: int.tryParse('${m['pubdate'] ?? 0}') ?? 0,
       upName: owner['name'] as String? ?? '',
+      contentMode: mode,
       chapters: pages
           .map((e) => Chapter.fromMap((e as Map).cast<String, dynamic>()))
           .toList(),
@@ -138,6 +152,7 @@ class Book {
         'authorFace': authorFace,
         'desc': desc,
         'play': play,
+        'contentMode': contentMode.name,
       };
 
   factory Book.fromJson(Map<String, dynamic> m) => Book(
@@ -152,5 +167,6 @@ class Book {
         authorFace: m['authorFace'] as String? ?? '',
         desc: m['desc'] as String? ?? '',
         play: int.tryParse('${m['play'] ?? 0}') ?? 0,
+        contentMode: ContentMode.fromJson(m['contentMode']),
       );
 }

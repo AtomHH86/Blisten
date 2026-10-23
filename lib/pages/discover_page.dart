@@ -6,10 +6,12 @@ import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../data/seed_books.dart';
 import '../models/book.dart';
+import '../models/content_mode.dart';
 import '../player/book_player.dart';
 import '../services/bili_api.dart';
 import '../widgets/book_cards.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/resource_import_dialog.dart';
 import 'book_detail_page.dart';
 import 'cache_page.dart';
 import 'player_page.dart';
@@ -18,7 +20,8 @@ import 'search_page.dart';
 /// 发现：分类浏览（热门/广播剧/评书…）+ 搜索入口 + 精选推荐兜底
 /// 搜索跳转到独立搜索页（支持分页）
 class DiscoverPage extends StatefulWidget {
-  const DiscoverPage({super.key});
+  final BiliApi? api;
+  const DiscoverPage({super.key, this.api});
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
@@ -26,7 +29,7 @@ class DiscoverPage extends StatefulWidget {
 
 class _DiscoverPageState extends State<DiscoverPage> {
   final _controller = TextEditingController();
-  final _bili = BiliApi.instance;
+  late final _bili = widget.api ?? BiliApi.instance;
 
   // 分类浏览
   int _cat = 0;
@@ -34,6 +37,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   String? _browseError;
   List<Book> _browseBooks = [];
   final Map<int, List<Book>> _browseCache = {};
+  int _browseRequestId = 0;
 
   @override
   void initState() {
@@ -58,6 +62,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     // 先固定住本次请求对应的分类：await 之后 _cat 可能已被用户切走，
     // 若还用 _cat 写缓存/渲染，A 的结果会落到 B 的分类下。
     final catIndex = _cat;
+    final requestId = ++_browseRequestId;
     if (!force && _browseCache.containsKey(catIndex)) {
       setState(() {
         _browseBooks = _browseCache[catIndex]!;
@@ -74,11 +79,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
     try {
       // 错开自动请求，降低被风控的概率
       await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted || requestId != _browseRequestId) return;
       // 热门推荐：有声小说按播放量排序的榜单；其余分类走关键词搜索
       final list = catIndex == 0
           ? await _bili.rankHotNovel()
-          : await _bili.search(cat.keyword);
-      if (!mounted) return;
+          : await _bili.search(cat.keyword, mode: cat.mode);
+      if (!mounted || requestId != _browseRequestId) return;
       _browseCache[catIndex] = list;
       // 期间用户已切到别的分类就别覆盖当前界面
       if (_cat != catIndex) return;
@@ -87,7 +93,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         _browseLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestId != _browseRequestId) return;
       if (_cat != catIndex) return;
       setState(() {
         _browseLoading = false;
@@ -101,7 +107,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SearchPage(
+          api: _bili,
           initialKeyword: keyword,
+          initialMode: DiscoverSeeds.categories[_cat].mode,
           autofocus: keyword == null || keyword.isEmpty,
         ),
       ),
@@ -111,7 +119,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('发现')),
+      appBar: AppBar(
+        title: const Text('发现'),
+        actions: [IconButton(
+          tooltip: '添加 B 站资源',
+          onPressed: () => showResourceImportDialog(context,
+              initialMode: DiscoverSeeds.categories[_cat].mode),
+          icon: const Icon(Icons.add_link_rounded),
+        )],
+      ),
       body: Column(
         children: [
           Padding(
@@ -138,7 +154,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                 size: 18, color: AppTheme.textHint),
                             const SizedBox(width: 8),
                             Text(
-                              '搜索书名 / 作者 / 主播',
+                              switch (DiscoverSeeds.categories[_cat].mode) {
+                                ContentMode.audiobook => '搜索书名 / 作者 / 主播',
+                                ContentMode.music => '搜索歌名 / 歌手 / UP 主',
+                                ContentMode.concert => '搜索演唱会 / 歌手 / UP 主',
+                              },
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppTheme.textHint,
@@ -279,7 +299,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
           children: [
             Icon(Icons.download_done_rounded, size: 17, color: AppTheme.accent),
             const SizedBox(width: 6),
-            Text('已缓存的书籍',
+            Text('已缓存的内容',
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -288,14 +308,18 @@ class _DiscoverPageState extends State<DiscoverPage> {
             TextButton(
               onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const CachePage())),
-              child: Text('全部 ${cached.length} 本',
+              child: Text('全部 ${cached.length} 项',
                   style: TextStyle(fontSize: 13, color: AppTheme.accent)),
             ),
           ],
         ),
       ),
       ...cached.take(12).map((b) {
-        final book = Book(bvid: b.bvid, aid: 0, title: b.title, pic: b.cover);
+        final entries = context.read<CacheStore>().entriesOf(b.bvid);
+        final mode = ShelfStore.instance.byBvid(b.bvid)?.book.contentMode ??
+            (entries.isEmpty ? ContentMode.audiobook : entries.first.contentMode);
+        final book = Book(bvid: b.bvid, aid: 0, title: b.title, pic: b.cover,
+            contentMode: mode);
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: _OfflineBookTile(book: book, count: b.count),
@@ -372,13 +396,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
     final kw = _cat == 0 ? '有声小说' : cat.keyword;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SearchPage(initialKeyword: kw, autofocus: false),
+        builder: (_) => SearchPage(initialKeyword: kw, autofocus: false, initialMode: cat.mode, api: _bili),
       ),
     );
   }
 
   /// 精选主播：点击查看该主播相关的有声小说（进入独立搜索页）
   List<Widget> _buildAnchorsSection(DiscoverCategory cat) {
+    if (cat.anchors.isEmpty) return const [];
     return [
       Padding(
         padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
@@ -424,7 +449,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   void _open(Book book) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => BookDetailPage(bvid: book.bvid)),
+      MaterialPageRoute(builder: (_) => BookDetailPage(bvid: book.bvid, contentMode: book.contentMode, api: _bili)),
     );
   }
 }
@@ -516,8 +541,8 @@ class _OfflineBookTile extends StatelessWidget {
             ..sort(CacheEntry.compareByOrder);
           if (entries.isEmpty) return;
           // 有续播记录且那一集还在缓存里，就接着上次的位置听
-          final shelf = ShelfStore.instance.byBvid(book.bvid);
-          final cid = (shelf != null &&
+          final shelf = ShelfStore.instance.progressByBvid(book.bvid);
+          final cid = (book.contentMode.resumesPosition && shelf != null &&
                   entries.any((e) => e.cid == shelf.lastCid))
               ? shelf.lastCid
               : entries.first.cid;
@@ -563,7 +588,7 @@ class _OfflineBookTile extends StatelessWidget {
                         Icon(Icons.offline_pin_rounded,
                             size: 13, color: AppTheme.accent),
                         const SizedBox(width: 4),
-                        Text('已缓存 $count 集 · 离线可听',
+                        Text('已缓存 $count ${book.contentMode.unitLabel} · 离线可听',
                             style: TextStyle(
                                 fontSize: 11.5, color: AppTheme.textSub)),
                       ],

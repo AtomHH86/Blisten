@@ -9,10 +9,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/chapter.dart';
+import '../../models/content_mode.dart';
 
 /// 一条离线缓存记录（一个章节一个文件）
 class CacheEntry {
   final String bvid;
+  final ContentMode contentMode;
   final int cid;
   final String bookTitle;
   final String chapterTitle;
@@ -49,6 +51,7 @@ class CacheEntry {
     this.page = 0,
     this.part = '',
     this.order = 0,
+    this.contentMode = ContentMode.audiobook,
   });
 
   String get fileName => '$bvid-$cid.m4a';
@@ -111,6 +114,7 @@ class CacheEntry {
         'page': page,
         'part': part,
         'order': order,
+        'contentMode': contentMode.name,
       };
 
   factory CacheEntry.fromJson(Map<String, dynamic> m) => CacheEntry(
@@ -125,12 +129,14 @@ class CacheEntry {
         page: int.tryParse('${m['page'] ?? 0}') ?? 0,
         part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
+        contentMode: ContentMode.fromJson(m['contentMode']),
       );
 }
 
 /// 队列中的一项下载任务
-class _QueueItem {
+class CacheRequest {
   final String bvid;
+  final ContentMode contentMode;
   final String bookTitle;
   final String cover;
   final int cid;
@@ -140,7 +146,7 @@ class _QueueItem {
   final String part;
   final int order;
 
-  const _QueueItem({
+  const CacheRequest({
     required this.bvid,
     required this.bookTitle,
     required this.cover,
@@ -150,6 +156,7 @@ class _QueueItem {
     this.page = 0,
     this.part = '',
     this.order = 0,
+    this.contentMode = ContentMode.audiobook,
   });
 
   Map<String, dynamic> toJson() => {
@@ -162,9 +169,10 @@ class _QueueItem {
         'page': page,
         'part': part,
         'order': order,
+        'contentMode': contentMode.name,
       };
 
-  factory _QueueItem.fromJson(Map<String, dynamic> m) => _QueueItem(
+  factory CacheRequest.fromJson(Map<String, dynamic> m) => CacheRequest(
         bvid: m['bvid'] as String? ?? '',
         bookTitle: m['bookTitle'] as String? ?? '',
         cover: m['cover'] as String? ?? '',
@@ -174,12 +182,14 @@ class _QueueItem {
         page: int.tryParse('${m['page'] ?? 0}') ?? 0,
         part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
+        contentMode: ContentMode.fromJson(m['contentMode']),
       );
 }
 
 /// 下载中的任务状态
 class CacheTask {
   final String bvid;
+  final ContentMode contentMode;
   final int cid;
   final String title;
   double progress; // 0~1
@@ -195,6 +205,7 @@ class CacheTask {
     this.done = false,
     this.failed = false,
     this.error,
+    this.contentMode = ContentMode.audiobook,
   });
 
   String get key => '$bvid-$cid';
@@ -206,6 +217,7 @@ class CacheTask {
 /// 批量缓存失败时用户和开发者都看不到任何痕迹，这一集就「人间蒸发」了。
 class CacheFailure {
   final String bvid;
+  final ContentMode contentMode;
   final int cid;
   final String bookTitle;
   final String chapterTitle;
@@ -225,6 +237,7 @@ class CacheFailure {
     this.page = 0,
     this.part = '',
     this.order = 0,
+    this.contentMode = ContentMode.audiobook,
   });
 
   Map<String, dynamic> toJson() => {
@@ -237,6 +250,7 @@ class CacheFailure {
         'page': page,
         'part': part,
         'order': order,
+        'contentMode': contentMode.name,
       };
 
   factory CacheFailure.fromJson(Map<String, dynamic> m) => CacheFailure(
@@ -249,6 +263,7 @@ class CacheFailure {
         page: int.tryParse('${m['page'] ?? 0}') ?? 0,
         part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
+        contentMode: ContentMode.fromJson(m['contentMode']),
       );
 }
 
@@ -331,10 +346,10 @@ class CacheStore extends ChangeNotifier {
   List<CacheFailure> get failures => List.unmodifiable(_failures);
 
   /// 跨进程重启后仍需下载的项
-  final List<_QueueItem> _pendingOnDisk = [];
+  final List<CacheRequest> _pendingOnDisk = [];
 
   /// 正在下载的那一项（出队但未完成），落盘时用它保住书名等信息
-  _QueueItem? _active;
+  CacheRequest? _active;
 
   /// 缓存根目录
   ///
@@ -356,7 +371,7 @@ class CacheStore extends ChangeNotifier {
 
   /// 队列中的待下载项（由页面入队，下载在 CacheStore 内串行执行，
   /// 因此离开弹窗、切页面、回到桌面都不会中断）
-  final List<_QueueItem> _queue = [];
+  final List<CacheRequest> _queue = [];
   bool _draining = false;
 
   /// 由入队方（播放/详情页）注入：解析下载地址与下载请求头
@@ -400,6 +415,7 @@ class CacheStore extends ChangeNotifier {
     required String bvid,
     required String bookTitle,
     required String cover,
+    ContentMode contentMode = ContentMode.audiobook,
     required List<({int cid, String chapterTitle, int durationSec, int page, String part, int order})>
         items,
     required Future<String?> Function(String bvid, int cid) resolveUrl,
@@ -418,8 +434,9 @@ class CacheStore extends ChangeNotifier {
         bvid: bvid,
         cid: it.cid,
         title: it.chapterTitle,
+        contentMode: contentMode,
       );
-      _queue.add(_QueueItem(
+      _queue.add(CacheRequest(
         bvid: bvid,
         bookTitle: bookTitle,
         cover: cover,
@@ -429,6 +446,7 @@ class CacheStore extends ChangeNotifier {
         page: it.page,
         part: it.part,
         order: it.order,
+        contentMode: contentMode,
       ));
       added++;
     }
@@ -452,6 +470,7 @@ class CacheStore extends ChangeNotifier {
     final grouped = <String,
         List<({int cid, String chapterTitle, int durationSec, int page, String part, int order})>>{};
     final titles = <String, String>{};
+    final modes = <String, ContentMode>{};
     for (final f in _failures) {
       grouped.putIfAbsent(f.bvid, () => []).add((
             cid: f.cid,
@@ -462,12 +481,14 @@ class CacheStore extends ChangeNotifier {
             order: f.order,
           ));
       titles[f.bvid] = f.bookTitle;
+      modes[f.bvid] = f.contentMode;
     }
     _failures.clear();
     for (final e in grouped.entries) {
       await enqueue(
         bvid: e.key,
         bookTitle: titles[e.key] ?? '',
+        contentMode: modes[e.key] ?? ContentMode.audiobook,
         cover: '',
         items: e.value,
         resolveUrl: resolveUrl,
@@ -542,6 +563,7 @@ class CacheStore extends ChangeNotifier {
           page: item.page,
           part: item.part,
           order: item.order,
+          contentMode: item.contentMode,
           // 按 132kbps 音轨估算（B 站默认档 qn=80 对应 132K），
           // 之前按 16kbps 估算，空间预检形同虚设，下载到一半才会 ENOSPC
           expectBytes: item.durationSec > 0
@@ -582,7 +604,7 @@ class CacheStore extends ChangeNotifier {
   }
 
   /// 解析下载地址，失败重试 [_urlAttempts] 次
-  Future<String?> _resolveWithRetry(_QueueItem item) async {
+  Future<String?> _resolveWithRetry(CacheRequest item) async {
     for (var i = 0; i < _urlAttempts; i++) {
       if (i > 0) await Future<void>.delayed(Duration(milliseconds: 2000 * i));
       final url = await _resolveUrl?.call(item.bvid, item.cid);
@@ -591,7 +613,7 @@ class CacheStore extends ChangeNotifier {
     return null;
   }
 
-  void _recordFailure(_QueueItem item, String reason) {
+  void _recordFailure(CacheRequest item, String reason) {
     _failures.removeWhere(
         (f) => f.bvid == item.bvid && f.cid == item.cid);
     _failures.add(CacheFailure(
@@ -604,6 +626,7 @@ class CacheStore extends ChangeNotifier {
       page: item.page,
       part: item.part,
       order: item.order,
+      contentMode: item.contentMode,
     ));
     _batchFailed++;
   }
@@ -682,7 +705,7 @@ class CacheStore extends ChangeNotifier {
       try {
         final arr = jsonDecode(rawPending) as List;
         _pendingOnDisk.addAll(arr.map(
-            (e) => _QueueItem.fromJson((e as Map).cast<String, dynamic>())));
+            (e) => CacheRequest.fromJson((e as Map).cast<String, dynamic>())));
       } catch (_) {}
     }
     // 清理磁盘上已被删掉的孤儿文件 + 校验索引与文件一致
@@ -714,8 +737,12 @@ class CacheStore extends ChangeNotifier {
       if (it.bvid.isEmpty || it.cid == 0) continue;
       if (isCached(it.bvid, it.cid)) continue;
       if (_queue.any((e) => e.bvid == it.bvid && e.cid == it.cid)) continue;
-      _tasks['${it.bvid}-${it.cid}'] =
-          CacheTask(bvid: it.bvid, cid: it.cid, title: it.chapterTitle);
+      _tasks['${it.bvid}-${it.cid}'] = CacheTask(
+        bvid: it.bvid,
+        cid: it.cid,
+        title: it.chapterTitle,
+        contentMode: it.contentMode,
+      );
       _queue.add(it);
       added++;
     }
@@ -734,17 +761,18 @@ class CacheStore extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       // 正在下载的（已出队但未完成）也要算上，否则崩溃后这一集会丢
-      final all = <_QueueItem>[..._queue];
+      final all = <CacheRequest>[..._queue];
       for (final t in _tasks.values) {
         if (t.done || t.failed) continue;
         if (all.any((e) => e.bvid == t.bvid && e.cid == t.cid)) continue;
-        all.add(_QueueItem(
+        all.add(CacheRequest(
           bvid: t.bvid,
           bookTitle: _active?.bvid == t.bvid ? _active?.bookTitle ?? '' : '',
           cover: _active?.bvid == t.bvid ? _active?.cover ?? '' : '',
           cid: t.cid,
           chapterTitle: t.title,
           durationSec: _active?.cid == t.cid ? _active?.durationSec ?? 0 : 0,
+          contentMode: t.contentMode,
         ));
       }
       if (all.isEmpty) {
@@ -993,6 +1021,7 @@ class CacheStore extends ChangeNotifier {
     required String cover,
     required int durationSec,
     required Map<String, String> headers,
+    ContentMode contentMode = ContentMode.audiobook,
     /// 分P序号，用于缓存页按作品原顺序展示
     int page = 0,
     /// 章节标题（不含「第 N 章 · 」前缀），离线重建章节列表时要用
@@ -1018,7 +1047,8 @@ class CacheStore extends ChangeNotifier {
 
     final task = _tasks.putIfAbsent(
       '$bvid-$cid',
-      () => CacheTask(bvid: bvid, cid: cid, title: chapterTitle),
+      () => CacheTask(
+          bvid: bvid, cid: cid, title: chapterTitle, contentMode: contentMode),
     );
     notifyListeners();
 
@@ -1072,6 +1102,7 @@ class CacheStore extends ChangeNotifier {
           page: page,
           part: part,
           order: order,
+          contentMode: contentMode,
         ),
       );
       await _save();

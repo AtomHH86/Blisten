@@ -89,7 +89,7 @@ class _CacheSheetState extends State<CacheSheet> {
     final already = total - items.length;
     if (items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('选中的 $total 集都已缓存'), duration: const Duration(seconds: 2)),
+        SnackBar(content: Text('选中的 $total ${book.contentMode.unitLabel}都已缓存'), duration: const Duration(seconds: 2)),
       );
       Navigator.of(context).pop();
       return;
@@ -101,6 +101,7 @@ class _CacheSheetState extends State<CacheSheet> {
       bvid: book.bvid,
       bookTitle: book.cleanTitle,
       cover: book.pic,
+      contentMode: book.contentMode,
       items: items,
       resolveUrl: (bvid, cid) => player.resolveUrlFor(bvid, cid),
       headers: player.downloadHeaders,
@@ -109,8 +110,8 @@ class _CacheSheetState extends State<CacheSheet> {
     if (!mounted) return;
     setState(() => _running = false);
     final msg = already > 0
-        ? '已开始后台缓存 ${items.length} 集（$already 集已缓存）'
-        : '已开始后台缓存 ${items.length} 集';
+        ? '已开始后台缓存 ${items.length} ${book.contentMode.unitLabel}（$already ${book.contentMode.unitLabel}已缓存）'
+        : '已开始后台缓存 ${items.length} ${book.contentMode.unitLabel}';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), duration: const Duration(seconds: 2)),
     );
@@ -181,8 +182,8 @@ class _CacheSheetState extends State<CacheSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              '${book.cleanTitle} · 共 ${chapters.length} 集\n'
-              '已缓存 ${cache.countOf(bvid)} 集 · 占用 ${cache.totalSizeText}',
+              '${book.cleanTitle} · 共 ${chapters.length} ${book.contentMode.unitLabel}\n'
+              '已缓存 ${cache.countOf(bvid)} ${book.contentMode.unitLabel} · 占用 ${cache.totalSizeText}',
               style: TextStyle(fontSize: 12, color: AppTheme.textSub),
             ),
           ),
@@ -250,7 +251,7 @@ class _CacheSheetState extends State<CacheSheet> {
                       label: Text(
                         running
                             ? '正在后台缓存…'
-                            : '缓存选中的 ${_selected.length} 集（后台）',
+                            : '缓存选中的 ${_selected.length} ${book.contentMode.unitLabel}（后台）',
                       ),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),

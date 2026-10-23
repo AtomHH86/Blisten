@@ -81,7 +81,7 @@ class _MiniPlayerState extends State<MiniPlayer>
                     ),
                     if (chapter != null)
                       Text(
-                        '第 ${chapter.page} 章 · ${chapter.part}',
+                        '第 ${chapter.page} ${player.book!.contentMode.unitLabel} · ${chapter.part}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11, color: AppTheme.textSub),

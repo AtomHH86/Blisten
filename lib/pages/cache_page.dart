@@ -254,7 +254,7 @@ class CachePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '占用 ${cache.totalSizeText} · 点击书籍查看已缓存章节',
+                  '占用 ${cache.totalSizeText} · 点击作品查看已缓存内容',
                   style: TextStyle(fontSize: 12, color: AppTheme.textSub),
                 ),
               ],
@@ -312,7 +312,7 @@ class CachePage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '已缓存 ${list.length} 集',
+                              '已缓存 ${list.length} ${list.first.contentMode.unitLabel}',
                               style: TextStyle(
                                   fontSize: 11, color: AppTheme.accent),
                             ),
@@ -420,7 +420,7 @@ class _BookChaptersSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '已缓存 ${list.length} 集 · ${CachePage.sizeText(size)}',
+                        '已缓存 ${list.length} ${list.first.contentMode.unitLabel} · ${CachePage.sizeText(size)}',
                         style:
                             TextStyle(fontSize: 12, color: AppTheme.textSub),
                       ),
@@ -618,6 +618,7 @@ class _BookChaptersSheet extends StatelessWidget {
       aid: 0,
       title: e.bookTitle,
       pic: e.cover,
+      contentMode: e.contentMode,
     );
     final r = await player.playCachedEntry(e.bvid, e.cid, book);
     navigator.pop();
@@ -693,7 +694,7 @@ class _CacheEmpty extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '在书籍详情页点每集后面的下载图标，\n或用「批量缓存」一次存下多集，无网也能听',
+              '在作品详情页点下载图标，\n或用「批量缓存」保存内容，无网也能听',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: AppTheme.textSub),
             ),

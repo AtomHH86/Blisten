@@ -189,7 +189,7 @@ class _PlayerPageState extends State<PlayerPage> {
                         size: 18, color: AppTheme.accent),
                     const SizedBox(width: 8),
                     Text(
-                      '目录 · ${chapters.length} 章',
+                      '目录 · ${chapters.length} ${player.book!.contentMode.unitLabel}',
                       style:  TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -309,7 +309,7 @@ class _PlayerPageState extends State<PlayerPage> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => BookDetailPage(bvid: book.bvid),
+                  builder: (_) => BookDetailPage(bvid: book.bvid, contentMode: book.contentMode),
                 ),
               );
             },
@@ -341,7 +341,7 @@ class _PlayerPageState extends State<PlayerPage> {
           const SizedBox(height: 6),
           if (chapter != null)
             Text(
-              '第 ${chapter.page} 章 · ${chapter.part}',
+              '第 ${chapter.page} ${book.contentMode.unitLabel} · ${chapter.part}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style:  TextStyle(
@@ -497,7 +497,7 @@ class _PlayerPageState extends State<PlayerPage> {
                     child: Row(
                       children: [
                         Text(
-                          '播放速度',
+                          '${player.book!.contentMode.label}播放速度',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -583,7 +583,7 @@ class _PlayerPageState extends State<PlayerPage> {
             avatar:  Icon(Icons.format_list_bulleted,
                 size: 16, color: AppTheme.accent),
             label: Text(
-              '目录 · ${player.chapters.length} 章',
+              '目录 · ${player.chapters.length} ${player.book!.contentMode.unitLabel}',
               style: const TextStyle(fontSize: 12),
             ),
             onPressed: () => _showChapterSheet(player),

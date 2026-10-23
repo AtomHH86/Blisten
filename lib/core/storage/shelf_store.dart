@@ -98,7 +98,8 @@ class ShelfBook {
       positionMs <= 0 ? '未开始' : '读到 $positionText';
 
   /// 这本书是否已经有收听进度（用于书架是否显示进度徽标）
-  bool get hasProgress => positionMs > 0 || doneCids.isNotEmpty;
+  bool get hasProgress =>
+      positionMs > 0 || lastChapterIndex > 0 || doneCids.isNotEmpty;
 
   /// **整本书**的播放进度（0~1）
   ///
@@ -154,8 +155,10 @@ class ShelfStore extends ChangeNotifier {
   static final ShelfStore instance = ShelfStore._();
 
   static const _key = 'abts_shelf';
+  static const _recentKey = 'abts_recent_progress';
 
   final List<ShelfBook> _books = [];
+  final List<ShelfBook> _recent = [];
 
   /// 按最近收听时间倒序返回（返回副本，避免排序副作用影响内部列表）
   List<ShelfBook> get books {
@@ -164,17 +167,39 @@ class ShelfStore extends ChangeNotifier {
     return List.unmodifiable(sorted);
   }
 
+  /// 收藏与独立收听记录合并展示；同一作品以收藏中的进度为准。
+  List<ShelfBook> get recentBooks {
+    final merged = <String, ShelfBook>{
+      for (final b in _recent) b.book.bvid: b,
+      for (final b in _books) b.book.bvid: b,
+    };
+    final sorted = merged.values.toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return List.unmodifiable(sorted);
+  }
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
+    _books.clear();
+    _recent.clear();
     final raw = prefs.getString(_key);
-    if (raw == null) return;
-    try {
-      final list = jsonDecode(raw) as List;
-      _books
-        ..clear()
-        ..addAll(list.map((e) => ShelfBook.fromJson((e as Map).cast<String, dynamic>())));
-      notifyListeners();
-    } catch (_) {}
+    if (raw != null) {
+      try {
+        final list = jsonDecode(raw) as List;
+        _books.addAll(list.map(
+            (e) => ShelfBook.fromJson((e as Map).cast<String, dynamic>())));
+      } catch (_) {}
+    }
+    final recentRaw = prefs.getString(_recentKey);
+    if (recentRaw != null) {
+      try {
+        final list = jsonDecode(recentRaw) as List;
+        _recent.addAll(list.take(100).map(
+            (e) => ShelfBook.fromJson((e as Map).cast<String, dynamic>())));
+        _recent.removeWhere((b) => isOnShelf(b.book.bvid));
+      } catch (_) {}
+    }
+    notifyListeners();
   }
 
   Future<void> _save() async {
@@ -182,6 +207,10 @@ class ShelfStore extends ChangeNotifier {
     await prefs.setString(
       _key,
       jsonEncode(_books.map((b) => b.toJson()).toList()),
+    );
+    await prefs.setString(
+      _recentKey,
+      jsonEncode(_recent.map((b) => b.toJson()).toList()),
     );
   }
 
@@ -194,17 +223,43 @@ class ShelfStore extends ChangeNotifier {
     return null;
   }
 
+  /// 读取断点不等于收藏；未收藏的歌曲和演唱会也可记录最近位置。
+  ShelfBook? progressByBvid(String bvid) {
+    final collected = byBvid(bvid);
+    if (collected != null) return collected;
+    for (final b in _recent) {
+      if (b.book.bvid == bvid) return b;
+    }
+    return null;
+  }
+
+  void _rememberRecent(ShelfBook progress) {
+    _recent.removeWhere((b) => b.book.bvid == progress.book.bvid);
+    _recent.insert(0, progress);
+    if (_recent.length > 100) _recent.removeRange(100, _recent.length);
+  }
+
   /// 加入书架（已存在则刷新元数据）
-  Future<void> add(Book book, {ShelfBook? withProgress}) async {
+  Future<void> add(Book book,
+      {ShelfBook? withProgress, bool updateContentMode = false}) async {
     final existing = byBvid(book.bvid);
     if (existing != null) {
-      existing.book = book; // 刷新元数据（封面/标题等可能已变化）
+      // 默认只刷新元数据，显式导入才允许重分类已有收藏。
+      existing.book = updateContentMode
+          ? book
+          : book.withContentMode(existing.book.contentMode);
       existing.updatedAt = DateTime.now().millisecondsSinceEpoch;
     } else {
-      _books.add(
-        withProgress ??
-            ShelfBook(book: book, lastCid: book.chapters?.first.cid ?? 0),
-      );
+      final progress = withProgress ?? progressByBvid(book.bvid);
+      if (progress != null) {
+        // 首次收藏以当前选择的模式为准，同时迁移原收听位置。
+        progress.book = book;
+        _books.add(progress);
+      } else {
+        _books.add(ShelfBook(
+            book: book, lastCid: book.chapters?.first.cid ?? 0));
+      }
+      _recent.removeWhere((b) => b.book.bvid == book.bvid);
     }
     notifyListeners();
     await _save();
@@ -212,6 +267,7 @@ class ShelfStore extends ChangeNotifier {
 
   Future<void> remove(String bvid) async {
     _books.removeWhere((b) => b.book.bvid == bvid);
+    _recent.removeWhere((b) => b.book.bvid == bvid);
     notifyListeners();
     await _save();
   }
@@ -236,11 +292,19 @@ class ShelfStore extends ChangeNotifier {
     required int chapterIndex,
     required int positionMs,
     required int chapterDurationMs,
+    Book? book,
     /// 实测的总章节数（播放器从真实章节列表传入），用于整本书进度
     int totalChapters = 0,
   }) async {
-    final existing = byBvid(bvid);
-    if (existing == null) return null;
+    var existing = progressByBvid(bvid);
+    if (existing == null) {
+      if (book == null) return null;
+      existing = ShelfBook(book: book);
+    }
+    if (!isOnShelf(bvid)) {
+      if (book != null) existing.book = book;
+      _rememberRecent(existing);
+    }
     existing
       ..lastCid = cid
       ..lastChapterIndex = chapterIndex
@@ -264,7 +328,7 @@ class ShelfStore extends ChangeNotifier {
       }
     }
 
-    _save();
+    await _save();
     notifyListeners();
     return existing;
   }

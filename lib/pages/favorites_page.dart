@@ -34,7 +34,7 @@ class FavoritesPage extends StatelessWidget {
           ? const EmptyShelfView(
               icon: Icons.collections_bookmark_outlined,
               title: '书架还是空的',
-              subtitle: '播放 1 分钟后会自动加入书架，也可在详情页点书签手动加入',
+              subtitle: '听书播放 1 分钟后自动加入；歌曲和演唱会请在详情页手动收藏',
             )
           : GridView.builder(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),

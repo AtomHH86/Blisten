@@ -7,11 +7,13 @@ import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../data/seed_books.dart';
 import '../models/book.dart';
+import '../models/content_mode.dart';
 import '../models/up_user.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 import '../utils/format.dart';
 import '../widgets/book_cards.dart';
+import '../widgets/resource_import_dialog.dart';
 import 'book_detail_page.dart';
 import 'up_home_page.dart';
 
@@ -19,7 +21,10 @@ import 'up_home_page.dart';
 class SearchPage extends StatefulWidget {
   final String? initialKeyword;
   final bool autofocus;
-  const SearchPage({super.key, this.initialKeyword, this.autofocus = false});
+  final ContentMode initialMode;
+  final BiliApi? api;
+  const SearchPage({super.key, this.initialKeyword, this.autofocus = false,
+    this.initialMode = ContentMode.audiobook, this.api});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -28,11 +33,13 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
-  final _bili = BiliApi.instance;
+  late final _bili = widget.api ?? BiliApi.instance;
+  late ContentMode _mode = widget.initialMode;
+  int _requestId = 0;
+  String _searchedKeyword = '';
 
-  /// 0 = 视频（有声小说），1 = UP 主
+  /// 0 = 当前模式视频，1 = UP 主
   int _tab = 0;
-  static const _tabs = ['听书', 'UP主'];
 
   List<Book> _results = [];
   List<UpUser> _ups = [];
@@ -40,13 +47,13 @@ class _SearchPageState extends State<SearchPage> {
   bool _loadingMore = false;
   bool _noMore = false;
   String? _error;
-  /// 切换标签时的加载中（此时保持旧数据，页面不跳动）
-  bool _switching = false;
 
   int _page = 1;
   int _total = 0;
   static const int _pageSize = 20;
   bool _hasSearched = false;
+  bool _switching = false;
+  int? _pendingTab;
 
   final _scrollController = ScrollController();
   bool _showTopButton = false;
@@ -63,7 +70,9 @@ class _SearchPageState extends State<SearchPage> {
     }
     if (widget.initialKeyword != null && widget.initialKeyword!.isNotEmpty) {
       _controller.text = widget.initialKeyword!;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _search());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _search();
+      });
     }
   }
 
@@ -98,13 +107,17 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _search({bool recordHistory = true}) async {
     final kw = _controller.text.trim();
     if (kw.isEmpty) return;
+    final requestId = ++_requestId;
+    final mode = _mode;
+    final tab = _tab;
     FocusScope.of(context).unfocus();
-    // 切换标签触发的加载不重复写搜索历史
-    if (recordHistory) {
-      context.read<SearchHistoryStore>().add(kw);
-    }
+    if (recordHistory) context.read<SearchHistoryStore>().add(kw);
     setState(() {
+      _searchedKeyword = kw;
       _loading = true;
+      _loadingMore = false;
+      _switching = false;
+      _pendingTab = null;
       _error = null;
       _results = [];
       _ups = [];
@@ -113,45 +126,35 @@ class _SearchPageState extends State<SearchPage> {
       _noMore = false;
       _hasSearched = true;
     });
-    if (_tab == 1) {
-      try {
-        final list = await _bili.searchUser(kw, pageSize: _pageSize);
-        if (!mounted) return;
-        setState(() {
-          _ups = list;
-          _loading = false;
-          if (list.length < _pageSize) _noMore = true;
-        });
-        AppAnalytics.onEvent('search_up', {'has_result': list.isNotEmpty ? 1 : 0});
-      } catch (e) {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _error = '搜索失败，请稍后重试';
-        });
-      }
-      return;
-    }
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
     try {
       var rawCount = _pageSize;
-      final list = await _bili.search(
-        kw,
-        page: _page,
-        pageSize: _pageSize,
-        onFirstPage: (t) => _total = t,
-        onRawCount: (c) => rawCount = c,
-      );
-      if (!mounted) return;
+      var total = 0;
+      final ups = tab == 1
+          ? await _bili.searchUser(kw, pageSize: _pageSize)
+          : <UpUser>[];
+      final books = tab == 0
+          ? await _bili.search(
+              kw,
+              mode: mode,
+              pageSize: _pageSize,
+              onFirstPage: (t) => total = t,
+              onRawCount: (c) => rawCount = c,
+            )
+          : <Book>[];
+      if (!mounted || requestId != _requestId) return;
       setState(() {
-        _results = list;
+        _ups = ups;
+        _results = books;
+        _total = total;
         _loading = false;
-        // 用「原始条数」判断是否还有下一页：听书过滤后可能不足一页，
-        // 但后面仍有结果，按过滤后的长度判断会误判成到底。
-        if (rawCount < _pageSize) _noMore = true;
+        // 听书过滤后可能不足一页，分页以原始条数为准。
+        _noMore = tab == 1 ? ups.length < _pageSize : rawCount < _pageSize;
       });
-      AppAnalytics.onEvent('search', {'has_result': list.isNotEmpty ? 1 : 0});
-    } catch (e) {
-      if (!mounted) return;
+      AppAnalytics.onEvent(tab == 1 ? 'search_up' : 'search',
+          {'has_result': (tab == 1 ? ups.isNotEmpty : books.isNotEmpty) ? 1 : 0});
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _loading = false;
         _error = '搜索失败，请稍后重试';
@@ -159,88 +162,124 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-/// 切换「听书 / UP主」：先把数据取回来再整体替换，切换过程中页面不闪不跳
-  Future<void> _switchTab(int i) async {
-    if (_tab == i || _switching) return;
-    final kw = _controller.text.trim();
-    if (kw.isEmpty) return;
-    setState(() => _switching = true);
-    try {
-      List<Book>? books;
-      List<UpUser>? ups;
-      var rawCount = _pageSize;
-      if (i == 1) {
-        ups = await _bili.searchUser(kw, pageSize: _pageSize);
+  void _switchMode(ContentMode mode) {
+    if (_mode == mode) return;
+    setState(() => _mode = mode);
+    if (_hasSearched) {
+      if (_controller.text.trim().isNotEmpty) {
+        _search(recordHistory: false);
       } else {
-        books = await _bili.search(
-          kw,
-          pageSize: _pageSize,
-          onRawCount: (c) => rawCount = c,
-        );
+        _clearSearch();
       }
-      if (!mounted) return;
-      setState(() {
-        _tab = i;
-        _results = books ?? <Book>[];
-        _ups = ups ?? <UpUser>[];
-        _error = null;
-        _page = 1;
-        _total = 0;
-        // 必须按「原始条数」判断是否到底：听书过滤后常不足一页，
-        // 用过滤后的长度会导致第二页永远加载不出来。
-        _noMore = (i == 1) ? (_ups.length < _pageSize) : (rawCount < _pageSize);
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = '加载失败，请稍后重试');
-    } finally {
-      if (mounted) setState(() => _switching = false);
     }
   }
 
-  /// 上拉分页：加载下一页并追加到列表尾部
-  Future<void> _loadMore() async {
+  /// 先加载目标标签，再一起替换列表与标签，保持原来的无闪屏切换。
+  Future<void> _switchTab(int tab) async {
+    if (_pendingTab == tab || _tab == tab) return;
     final kw = _controller.text.trim();
-    if (kw.isEmpty || _loading || _loadingMore || _noMore) return;
-    if (_tab == 1) return; // UP 主一次性返回，不分页
+    if (kw.isEmpty) return;
+    final requestId = ++_requestId;
+    final mode = _mode;
+    setState(() {
+      _switching = true;
+      _pendingTab = tab;
+      _loadingMore = false;
+    });
+    try {
+      var rawCount = _pageSize;
+      var total = 0;
+      final ups = tab == 1
+          ? await _bili.searchUser(kw, pageSize: _pageSize)
+          : <UpUser>[];
+      final books = tab == 0
+          ? await _bili.search(kw, mode: mode, pageSize: _pageSize,
+              onFirstPage: (t) => total = t,
+              onRawCount: (c) => rawCount = c)
+          : <Book>[];
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _tab = tab;
+        _results = books;
+        _ups = ups;
+        _searchedKeyword = kw;
+        _page = 1;
+        _total = total;
+        _error = null;
+        _loading = false;
+        _switching = false;
+        _pendingTab = null;
+        _noMore = tab == 1 ? ups.length < _pageSize : rawCount < _pageSize;
+      });
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loading = false;
+        _switching = false;
+        _pendingTab = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('加载失败，请稍后重试')),
+      );
+    }
+  }
+
+  /// 上拉分页保留首次请求的关键词与模式，切换后的旧响应不追加。
+  Future<void> _loadMore() async {
+    final kw = _searchedKeyword;
+    if (kw.isEmpty || _loading || _loadingMore || _switching || _noMore || _tab == 1) return;
     if (_total > 0 && _page * _pageSize >= _total) {
-      if (mounted) setState(() => _noMore = true);
+      setState(() => _noMore = true);
       return;
     }
+    final requestId = _requestId;
+    final mode = _mode;
     final nextPage = _page + 1;
     setState(() => _loadingMore = true);
     try {
       var rawCount = _pageSize;
       final list = await _bili.search(
         kw,
+        mode: mode,
         page: nextPage,
         pageSize: _pageSize,
         onRawCount: (c) => rawCount = c,
       );
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         _page = nextPage;
-        _results = [..._results, ...list];
+        final seen = _results.map((b) => b.bvid).toSet();
+        _results = [..._results, ...list.where((b) => seen.add(b.bvid))];
         _loadingMore = false;
-        // 原始条数不足一页才是真的到底（听书过滤会少于 pageSize）
-        if (rawCount < _pageSize) _noMore = true;
+        _noMore = rawCount < _pageSize;
       });
-    } catch (e) {
-      if (!mounted) return;
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
       setState(() => _loadingMore = false);
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('加载更多失败，上滑重试'),
           duration: const Duration(seconds: 1),
-          action: SnackBarAction(
-            label: '重试',
-            textColor: AppTheme.accent,
-            onPressed: _loadMore,
-          ),
+          action: SnackBarAction(label: '重试', onPressed: _loadMore),
         ),
       );
     }
+  }
+
+  void _clearSearch() {
+    ++_requestId;
+    _controller.clear();
+    setState(() {
+      _hasSearched = false;
+      _switching = false;
+      _pendingTab = null;
+      _loading = false;
+      _loadingMore = false;
+      _error = null;
+      _results = [];
+      _ups = [];
+      _searchedKeyword = '';
+    });
   }
 
   void _searchWith(String kw) {
@@ -282,6 +321,11 @@ class _SearchPageState extends State<SearchPage> {
         title: const Text('搜索'),
         titleSpacing: 0,
         actions: [
+          IconButton(
+            tooltip: '添加 B 站资源',
+            onPressed: () => showResourceImportDialog(context, initialMode: _mode),
+            icon: const Icon(Icons.add_link_rounded),
+          ),
           IconButton(
             tooltip: '回到发现页',
             onPressed: () => Navigator.of(context).maybePop(),
@@ -328,9 +372,14 @@ class _SearchPageState extends State<SearchPage> {
                   focusNode: _focusNode,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _search(),
+                  onChanged: (_) => setState(() {}),
                   style: TextStyle(fontSize: 15, color: AppTheme.textMain),
                   decoration: InputDecoration(
-                    hintText: '搜索书名 / 作者 / 主播',
+                    hintText: switch (_mode) {
+                      ContentMode.audiobook => '搜索书名 / 作者 / 主播',
+                      ContentMode.music => '搜索歌名 / 歌手 / UP 主',
+                      ContentMode.concert => '搜索演唱会 / 歌手 / UP 主',
+                    },
                     hintStyle: TextStyle(
                         fontSize: 14, color: AppTheme.textHint),
                     prefixIcon: Icon(Icons.manage_search_rounded,
@@ -340,10 +389,7 @@ class _SearchPageState extends State<SearchPage> {
                         : IconButton(
                             icon: Icon(Icons.cancel_rounded,
                                 color: AppTheme.textHint, size: 18),
-                            onPressed: () {
-                              _controller.clear();
-                              setState(() {});
-                            },
+                            onPressed: _clearSearch,
                           ),
                     // 关闭主题自带的浅色填充与边框，内层只承接渐变描边
                     filled: false,
@@ -354,6 +400,21 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: ContentMode.values.map((mode) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: ChoiceChip(
+                    label: Text(mode.label),
+                    selected: _mode == mode,
+                    onSelected: (_) => _switchMode(mode),
+                  ),
+                ),
+              )).toList(),
             ),
           ),
           // 搜索框在上、切换在下；搜索出结果后才出现
@@ -380,7 +441,7 @@ class _SearchPageState extends State<SearchPage> {
                 border: Border.all(color: AppTheme.divider, width: 0.5),
               ),
               child: Row(
-                children: List.generate(_tabs.length, (i) {
+                children: List.generate(2, (i) {
                   final active = _tab == i;
                   return Expanded(
                     child: GestureDetector(
@@ -394,7 +455,7 @@ class _SearchPageState extends State<SearchPage> {
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: Text(
-                          _tabs[i],
+                          i == 0 ? '${_mode.label}结果' : 'UP主',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight:
@@ -410,16 +471,11 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
           ),
-          // 切换时的轻量指示：不清空列表，页面保持不跳动
           if (_switching)
             const Padding(
               padding: EdgeInsets.only(left: 12),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppTheme.accent),
-              ),
+              child: SizedBox(width: 16, height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent)),
             ),
         ],
       ),
@@ -446,7 +502,7 @@ class _SearchPageState extends State<SearchPage> {
       if (_ups.isEmpty) {
         return _ErrorState(
           icon: Icons.person_search_outlined,
-          message: '没有找到「${_controller.text}」相关的 UP 主',
+          message: '没有找到「$_searchedKeyword」相关的 UP 主',
         );
       }
       return _buildUpList();
@@ -454,7 +510,7 @@ class _SearchPageState extends State<SearchPage> {
     if (_results.isEmpty) {
       return _ErrorState(
         icon: Icons.search_off_rounded,
-        message: '没有找到「${_controller.text}」相关内容',
+        message: '没有找到「$_searchedKeyword」相关内容',
       );
     }
     final shelf = context.watch<ShelfStore>();
@@ -469,15 +525,15 @@ class _SearchPageState extends State<SearchPage> {
         return BookListTile(
           book: b,
           subtitle: [
-            if (b.pages > 1) '${b.pages} 章',
+            if (b.pages > 1) '${b.pages} ${b.contentMode.unitLabel}',
             if (b.durationText.isNotEmpty) b.durationText,
             '${Fmt.count(b.play)} 播放',
           ].join(' · '),
-          trailing: shelf.isOnShelf(b.bvid) ? '已在书架' : null,
+          trailing: shelf.isOnShelf(b.bvid) ? '已收藏' : null,
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => BookDetailPage(bvid: b.bvid),
+                builder: (_) => BookDetailPage(bvid: b.bvid, contentMode: b.contentMode, api: _bili),
               ),
             );
           },
@@ -542,7 +598,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => UpHomePage(up: up)),
+              MaterialPageRoute(builder: (_) => UpHomePage(up: up, contentMode: _mode, api: _bili)),
             );
           },
         );
@@ -566,7 +622,7 @@ class _SearchPageState extends State<SearchPage> {
                 children: [
                   const TextSpan(text: '“'),
                   TextSpan(
-                    text: _controller.text.trim(),
+                    text: _searchedKeyword,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       color: AppTheme.accent,
@@ -653,7 +709,7 @@ class _SearchPageState extends State<SearchPage> {
         Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: DiscoverSeeds.hotKeys
+          children: DiscoverSeeds.hotKeysFor(_mode)
               .asMap()
               .entries
               .map(
