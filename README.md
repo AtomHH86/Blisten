@@ -35,7 +35,7 @@ Flutter · Android · 永久免费 · 开源
 
 本版不包含跨视频歌单、循环/随机播放或整场演唱会自动分曲。已分 P 的演唱会可按分 P 选择；单 P 的整场仍作为一个音源播放。这是本地源码改造，尚未发布为 GitHub Release。
 
-开发验证命令：`flutter test`、`flutter analyze`。链接解析和网络请求使用受控测试响应验证，Android 真机的播放、锁屏及后台行为仍需独立验收。
+开发验证命令：`flutter test`、`flutter analyze`。链接解析和网络请求使用受控测试响应验证；已完成一轮 Android 16 真机基础验证，实测范围、调试调用方式及待补测项目见 [Android 测试记录](docs/testing/2026-10-23-android-device.md)。
 
 界面预览（Widget 实际渲染，使用测试数据，并非线上资源验证）：
 

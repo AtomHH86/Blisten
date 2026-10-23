@@ -1,0 +1,200 @@
+[
+  {
+    "capturedAt": "2026-10-23T09:09:36.952042+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 80811,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "foreground",
+    "powerState": "mWakefulness=Awake"
+  },
+  {
+    "capturedAt": "2026-10-23T09:09:52.441606+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 107936,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "background-screen-on",
+    "powerState": "mWakefulness=Awake"
+  },
+  {
+    "capturedAt": "2026-10-23T09:10:07.829674+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 135061,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "background-screen-on",
+    "powerState": "mWakefulness=Awake"
+  },
+  {
+    "capturedAt": "2026-10-23T09:10:23.275374+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 162099,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "screen-off",
+    "powerState": "mWakefulness=Dozing"
+  },
+  {
+    "capturedAt": "2026-10-23T09:10:38.714193+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 188785,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "screen-off",
+    "powerState": "mWakefulness=Dozing"
+  },
+  {
+    "capturedAt": "2026-10-23T09:10:54.172692+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 215999,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "screen-off",
+    "powerState": "mWakefulness=Dozing"
+  },
+  {
+    "capturedAt": "2026-10-23T09:11:09.610543+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 243036,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "screen-off",
+    "powerState": "mWakefulness=Dozing"
+  },
+  {
+    "capturedAt": "2026-10-23T09:11:25.057789+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 270249,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "screen-off",
+    "powerState": "mWakefulness=Dozing"
+  },
+  {
+    "capturedAt": "2026-10-23T09:11:40.501888+00:00",
+    "source": "package:abts/player/book_player.dart",
+    "samplingMethod": "getObject-fields (evaluation unavailable)",
+    "state": {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "chapterIndex": 0,
+      "rate": 1.75,
+      "currentPositionMs": 297286,
+      "currentDurationMs": 12079701,
+      "isPlaying": true,
+      "buffering": false,
+      "loading": false,
+      "error": null,
+      "loaded": true,
+      "isOffline": false,
+      "nativePlayerRate": 1.75
+    },
+    "phase": "screen-off",
+    "powerState": "mWakefulness=Dozing"
+  }
+]

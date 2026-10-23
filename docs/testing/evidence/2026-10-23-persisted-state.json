@@ -1,0 +1,44 @@
+{
+  "capturedAt": "2026-10-23T09:12:25.602196+00:00",
+  "note": "测试倍率；后续清理将恢复 1.0x。",
+  "flutter.abts_rate_concert": 1.5,
+  "flutter.abts_recent_progress": [
+    {
+      "bvid": "BV1SrbkzxEVi",
+      "contentMode": "music",
+      "lastChapterIndex": 5,
+      "positionMs": 81815
+    }
+  ],
+  "flutter.abts_rate": 1.75,
+  "flutter.abts_rate_music": 1.25,
+  "flutter.abts_cache_index": [
+    {
+      "bvid": "BV1wB4y1R7Sg",
+      "contentMode": "music",
+      "cid": 727115442,
+      "page": 1,
+      "sizeBytes": 3700585
+    }
+  ],
+  "flutter.abts_shelf": [
+    {
+      "bvid": "BV1wB4y1R7Sg",
+      "contentMode": "music",
+      "lastChapterIndex": 0,
+      "positionMs": 417
+    },
+    {
+      "bvid": "BV11W411N7hb",
+      "contentMode": "concert",
+      "lastChapterIndex": 0,
+      "positionMs": 347843
+    },
+    {
+      "bvid": "BV1Ke4y1J7Ew",
+      "contentMode": "audiobook",
+      "lastChapterIndex": 0,
+      "positionMs": 298160
+    }
+  ]
+}
