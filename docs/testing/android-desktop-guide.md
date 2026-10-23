@@ -2,11 +2,11 @@
 
 当前配置适用于这台 Intel Mac（macOS 13.7.8）。Flutter、Java、SDK、依赖缓存和模拟器放在仓库父目录的 `.flutter-sdk`、`.android-toolchain`，不依赖临时目录长期存在。无需连接手机或安装 Android Studio。
 
-本轮实际通过情况见[模拟器验收记录](2026-10-23-android-emulator.md)。
+迁移前实际通过情况见[模拟器验收记录](2026-10-23-android-emulator.md)；该记录保留原项目身份。当前项目为 Blisten，迁移后验收另行记录。
 
 ## 常用命令
 
-在 `abts` 仓库目录执行：
+在 `Blisten` 仓库目录执行：
 
 ```bash
 tool/test-android.sh                 # 默认：检查 + 模拟器回归 + 跨进程恢复

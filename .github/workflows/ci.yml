@@ -1,0 +1,53 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Analyze and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      FLUTTER_SUPPRESS_ANALYTICS: "true"
+      DART_SUPPRESS_ANALYTICS: "true"
+      FLUTTER_VERSION: 3.38.10
+      FLUTTER_REVISION: c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Flutter SDK
+        shell: bash
+        run: |
+          git clone --depth 1 --branch "$FLUTTER_VERSION" \
+            https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          test "$(git -C "$RUNNER_TEMP/flutter" rev-parse HEAD)" = "$FLUTTER_REVISION"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve dependencies
+        run: |
+          flutter --version
+          flutter pub get --enforce-lockfile
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Unit and widget tests
+        run: flutter test test --no-pub --reporter expanded
+
+      - name: APK packaging script tests
+        run: python3 -B -m unittest discover -s tool/tests -p 'test_apk_packaging.py' -v

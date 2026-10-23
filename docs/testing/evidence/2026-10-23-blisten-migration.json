@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-23",
+  "project": "Blisten",
+  "source_baseline": "d9f7c5b9d52677495dbd0bbd5ab3586c87ed8364",
+  "scope": "Independent repository and documentation; application identity unchanged",
+  "runs": [
+    {
+      "suite": "unit",
+      "command": "tool/test-android.sh unit",
+      "log": "build/desktop-tests/20261023-212010-43409/run.log",
+      "log_sha256": "2f237ea207c7c548c00bba94375a960df2edab8a808e2558728709d6075168bd",
+      "exit_code": 0
+    },
+    {
+      "suite": "integration",
+      "command": "tool/test-android.sh integration",
+      "log": "build/desktop-tests/20261023-212147-43805/run.log",
+      "log_sha256": "3d3f053886adfe4ad3e1c519f5384871e3c46bf2af9eb7f4f62018ef038cccd4",
+      "exit_code": 0
+    }
+  ],
+  "unit": {
+    "analysis_issues": 0,
+    "passed": 58,
+    "optional_screenshot_skipped": 1,
+    "python_packaging_passed": 10
+  },
+  "native": {
+    "functional_cases": 5,
+    "restart_seed_pid": 3282,
+    "restart_verify_pid": 3450,
+    "phases": [
+      "audio_modes",
+      "restart_seed",
+      "restart_verify"
+    ],
+    "device": "emulator-5554"
+  },
+  "signing_gate": {
+    "command": "bash tool/build-android-apks.sh",
+    "exit_code": 1,
+    "reason": "Missing release signing configuration: key.properties",
+    "release_apks_created": false
+  },
+  "remote_actions_run": false,
+  "online_smoke_rerun": false
+}

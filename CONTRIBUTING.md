@@ -1,0 +1,46 @@
+# 参与 Blisten 开发
+
+后续开发以本仓库为准。修改前阅读 [README](README.md) 和相关测试，保持改动集中；缺陷修复优先增加能复现问题的检查。较大的规则或兼容性变化，应先说明使用场景、预期行为和迁移影响。
+
+## 环境与快速检查
+
+当前测试基线使用 Flutter **3.38.10**（内含 Dart 3.10.9）和 Python 3。Android 构建另需 Java 17、Android SDK 及项目要求的 NDK。依赖版本保存在 `pubspec.lock` 中；仅在需要升级依赖时更新锁文件。
+
+已配置这台电脑的共享工具链时，在仓库根目录执行：
+
+```bash
+tool/test-android.sh unit
+```
+
+其他电脑安装对应工具后，可直接执行与 CI 相同的检查：
+
+```bash
+flutter pub get --enforce-lockfile
+flutter analyze --no-pub
+flutter test test --no-pub --reporter expanded
+python3 -B -m unittest discover -s tool/tests -p 'test_apk_packaging.py' -v
+```
+
+GitHub Actions 固定 Flutter 版本与提交，执行上述检查；配置文件是 [.github/workflows/ci.yml](.github/workflows/ci.yml)。工作流不生成正式安装包。首次上传仓库后，仍需确认 Actions 中的实际运行结果。
+
+## Android 回归
+
+涉及播放器、断点、模式规则、缓存或 Android 代码的改动，还应运行专用模拟器测试：
+
+```bash
+tool/test-android.sh integration
+# 真实 B 站接口变更时按需执行，结果受网络和平台状态影响：
+tool/test-android.sh online
+```
+
+环境配置、日志位置和测试边界见[电脑测试指南](docs/testing/android-desktop-guide.md)。固定数据测试可重复验证应用逻辑；联网测试单独运行。修改测试运行器时，还应验证异常能产生非零退出码。
+
+## 提交与 Pull Request
+
+从 `main` 创建短期分支，一次提交聚焦一个问题。提交信息说明改动目的；PR 说明触发场景、最终行为、已执行的验证和未覆盖的范围。不要为无关文件统一格式。
+
+涉及听书、歌曲或演唱会时，检查其他模式是否受影响；涉及持久化时，保留旧数据读取兼容性，或提供明确的迁移方案。包名、发布签名和版本号变更会影响安装与升级，必须在 PR 中说明。
+
+签名证书、`key.properties`、Cookie、Token、个人数据、SDK、依赖缓存和 APK 不应进入源码提交。正式包使用 `tool/build-android-apks.sh` 生成，具体要求见电脑测试指南。
+
+本项目沿用 [MIT 许可证](LICENSE)，贡献应与该许可证兼容，并保留上游版权声明及新增第三方代码所需的声明。
