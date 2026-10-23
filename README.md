@@ -145,6 +145,10 @@ Flutter · Android · 永久免费 · 开源
 
 ## 从源码构建
 
+Android 真机调试可先运行 `flutter run -d <设备ID>`，或用 `flutter build apk --debug --target-platform android-arm64` 生成 ARM64 手机的调试包。调试版名称为“阿B听书·测试”，包名为 `dev.pages.abts.debug`，可与原版并存，收藏、进度和缓存各自独立。发布版仍使用原包名。
+
+本次构建与真机验收进度见 [Android 测试记录](docs/testing/2026-10-23-android-device.md)。
+
 ```bash
 # 环境：Flutter 3.38.x（Dart 3.10+）、JDK 17、Android SDK
 flutter pub get

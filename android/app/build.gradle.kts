@@ -52,6 +52,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             // 有 key.properties 时用正式证书签名，否则回退 debug 签名（便于他人构建）
             signingConfig = if (hasReleaseKeystore) {
