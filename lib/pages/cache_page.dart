@@ -40,7 +40,7 @@ class CachePage extends StatelessWidget {
               onPressed: () => _confirmClearAll(context, cache),
               child: Text(
                 '清空',
-                style: TextStyle(color: AppTheme.accent, fontSize: 14),
+                style: TextStyle(color: AppTheme.actionText, fontSize: 16),
               ),
             ),
         ],
@@ -78,8 +78,8 @@ class CachePage extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +91,7 @@ class CachePage extends StatelessWidget {
                 height: 15,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: AppTheme.accent,
+                  color: AppTheme.actionText,
                   value: cache.queueProgress > 0 ? cache.queueProgress : null,
                 ),
               ),
@@ -100,7 +100,7 @@ class CachePage extends StatelessWidget {
                 child: Text(
                   '正在后台缓存',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textMain,
                   ),
@@ -108,7 +108,7 @@ class CachePage extends StatelessWidget {
               ),
               Text(
                 '$pct%',
-                style: TextStyle(fontSize: 13, color: AppTheme.accent),
+                style: TextStyle(fontSize: 14, color: AppTheme.actionText),
               ),
             ],
           ),
@@ -118,7 +118,7 @@ class CachePage extends StatelessWidget {
               cur.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+              style: TextStyle(fontSize: 14, color: AppTheme.textSub),
             ),
           ],
           const SizedBox(height: 6),
@@ -133,7 +133,7 @@ class CachePage extends StatelessWidget {
               }
               return '排队 ${cache.queueLength} 项 · 可离开本页';
             }(),
-            style: TextStyle(fontSize: 11, color: AppTheme.textHint),
+            style: TextStyle(fontSize: 12, color: AppTheme.textHint),
           ),
         ],
       ),
@@ -156,7 +156,7 @@ class CachePage extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: danger.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: danger.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -170,7 +170,7 @@ class CachePage extends StatelessWidget {
                 child: Text(
                   '${failures.length} 项缓存失败',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textMain,
                   ),
@@ -192,7 +192,7 @@ class CachePage extends StatelessWidget {
                 },
                 child: Text(
                   '全部重试',
-                  style: TextStyle(fontSize: 13, color: AppTheme.accent),
+                  style: TextStyle(fontSize: 14, color: AppTheme.actionText),
                 ),
               ),
             ],
@@ -205,7 +205,7 @@ class CachePage extends StatelessWidget {
                     '${f.chapterTitle} · ${f.reason}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                   ),
                 ),
               ),
@@ -214,13 +214,13 @@ class CachePage extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 '还有 ${failures.length - 5} 项失败…',
-                style: TextStyle(fontSize: 11, color: AppTheme.textHint),
+                style: TextStyle(fontSize: 12, color: AppTheme.textHint),
               ),
             ),
           const SizedBox(height: 6),
           Text(
             '通常是网络波动或 B 站限流，稍后重试即可',
-            style: TextStyle(fontSize: 11, color: AppTheme.textHint),
+            style: TextStyle(fontSize: 12, color: AppTheme.textHint),
           ),
         ],
       ),
@@ -233,12 +233,12 @@ class CachePage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.divider),
       ),
       child: Row(
         children: [
-          Icon(Icons.sd_storage_rounded, size: 22, color: AppTheme.accent),
+          Icon(Icons.sd_storage_rounded, size: 22, color: AppTheme.actionText),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -247,7 +247,7 @@ class CachePage extends StatelessWidget {
                 Text(
                   '已缓存 $count 项',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textMain,
                   ),
@@ -255,7 +255,7 @@ class CachePage extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '占用 ${cache.totalSizeText} · 点击作品查看已缓存内容',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                  style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                 ),
               ],
             ),
@@ -273,13 +273,13 @@ class CachePage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Material(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           onTap: () => _showBookChapters(context, cache, bvid, list),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.divider),
             ),
             padding: const EdgeInsets.all(12),
@@ -296,13 +296,16 @@ class CachePage extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textMain,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -314,14 +317,13 @@ class CachePage extends StatelessWidget {
                             child: Text(
                               '已缓存 ${list.length} ${list.first.contentMode.unitLabel}',
                               style: TextStyle(
-                                  fontSize: 11, color: AppTheme.accent),
+                                  fontSize: 12, color: AppTheme.actionText),
                             ),
                           ),
-                          const SizedBox(width: 8),
                           Text(
                             sizeText(size),
                             style: TextStyle(
-                                fontSize: 11, color: AppTheme.textHint),
+                                fontSize: 12, color: AppTheme.textHint),
                           ),
                         ],
                       ),
@@ -367,7 +369,7 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
         backgroundColor: AppTheme.surface,
         title: const Text('清空缓存'),
         content: Text('清空全部 ${cache.entries.length} 项离线缓存？此操作不可撤销。',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 14)),
+            style: TextStyle(color: AppTheme.textMain, fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -375,7 +377,7 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('清空', style: TextStyle(color: AppTheme.accent)),
+            child: Text('清空', style: TextStyle(color: AppTheme.error)),
           ),
         ],
       ),
@@ -419,7 +421,7 @@ class _BookChaptersSheet extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 17,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textMain,
                         ),
@@ -428,7 +430,7 @@ class _BookChaptersSheet extends StatelessWidget {
                       Text(
                         '已缓存 ${list.length} $unitLabel · ${CachePage.sizeText(size)}',
                         style:
-                            TextStyle(fontSize: 12, color: AppTheme.textSub),
+                            TextStyle(fontSize: 14, color: AppTheme.textSub),
                       ),
                     ],
                   ),
@@ -437,7 +439,7 @@ class _BookChaptersSheet extends StatelessWidget {
                   TextButton(
                     onPressed: () => _confirmDeleteAll(context, cache, list),
                     child: Text('删除全部',
-                        style: TextStyle(color: AppTheme.textSub, fontSize: 13)),
+                        style: TextStyle(color: AppTheme.textSub, fontSize: 14)),
                   ),
               ],
             ),
@@ -448,7 +450,7 @@ class _BookChaptersSheet extends StatelessWidget {
                 ? Center(
                     child: Text('缓存已被清空',
                         style:
-                            TextStyle(fontSize: 13, color: AppTheme.textHint)),
+                            TextStyle(fontSize: 14, color: AppTheme.textHint)),
                   )
                 : ListView.builder(
                     itemCount: list.length,
@@ -456,20 +458,20 @@ class _BookChaptersSheet extends StatelessWidget {
                       final e = list[i];
                       final st = _statusOf(context, e);
                       return ListTile(
-                        dense: true,
+                        dense: false,
                         leading: Icon(
                           st.done
                               ? Icons.check_circle_rounded
                               : Icons.offline_pin_rounded,
                           size: 20,
-                          color: st.done ? AppTheme.textHint : AppTheme.accent,
+                          color: st.done ? AppTheme.textHint : AppTheme.actionText,
                         ),
                         title: Text(
                           e.chapterTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
                             color:
                                 st.done ? AppTheme.textHint : AppTheme.textMain,
                           ),
@@ -482,7 +484,7 @@ class _BookChaptersSheet extends StatelessWidget {
                                   .where((s) => s.isNotEmpty)
                                   .join(' · '),
                               style: TextStyle(
-                                  fontSize: 11, color: AppTheme.textHint),
+                                  fontSize: 12, color: AppTheme.textHint),
                             ),
                             if (st.text.isNotEmpty)
                               Padding(
@@ -495,17 +497,19 @@ class _BookChaptersSheet extends StatelessWidget {
                                           : Icons.timelapse_rounded,
                                       size: 12,
                                       color: st.done
-                                          ? AppTheme.accent
+                                          ? AppTheme.success
                                           : AppTheme.textSub,
                                     ),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      st.text,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: st.done
-                                            ? AppTheme.accent
-                                            : AppTheme.textSub,
+                                    Expanded(
+                                      child: Text(
+                                        st.text,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: st.done
+                                              ? AppTheme.success
+                                              : AppTheme.textSub,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -521,7 +525,7 @@ class _BookChaptersSheet extends StatelessWidget {
                                     value: st.progress,
                                     minHeight: 3,
                                     backgroundColor: AppTheme.divider,
-                                    color: AppTheme.accent,
+                                    color: AppTheme.actionText,
                                   ),
                                 ),
                               ),
@@ -595,7 +599,7 @@ class _BookChaptersSheet extends StatelessWidget {
         content: Text(
           '「${e.chapterTitle}」${e.sizeText.isEmpty ? '' : '（${e.sizeText}）'}\n'
           '删除后需要重新缓存才能离线收听。',
-          style: TextStyle(color: AppTheme.textMain, fontSize: 14, height: 1.6),
+          style: TextStyle(color: AppTheme.textMain, fontSize: 16, height: 1.6),
         ),
         actions: [
           TextButton(
@@ -663,7 +667,7 @@ class _BookChaptersSheet extends StatelessWidget {
         backgroundColor: AppTheme.surface,
         title: const Text('删除缓存'),
         content: Text('删除这 ${list.length} $unitLabel离线缓存？',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 14)),
+            style: TextStyle(color: AppTheme.textMain, fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -671,7 +675,7 @@ class _BookChaptersSheet extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('删除', style: TextStyle(color: AppTheme.accent)),
+            child: Text('删除', style: TextStyle(color: AppTheme.error)),
           ),
         ],
       ),
@@ -696,13 +700,13 @@ class _CacheEmpty extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               '还没有缓存任何内容',
-              style: TextStyle(fontSize: 14, color: AppTheme.textMain),
+              style: TextStyle(fontSize: 16, color: AppTheme.textMain),
             ),
             const SizedBox(height: 6),
             Text(
               '在作品详情页点下载图标，\n或用「批量缓存」保存内容，无网也能听',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+              style: TextStyle(fontSize: 14, color: AppTheme.textSub),
             ),
           ],
         ),

@@ -5,6 +5,20 @@ import '../models/book.dart';
 import '../utils/format.dart';
 import 'book_cover.dart';
 
+/// 网格为标题和作者预留随系统字体缩放的高度，窄屏降低列数。
+SliverGridDelegateWithFixedCrossAxisCount bookGridDelegate(BuildContext context) {
+  final width = MediaQuery.sizeOf(context).width;
+  final scaler = MediaQuery.textScalerOf(context);
+  final columns = width < 360 || scaler.scale(14) > 19 ? 2 : 3;
+  final tileWidth = (width - 24 - 12 * (columns - 1)) / columns;
+  return SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: columns,
+    mainAxisSpacing: 16,
+    crossAxisSpacing: 12,
+    mainAxisExtent: tileWidth * 1.2 + scaler.scale(14) * 2.6 + scaler.scale(12) * 1.3 + 16,
+  );
+}
+
 /// 网格卡片：封面 + 书名 + 作者（书架/发现页通用）
 class BookGridItem extends StatelessWidget {
   final Book book;
@@ -25,7 +39,7 @@ class BookGridItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,7 +59,7 @@ class BookGridItem extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style:  TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               height: 1.3,
               fontWeight: FontWeight.w500,
               color: AppTheme.textMain,
@@ -56,7 +70,7 @@ class BookGridItem extends StatelessWidget {
             book.author,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style:  TextStyle(fontSize: 11, color: AppTheme.textSub),
+            style:  TextStyle(fontSize: 12, color: AppTheme.textSub),
           ),
         ],
       ),
@@ -88,7 +102,11 @@ class BookListTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            BookCover(url: book.pic, width: 96, height: 60),
+            BookCover(
+              url: book.pic,
+              width: MediaQuery.textScalerOf(context).scale(14) > 19 ? 64 : 80,
+              height: 64,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -99,7 +117,7 @@ class BookListTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style:  TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textMain,
                     ),
@@ -115,26 +133,21 @@ class BookListTile extends StatelessWidget {
                         color: AppTheme.textSub,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        subtitle ?? '${book.pages} ${book.contentMode.unitLabel} · ${book.durationText}',
-                        style:  TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSub,
+                      Expanded(
+                        child: Text(
+                          subtitle ?? '${book.pages} ${book.contentMode.unitLabel} · ${book.durationText}',
+                          style: TextStyle(fontSize: 12, color: AppTheme.textSub),
                         ),
                       ),
                     ],
                   ),
+                  if (trailing != null) ...[
+                    const SizedBox(height: 4),
+                    Text(trailing!, style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
+                  ],
                 ],
               ),
             ),
-            if (trailing != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text(
-                  trailing!,
-                  style:  TextStyle(fontSize: 12, color: AppTheme.textSub),
-                ),
-              ),
           ],
         ),
       ),

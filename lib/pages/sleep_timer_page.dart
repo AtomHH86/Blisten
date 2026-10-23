@@ -38,13 +38,13 @@ class SleepTimerPage extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.timer_rounded, color: AppTheme.accent, size: 20),
+                    Icon(Icons.timer_rounded, color: AppTheme.actionText, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '距自动暂停还剩 ${_remainingText(player.sleepRemaining)}',
                         style: TextStyle(
-                            fontSize: 13, color: AppTheme.textMain),
+                            fontSize: 14, color: AppTheme.textMain),
                       ),
                     ),
                   ],
@@ -54,16 +54,16 @@ class SleepTimerPage extends StatelessWidget {
           for (final (d, label) in _options)
             ListTile(
               title: Text(label,
-                  style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
+                  style: TextStyle(fontSize: 16, color: AppTheme.textMain)),
               trailing: d == Duration.zero
                   ? (player.sleepRemaining <= Duration.zero
-                      ? Icon(Icons.check, color: AppTheme.accent)
+                      ? Icon(Icons.check, color: AppTheme.actionText)
                       : null)
                   : (player.sleepRemaining > Duration.zero &&
                           player.sleepRemaining <=
                               d + const Duration(minutes: 1) &&
                           player.sleepRemaining > d - const Duration(minutes: 1))
-                      ? Icon(Icons.check, color: AppTheme.accent)
+                      ? Icon(Icons.check, color: AppTheme.actionText)
                       : Icon(Icons.bedtime_outlined,
                           size: 20, color: AppTheme.textSub),
               onTap: () {
@@ -92,19 +92,19 @@ class SleepTimerPage extends StatelessWidget {
             value: player.stopAtChapterEnd,
             onChanged: (v) => player.setStopAtChapterEnd(v),
             title: Text('播完当前${player.book?.contentMode.unitLabel ?? '项'}自动暂停',
-                style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
+                style: TextStyle(fontSize: 16, color: AppTheme.textMain)),
             subtitle: Text('播完即停，不自动播放下一${player.book?.contentMode.unitLabel ?? '项'}',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
-            activeThumbColor: AppTheme.accent,
+                style: TextStyle(fontSize: 14, color: AppTheme.textSub)),
+            activeThumbColor: AppTheme.onPrimary,
           ),
           const Divider(height: 1),
           ListTile(
             leading: Icon(Icons.edit_calendar_rounded,
-                size: 20, color: AppTheme.accent),
+                size: 20, color: AppTheme.actionText),
             title: Text('自定义时长',
-                style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
+                style: TextStyle(fontSize: 16, color: AppTheme.textMain)),
             subtitle: Text('按分钟设置，1 ~ 720 分钟',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
+                style: TextStyle(fontSize: 14, color: AppTheme.textSub)),
             trailing: Icon(Icons.chevron_right_rounded,
                 color: AppTheme.textHint),
             onTap: () => _pickCustom(context, player),
@@ -131,7 +131,7 @@ class SleepTimerPage extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: Text('自定义睡眠定时',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 17)),
+            style: TextStyle(color: AppTheme.textMain, fontSize: 20)),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -142,7 +142,7 @@ class SleepTimerPage extends StatelessWidget {
             suffixText: '分钟',
             hintText: '例如 25',
             helperText: '1 ~ 720 分钟',
-            helperStyle: TextStyle(fontSize: 11, color: AppTheme.textHint),
+            helperStyle: TextStyle(fontSize: 12, color: AppTheme.textHint),
           ),
           onSubmitted: (v) {
             final m = int.tryParse(v.trim());
@@ -159,7 +159,7 @@ class SleepTimerPage extends StatelessWidget {
               final m = int.tryParse(controller.text.trim());
               Navigator.of(ctx).pop(m);
             },
-            child: Text('确定', style: TextStyle(color: AppTheme.accent)),
+            child: Text('设置定时', style: TextStyle(color: AppTheme.actionText)),
           ),
         ],
       ),

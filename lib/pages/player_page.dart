@@ -17,7 +17,7 @@ import '../widgets/book_cover.dart';
 import 'book_detail_page.dart';
 import 'cache_sheet.dart';
 
-/// 全屏播放页（PiliPlus 风格）
+/// 全屏播放页：封面、进度与主要收听控制
 class PlayerPage extends StatefulWidget {
   const PlayerPage({super.key});
 
@@ -54,18 +54,18 @@ class _PlayerPageState extends State<PlayerPage> {
         appBar: AppBar(
           title: const Text('播放'),
           leading: IconButton(
+            tooltip: '返回上一页，继续收听',
             icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 30),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         body: Center(
           child: player.loading
-              ?  CircularProgressIndicator(color: AppTheme.accent)
-              : Text(
-                  player.error ?? '尚未播放任何内容',
-                  style:  TextStyle(
-                      fontSize: 13, color: AppTheme.textSub),
-                ),
+              ?  CircularProgressIndicator(color: AppTheme.actionText)
+              : player.error != null
+                  ? SingleChildScrollView(child: _buildPlaybackError(player))
+                  : Text('尚未播放任何内容',
+                      style: TextStyle(fontSize: 14, color: AppTheme.textSub)),
         ),
       );
     }
@@ -97,16 +97,55 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                _buildAppBar(player),
-                Expanded(child: _buildCover(book)),
-                _buildTitle(book, chapter),
-                _buildProgress(player, chapter),
-                _buildControls(player),
-                _buildActionRow(player),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildAppBar(player),
+                      SizedBox(
+                        height: math.max(120, math.min(
+                          constraints.maxWidth - 64, constraints.maxHeight * 0.38)),
+                        child: _buildCover(book),
+                      ),
+                      _buildTitle(book, chapter),
+                      if (player.error != null) _buildPlaybackError(player),
+                      _buildProgress(player, chapter),
+                      _buildControls(player),
+                      _buildActionRow(player),
+                    ],
+                  ),
+                ),
+              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaybackError(BookPlayer player) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline_rounded, size: 32, color: AppTheme.error),
+          const SizedBox(height: 12),
+          Text('暂时无法播放',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600,
+                  color: AppTheme.textMain)),
+          const SizedBox(height: 8),
+          Text('请重试，或返回后选择其他内容。',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: AppTheme.textSub)),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: player.loading ? null : player.retryPlayback,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('重试'),
           ),
         ],
       ),
@@ -122,12 +161,13 @@ class _PlayerPageState extends State<PlayerPage> {
     return Row(
       children: [
         IconButton(
+          tooltip: '返回上一页，继续收听',
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 30),
           color: AppTheme.textMain,
           onPressed: () => Navigator.of(context).pop(),
         ),
         const SizedBox(width: 4),
-        Text(
+        Expanded(child: Text(
           player.loading
               ? '加载中…'
               : player.isOffline
@@ -135,10 +175,10 @@ class _PlayerPageState extends State<PlayerPage> {
                   : '正在收听',
           style:  TextStyle(
               fontSize: 14,
-              color: player.isOffline ? AppTheme.accent : AppTheme.textSub),
-        ),
-        const Spacer(),
+              color: player.isOffline ? AppTheme.actionText : AppTheme.textSub),
+        )),
         IconButton(
+          tooltip: '分享原作品链接',
           icon: const Icon(Icons.share_outlined, size: 22),
           color: AppTheme.textSub,
           onPressed: () => _share(player),
@@ -187,17 +227,16 @@ class _PlayerPageState extends State<PlayerPage> {
                 child: Row(
                   children: [
                      Icon(Icons.format_list_bulleted,
-                        size: 18, color: AppTheme.accent),
+                        size: 18, color: AppTheme.actionText),
                     const SizedBox(width: 8),
-                    Text(
+                    Expanded(child: Text(
                       '目录 · ${chapters.length} ${player.book!.contentMode.unitLabel}',
                       style:  TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textMain,
                       ),
-                    ),
-                    const Spacer(),
+                    )),
                     IconButton(
                       tooltip: '从头播放',
                       icon:  Icon(Icons.replay, color: AppTheme.textSub),
@@ -221,7 +260,7 @@ class _PlayerPageState extends State<PlayerPage> {
                       dense: true,
                       leading: active
                           ?  Icon(Icons.graphic_eq_rounded,
-                              size: 18, color: AppTheme.accent)
+                              size: 18, color: AppTheme.actionText)
                           : SizedBox(
                               width: 18,
                               child: done
@@ -243,7 +282,7 @@ class _PlayerPageState extends State<PlayerPage> {
                           fontWeight:
                               active ? FontWeight.w700 : FontWeight.w400,
                           color: active
-                              ? AppTheme.accent
+                              ? AppTheme.actionText
                               : (done ? AppTheme.textHint : AppTheme.textMain),
                         ),
                       ),
@@ -290,7 +329,7 @@ class _PlayerPageState extends State<PlayerPage> {
                   ),
                   child:  Center(
                     child: CircularProgressIndicator(
-                        color: AppTheme.accent),
+                        color: AppTheme.actionText),
                   ),
                 ),
             ],
@@ -315,14 +354,14 @@ class _PlayerPageState extends State<PlayerPage> {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Flexible(
                     child: Text(
                       book.cleanTitle,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style:  TextStyle(
@@ -382,23 +421,25 @@ class _PlayerPageState extends State<PlayerPage> {
             data: SliderTheme.of(context).copyWith(
               trackHeight: 3,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              activeTrackColor: AppTheme.accent,
+              activeTrackColor: AppTheme.actionText,
               inactiveTrackColor: AppTheme.divider,
-              thumbColor: AppTheme.accent,
+              thumbColor: AppTheme.actionText,
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-              overlayColor: AppTheme.accent.withValues(alpha: 0.2),
+              overlayColor: AppTheme.actionText.withValues(alpha: 0.2),
             ),
             child: Slider(
               value: progress.clamp(0.0, 1.0),
-              onChangeStart: (_) {
+              semanticFormatterCallback: (value) =>
+                  '收听进度 ${Fmt.duration(Duration(milliseconds: (value * duration.inMilliseconds).round()))}',
+              onChangeStart: duration <= Duration.zero ? null : (_) {
                 _dragValue = position.inMilliseconds.toDouble();
               },
-              onChanged: (v) {
+              onChanged: duration <= Duration.zero ? null : (v) {
                 setState(() {
                   _dragValue = v * duration.inMilliseconds;
                 });
               },
-              onChangeEnd: (v) {
+              onChangeEnd: duration <= Duration.zero ? null : (v) {
                 final target = Duration(
                     milliseconds: (v * duration.inMilliseconds).round());
                 setState(() => _dragValue = -1);
@@ -432,46 +473,55 @@ class _PlayerPageState extends State<PlayerPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            iconSize: 38,
+            tooltip: '上一${player.book!.contentMode.unitLabel}',
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            iconSize: 32,
             color: player.hasPrev ? AppTheme.textMain : AppTheme.textHint,
             icon: const Icon(Icons.skip_previous_rounded),
             onPressed: player.hasPrev ? player.previous : null,
           ),
-          const SizedBox(width: 6),
           IconButton(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             tooltip: '后退 15 秒',
             onPressed: () => player.seekRelative(-15),
             icon: _Seek15Icon(forward: false, color: AppTheme.textSub),
           ),
-          const SizedBox(width: 10),
-          InkResponse(
-            onTap: player.togglePlay,
-            radius: 40,
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration:  BoxDecoration(
-                color: AppTheme.accent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                player.isPlaying
-                    ? Icons.pause_rounded
-                    : Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 44,
+          Semantics(
+            button: true,
+            label: player.error != null ? '重试播放' : (player.isPlaying ? '暂停' : '播放'),
+            child: Tooltip(
+              message: player.error != null ? '重试播放' : (player.isPlaying ? '暂停' : '播放'),
+              child: InkResponse(
+                onTap: player.loading ? null :
+                    (player.error != null ? player.retryPlayback : player.togglePlay),
+                radius: 40,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.accent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    player.error != null ? Icons.refresh_rounded :
+                    (player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                    color: AppTheme.onPrimary,
+                    size: 44,
+                  ),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 10),
           IconButton(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             tooltip: '前进 15 秒',
             onPressed: () => player.seekRelative(15),
             icon: _Seek15Icon(forward: true, color: AppTheme.textSub),
           ),
-          const SizedBox(width: 6),
           IconButton(
-            iconSize: 38,
+            tooltip: '下一${player.book!.contentMode.unitLabel}',
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            iconSize: 32,
             color: player.hasNext ? AppTheme.textMain : AppTheme.textHint,
             icon: const Icon(Icons.skip_next_rounded),
             onPressed: player.hasNext ? player.next : null,
@@ -497,19 +547,19 @@ class _PlayerPageState extends State<PlayerPage> {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
                     child: Row(
                       children: [
-                        Text(
+                        Expanded(child: Text(
                           '${player.book!.contentMode.label}播放速度',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textMain,
                           ),
-                        ),
-                        const Spacer(),
+                        )),
+                        const SizedBox(width: 12),
                         Text(
                           '当前 ${player.rateLabel}',
                           style: TextStyle(
-                              fontSize: 13, color: AppTheme.accent),
+                              fontSize: 13, color: AppTheme.actionText),
                         ),
                       ],
                     ),
@@ -541,12 +591,12 @@ class _PlayerPageState extends State<PlayerPage> {
         _speedLabel(r),
         style: TextStyle(
           fontSize: 15,
-          color: active ? AppTheme.accent : AppTheme.textMain,
+          color: active ? AppTheme.actionText : AppTheme.textMain,
           fontWeight: active ? FontWeight.w700 : FontWeight.w400,
         ),
       ),
       trailing: active
-          ? const Icon(Icons.check, color: AppTheme.accent)
+          ? Icon(Icons.check, color: AppTheme.actionText)
           : null,
       onTap: () {
         player.setRate(r);
@@ -567,22 +617,24 @@ class _PlayerPageState extends State<PlayerPage> {
         runSpacing: 8,
         children: [
           ActionChip(
+            materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.speed_rounded,
                 size: 16,
-                color: player.rate != 1.0 ? AppTheme.accent : AppTheme.textSub),
+                color: player.rate != 1.0 ? AppTheme.actionText : AppTheme.textSub),
             label: Text(
               '倍速 ${player.rateLabel}',
               style: TextStyle(
                 fontSize: 12,
-                color: player.rate != 1.0 ? AppTheme.accent : null,
+                color: player.rate != 1.0 ? AppTheme.actionText : null,
                 fontWeight: player.rate != 1.0 ? FontWeight.w700 : null,
               ),
             ),
             onPressed: () => _showSpeedSheet(player),
           ),
           ActionChip(
+            materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.format_list_bulleted,
-                size: 16, color: AppTheme.accent),
+                size: 16, color: AppTheme.actionText),
             label: Text(
               '目录 · ${player.chapters.length} ${player.book!.contentMode.unitLabel}',
               style: const TextStyle(fontSize: 12),
@@ -590,8 +642,9 @@ class _PlayerPageState extends State<PlayerPage> {
             onPressed: () => _showChapterSheet(player),
           ),
           ActionChip(
+            materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.bedtime_outlined,
-                size: 16, color: AppTheme.accent),
+                size: 16, color: AppTheme.actionText),
             label: Text(
               player.stopAtChapterEnd
                   ? '播完自动暂停'
@@ -600,7 +653,7 @@ class _PlayerPageState extends State<PlayerPage> {
                       : '睡眠定时',
               style: TextStyle(
                 fontSize: 12,
-                color: player.stopAtChapterEnd ? AppTheme.accent : null,
+                color: player.stopAtChapterEnd ? AppTheme.actionText : null,
                 fontWeight:
                     player.stopAtChapterEnd ? FontWeight.w700 : null,
               ),
@@ -608,14 +661,15 @@ class _PlayerPageState extends State<PlayerPage> {
             onPressed: () => _showSleepSheet(player),
           ),
           ActionChip(
+            materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.download_for_offline_outlined,
                 size: 16,
-                color: player.currentCached ? AppTheme.accent : AppTheme.textSub),
+                color: player.currentCached ? AppTheme.actionText : AppTheme.textSub),
             label: Text(
               player.currentCached ? '已缓存' : '缓存',
               style: TextStyle(
                 fontSize: 12,
-                color: player.currentCached ? AppTheme.accent : null,
+                color: player.currentCached ? AppTheme.actionText : null,
                 fontWeight: player.currentCached ? FontWeight.w700 : null,
               ),
             ),
@@ -663,7 +717,7 @@ class _PlayerPageState extends State<PlayerPage> {
                   '播完即停，不自动播放下一${player.book?.contentMode.unitLabel ?? '项'}',
                   style: const TextStyle(fontSize: 12),
                 ),
-                activeThumbColor: AppTheme.accent,
+                activeThumbColor: AppTheme.actionText,
               ),
               const Divider(height: 1),
               ...options.map((o) {
@@ -673,9 +727,9 @@ class _PlayerPageState extends State<PlayerPage> {
                 return ListTile(
                   title: Text(o.$2,
                       style: TextStyle(
-                          color: active ? AppTheme.accent : AppTheme.textMain)),
+                          color: active ? AppTheme.actionText : AppTheme.textMain)),
                   trailing: active
-                      ?  Icon(Icons.check, color: AppTheme.accent)
+                      ?  Icon(Icons.check, color: AppTheme.actionText)
                       : null,
                   onTap: () {
                     if (o.$1 > Duration.zero) {

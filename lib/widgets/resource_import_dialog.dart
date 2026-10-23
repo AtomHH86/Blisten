@@ -108,6 +108,7 @@ class _ResourceImportDialogState extends State<ResourceImportDialog> {
     return PopScope(
       canPop: !_loading,
       child: AlertDialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         title: const Text('添加 B 站资源'),
         content: SingleChildScrollView(
           child: Column(
@@ -118,6 +119,7 @@ class _ResourceImportDialogState extends State<ResourceImportDialog> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
+                runSpacing: 8,
                 children: ContentMode.values
                     .map(
                       (mode) => ChoiceChip(

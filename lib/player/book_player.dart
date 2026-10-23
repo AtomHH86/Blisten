@@ -58,6 +58,14 @@ class BookPlayer extends ChangeNotifier {
   String? _playbackUrl;
   BookAudio? _lastAudio;
 
+  // 只保留最近一次失败的播放目标；重试沿用当次分 P 和偏移，
+  // 不能重新套用「重新选择歌曲从首曲开始」的入口规则。
+  ({Book book, List<Chapter> chapters, int index, int positionMs,
+    bool complete})? _failedTarget;
+  int _loadGeneration = 0;
+  int? _nativeLoadGeneration;
+  Completer<void>? _nativeLoadError;
+
   final Map<int, ({String url, int ts})> _urlCache = {};
   Timer? _positionTimer;
   Timer? _sleepTimer;
@@ -230,13 +238,32 @@ class BookPlayer extends ChangeNotifier {
     });
     _player.stream.error.listen((e) async {
       debugPrint('[BookPlayer] player error: $e');
-      // 重连进行中再次报错是重连链路的正常噪声，直接忽略，避免覆盖成功状态
+      // 只有本代已经开始打开音源时，原生错误才归属该加载链。
+      // 目录仍在等待时的旧音源错误不能接管新请求的 loading。
+      if (_loading) {
+        final error = _nativeLoadError;
+        if (_nativeLoadGeneration == _loadGeneration &&
+            error != null && !error.isCompleted) {
+          error.complete();
+        }
+        return;
+      }
       if (_reconnecting) return;
-      _loading = false;
       // 长音频断流：先尝试自动重连，重连失败才报错
       if (_loaded) {
+        final generation = _loadGeneration;
+        final session = _session;
+        final retryBook = _book;
+        final retryTarget = retryBook == null ? null : (
+          book: retryBook, chapters: List<Chapter>.of(_chapters),
+          index: _index, positionMs: currentPosition.inMilliseconds,
+          complete: _chaptersComplete,
+        );
         final ok = await _reconnect();
         if (ok) return;
+        // 重连可能清空原生位置，失败后仍从发生错误前的位置重试。
+        if (generation != _loadGeneration || session != _session) return;
+        _failedTarget = retryTarget;
       }
       _error = '播放失败，请稍后重试';
       notifyListeners();
@@ -323,30 +350,39 @@ class BookPlayer extends ChangeNotifier {
   /// 断流自动重连：用当前章节的备用音轨地址重开并 seek 回原位置。
   /// 返回是否恢复成功。
   Future<bool> _reconnect({int? keepMs}) async {
-    if (_reconnecting) return false;
+    if (_reconnecting || _loading) return false;
     _reconnecting = true;
-    // 记录会话代号：期间若用户按了停止，这里要放弃，不能把声音又放出来
+    // 新选择和停止都使旧重连失效，旧请求不能触碰新会话的音源与状态。
     final mySession = _session;
+    final generation = _loadGeneration;
+    bool stillCurrent() => mySession == _session && generation == _loadGeneration;
     final resumeMs = keepMs ?? currentPosition.inMilliseconds;
+    final book = _book;
+    final chapter = currentChapter;
+    final rate = _rate;
     try {
-      final chapter = currentChapter;
-      if (chapter == null) return false;
+      if (book == null || chapter == null) return false;
       // 音源视为已失效：重建失败时 resume() 会据此重新载入
       _playbackUrl = null;
       _loading = true;
       notifyListeners();
 
       // 已缓存的章节直接重开本地文件，无需重新取流
-      final local = await _cachedPathOf(_book?.bvid, chapter.cid);
+      final local = await _cachedPathOf(book.bvid, chapter.cid);
+      if (!stillCurrent()) return false;
       if (local != null) {
         try {
+          final nativeError = _beginNativeLoad(generation);
           await _player.open(Media(local), play: false);
-          if (mySession != _session) {
-            await _player.stop();
-            return false;
-          }
-          await _player.setRate(_rate);
-          await _seekToResume(resumeMs);
+          if (!stillCurrent()) return false;
+          await _waitForNativeLoad(nativeError);
+          if (!stillCurrent()) return false;
+          await _player.setRate(rate);
+          if (!stillCurrent()) return false;
+          await _seekToResume(resumeMs,
+              stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
+          if (!stillCurrent()) return false;
+          if (nativeError.isCompleted) throw StateError('原生音源加载失败');
           _isOffline = true;
           _mediaReady = true;
           _error = null;
@@ -358,39 +394,48 @@ class BookPlayer extends ChangeNotifier {
           notifyListeners();
           return true;
         } catch (e) {
+          if (!stillCurrent()) return false;
           debugPrint('[BookPlayer] 本地重开失败: $e');
-          await _cache.dropIfBroken(_book?.bvid ?? '', chapter.cid);
+          await _cache.dropIfBroken(book.bvid, chapter.cid);
+          if (!stillCurrent()) return false;
         }
       }
 
       // 换一个候选地址重试（清掉旧地址缓存，强制重新取流）
       _urlCache.remove(chapter.cid);
-      final candidates = await _fetchStreamCandidates(chapter.cid);
-      if (candidates.isEmpty) return false;
+      final source = await _fetchStreamCandidates(chapter.cid,
+          bvid: book.bvid, stillCurrent: stillCurrent);
+      if (!stillCurrent() || source.urls.isEmpty) return false;
+      final candidates = source.urls;
 
       var opened = false;
       for (final url in candidates) {
         try {
-          await _player.open(Media(url, httpHeaders: _streamHeaders()),
-              play: false);
-          if (mySession != _session) {
-            debugPrint('[BookPlayer] 重连期间已被停止，放弃');
-            await _player.stop();
-            return false;
-          }
-          // open 之后倍速可能被复位，显式恢复
-          await _player.setRate(_rate);
-          await _seekToResume(resumeMs);
+          final nativeError = _beginNativeLoad(generation);
+          await _player.open(Media(url, httpHeaders: _streamHeaders()), play: false);
+          if (!stillCurrent()) return false;
+          await _waitForNativeLoad(nativeError);
+          if (!stillCurrent()) return false;
+          // open 之后倍速可能被复位，这里显式恢复
+          await _player.setRate(rate);
+          if (!stillCurrent()) return false;
+          await _seekToResume(resumeMs,
+              stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
+          if (!stillCurrent()) return false;
+          if (nativeError.isCompleted) throw StateError('原生音源加载失败');
           opened = true;
           _playbackUrl = url;
           break;
         } catch (e) {
+          if (!stillCurrent()) return false;
           debugPrint('[BookPlayer] 重连候选失败: $e');
           await _player.stop();
+          if (!stillCurrent()) return false;
         }
       }
       if (!opened) return false;
 
+      _lastAudio = source.audio ?? _lastAudio;
       _error = null;
       _loading = false;
       _mediaReady = true;
@@ -405,8 +450,12 @@ class BookPlayer extends ChangeNotifier {
       debugPrint('[BookPlayer] 重连失败: $e');
       return false;
     } finally {
-      _reconnecting = false;
-      _loading = false;
+      if (stillCurrent()) {
+        _nativeLoadGeneration = null;
+        _nativeLoadError = null;
+        _reconnecting = false;
+        _loading = false;
+      }
     }
   }
 
@@ -498,22 +547,50 @@ class BookPlayer extends ChangeNotifier {
     }());
   }
 
+  int _beginLoad() {
+    _nativeLoadGeneration = null;
+    _nativeLoadError = null;
+    _failedTarget = null;
+    _reconnecting = false;
+    _loading = true;
+    _error = null;
+    return ++_loadGeneration;
+  }
+
   /// 播放指定作品；resume:false 从首个分P开头播放，显式分P可直接传入位置。
   /// 返回是否成功进入播放
   Future<bool> playBook(Book book,
       {int resumeIndex = 0, int resumeMs = 0, bool resume = true}) async {
+    final generation = _beginLoad();
+    notifyListeners();
     _ensureNotificationPermission();
     List<Chapter> chapters;
-    if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
-      chapters = _chapters; // 同本书复用列表
-    } else {
-      chapters = book.chapters ?? await _api.pageList(book.bvid);
+    try {
+      if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
+        chapters = _chapters; // 同本书复用列表
+      } else {
+        chapters = book.chapters ?? await _api.pageList(book.bvid);
+      }
+    } catch (e) {
+      if (generation != _loadGeneration) return false;
+      _loading = false;
+      _error = '加载目录失败，请重试';
+      _failedTarget = (book: book, chapters: <Chapter>[],
+        index: resume ? resumeIndex : 0, positionMs: resume ? resumeMs : 0,
+        complete: true);
+      debugPrint('[BookPlayer] 加载目录失败: $e');
+      notifyListeners();
+      return false;
     }
+    if (generation != _loadGeneration) return false;
 
     if (chapters.isEmpty) {
       _error = '这个资源没有可播放的分P';
       _book = book;
+      _chapters = [];
+      _index = 0;
       _loaded = false;
+      _loading = false;
       notifyListeners();
       return false;
     }
@@ -530,7 +607,8 @@ class BookPlayer extends ChangeNotifier {
         ? resumeIndex
         : 0;
     return _loadTarget(idx,
-        resumeMs: resume ? resumeMs : 0, newBook: book, newChapters: chapters);
+        resumeMs: resume ? resumeMs : 0, newBook: book, newChapters: chapters,
+        requestGeneration: generation);
   }
 
   /// 从书架/离线入口播放一本书：在线优先，取不到就退回本地缓存
@@ -540,6 +618,8 @@ class BookPlayer extends ChangeNotifier {
   /// - [ShelfPlayOutcome.bookGone]：**网络正常但接口返回空**，说明作品被删/下架
   /// - [ShelfPlayOutcome.loadFailed]：请求本身失败（多半没网）且没有离线数据
   Future<ShelfPlayOutcome> playBookWithFallback(ShelfBook sb) async {
+    final generation = _beginLoad();
+    notifyListeners();
     _ensureNotificationPermission();
     final book = sb.book;
     final start = PlaybackPreferences.selectionStart(book.contentMode,
@@ -562,6 +642,7 @@ class BookPlayer extends ChangeNotifier {
     } catch (_) {
       networkOk = false; // 网络不可用 / 请求异常
     }
+    if (generation != _loadGeneration) return ShelfPlayOutcome.loadFailed;
 
     // ② 在线拿到了章节：正常播放（命中缓存的集自动播本地文件）
     if (chapters.isNotEmpty) {
@@ -569,7 +650,9 @@ class BookPlayer extends ChangeNotifier {
           ? start.index
           : 0;
       final ok = await _loadTarget(idx,
-          resumeMs: start.positionMs, newBook: book, newChapters: chapters);
+          resumeMs: start.positionMs, newBook: book, newChapters: chapters,
+          requestGeneration: generation);
+      if (generation != _loadGeneration) return ShelfPlayOutcome.loadFailed;
       if (ok) return ShelfPlayOutcome.ok;
       // 没播起来（多半是没网，且要续听的那一集没缓存）→ 退回本地已缓存的集
     }
@@ -585,7 +668,8 @@ class BookPlayer extends ChangeNotifier {
             ]
           : cached;
       for (final c in ordered) {
-        final r = await playCachedEntry(book.bvid, c.cid, book);
+        final r = await _playCachedEntry(book.bvid, c.cid, book, generation);
+        if (generation != _loadGeneration) return ShelfPlayOutcome.loadFailed;
         if (r == CachePlayOutcome.okOffline || r == CachePlayOutcome.okOnline) {
           return ShelfPlayOutcome.ok;
         }
@@ -599,6 +683,7 @@ class BookPlayer extends ChangeNotifier {
     _book = book;
     _chapters = const [];
     _loaded = false;
+    _loading = false;
     _error = networkOk ? '作品已下架或无法播放' : '网络不可用，且没有离线缓存';
     notifyListeners();
     return networkOk ? ShelfPlayOutcome.bookGone : ShelfPlayOutcome.loadFailed;
@@ -620,6 +705,32 @@ class BookPlayer extends ChangeNotifier {
     await _loadTarget(index, resumeMs: offsetMs);
   }
 
+  /// 用户重试失败目标；已停止或正在加载时不再发起播放。
+  Future<bool> retryPlayback() async {
+    if (_loading || _error == null) return false;
+    final target = _failedTarget;
+    if (target != null) {
+      if (target.index >= 0 && target.index < target.chapters.length) {
+        _urlCache.remove(target.chapters[target.index].cid);
+      }
+      if (target.chapters.isEmpty) {
+        return playBook(target.book, resumeIndex: target.index,
+            resumeMs: target.positionMs);
+      }
+      return _loadTarget(target.index,
+          resumeMs: target.positionMs, newBook: target.book,
+          newChapters: target.chapters, chaptersComplete: target.complete);
+    }
+    final book = _book;
+    if (book == null) return false;
+    if (_chapters.isNotEmpty) {
+      _urlCache.remove(currentChapter?.cid);
+      return _loadTarget(_index, resumeMs: currentPosition.inMilliseconds);
+    }
+    final progress = _shelf.progressByBvid(book.bvid) ?? ShelfBook(book: book);
+    return await playBookWithFallback(progress) == ShelfPlayOutcome.ok;
+  }
+
   /// 加载并打开音源：成功才提交新状态，任何一步失败都滚回旧状态
   Future<bool> _loadTarget(
     int index, {
@@ -629,9 +740,16 @@ class BookPlayer extends ChangeNotifier {
     /// 本次传入的章节列表是否是**完整目录**（在线列表＝完整；
     /// 离线时从缓存索引拼出来的只有已缓存的那几集，不能当整本书的章节数）
     bool chaptersComplete = true,
+    int? requestGeneration,
   }) async {
+    final generation = requestGeneration ?? _beginLoad();
+    if (generation != _loadGeneration) return false;
+    final session = _session;
+    bool stillCurrent() => generation == _loadGeneration && session == _session;
+    _failedTarget = null;
     final prevBook = _book;
     final prevChapters = _chapters;
+    final prevComplete = _chaptersComplete;
     final prevIndex = _index;
     final prevLoaded = _loaded;
     final prevUrl = _playbackUrl;
@@ -639,42 +757,57 @@ class BookPlayer extends ChangeNotifier {
     final prevOffline = _isOffline;
     final prevRate = _rate;
 
-    if (newBook != null) _book = newBook;
-    if (newChapters != null) {
-      _chapters = newChapters;
-      _chaptersComplete = chaptersComplete;
-    }
+    // 候选信息在原生播放成功前只留在本次请求中；失败不能回滚到
+    // 另一个尚未完成的请求，也不能把旧音源的位置记到候选作品。
+    final retryBook = newBook ?? _book;
+    final retryChapters = List<Chapter>.of(newChapters ?? _chapters);
+    final retryComplete = newChapters != null ? chaptersComplete : _chaptersComplete;
     _loading = true;
     _error = null;
     notifyListeners();
 
     var ok = false;
+    BookAudio? targetAudio;
     try {
-      if (_chapters.isEmpty || index < 0 || index >= _chapters.length) {
+      if (retryBook == null || retryChapters.isEmpty || index < 0 || index >= retryChapters.length) {
         throw StateError('分 P 索引越界：$index');
       }
-      _rate = await _preferences.rateFor(
-          _book?.contentMode ?? ContentMode.audiobook);
-      final chapter = _chapters[index];
-      // 注意：换章时 newBook 为 null，必须用已提交的 _book 判定缓存
-      final curBvid = _book?.bvid;
+      final rate = await _preferences.rateFor(
+          retryBook.contentMode);
+      if (!stillCurrent()) return false;
+      final chapter = retryChapters[index];
+      // 注意：换章时 newBook 为 null，沿用已提交作品判定缓存。
+      final curBvid = retryBook.bvid;
       final localPath = await _cachedPathOf(curBvid, chapter.cid);
+      if (!stillCurrent()) return false;
 
       if (localPath != null) {
         // 已缓存：直接播本地文件，不需要网络地址
         var opened = false;
+        Completer<void>? nativeError;
         try {
-          await _player.setRate(_rate);
+          await _player.setRate(rate);
+          if (!stillCurrent()) return false;
+          nativeError = _beginNativeLoad(generation);
           await _player.open(Media(localPath), play: false);
+          if (!stillCurrent()) return false;
+          await _waitForNativeLoad(nativeError);
+          if (!stillCurrent()) return false;
           opened = true;
         } catch (e) {
           // open 在播放器忙（比如刚被通知栏/耳机事件打断）时会抛瞬时异常，
           // 重试一次再决定，否则白白回退在线、浪费流量还丢掉离线播放的意义
           debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: $e');
           await Future<void>.delayed(const Duration(milliseconds: 350));
+          if (!stillCurrent()) return false;
           try {
-            await _player.setRate(_rate);
+            await _player.setRate(rate);
+            if (!stillCurrent()) return false;
+            nativeError = _beginNativeLoad(generation);
             await _player.open(Media(localPath), play: false);
+            if (!stillCurrent()) return false;
+            await _waitForNativeLoad(nativeError);
+            if (!stillCurrent()) return false;
             opened = true;
           } catch (e2) {
             debugPrint('[BookPlayer] 本地缓存打开仍失败，回退在线: $e2');
@@ -682,12 +815,17 @@ class BookPlayer extends ChangeNotifier {
         }
         if (opened) {
           // 先应用当前模式倍速再起播；设置失败也不删除有效的缓存文件。
-          await _player.setRate(_rate);
+          await _player.setRate(rate);
+          if (!stillCurrent()) return false;
+          final error = nativeError!;
           if (resumeMs > 0) {
-            await _seekToResume(resumeMs);
+            await _seekToResume(resumeMs,
+                stillCurrent: () => stillCurrent() && !error.isCompleted);
           } else {
             await _player.play();
           }
+          if (!stillCurrent()) return false;
+          if (error.isCompleted) throw StateError('原生音源加载失败');
           ok = true;
           _playbackUrl = null;
           _mediaReady = true;
@@ -695,12 +833,16 @@ class BookPlayer extends ChangeNotifier {
           _pausedByInterruption = false;
         } else {
           // 打开失败先确认文件是否真的坏了，不能因为一次 open 异常就删掉离线文件
-          await _cache.dropIfBroken(curBvid ?? '', chapter.cid);
+          await _cache.dropIfBroken(curBvid, chapter.cid);
         }
       }
 
       if (!ok) {
-        final candidates = await _fetchStreamCandidates(chapter.cid);
+        final source = await _fetchStreamCandidates(chapter.cid,
+            bvid: curBvid, stillCurrent: stillCurrent);
+        if (!stillCurrent()) return false;
+        targetAudio = source.audio;
+        final candidates = source.urls;
         if (candidates.isEmpty) {
           throw StateError('获取音频链接失败（内容可能无法播放）');
         }
@@ -709,16 +851,25 @@ class BookPlayer extends ChangeNotifier {
           final url = candidates[i];
           try {
             // 有续播位置时先打开再精确跳转，保证落点准确到秒
-            await _player.setRate(_rate);
+            await _player.setRate(rate);
+            if (!stillCurrent()) return false;
+            final nativeError = _beginNativeLoad(generation);
             await _player.open(Media(url, httpHeaders: _streamHeaders()),
                 play: false);
+            if (!stillCurrent()) return false;
+            await _waitForNativeLoad(nativeError);
+            if (!stillCurrent()) return false;
             // open 后倍速可能被播放器复位，这里显式恢复
-            await _player.setRate(_rate);
+            await _player.setRate(rate);
+            if (!stillCurrent()) return false;
             if (resumeMs > 0) {
-              await _seekToResume(resumeMs);
+              await _seekToResume(resumeMs,
+                  stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
             } else {
               await _player.play();
             }
+            if (!stillCurrent()) return false;
+            if (nativeError.isCompleted) throw StateError('原生音源加载失败');
             if (_error != null) _error = null;
             ok = true;
             _playbackUrl = url;
@@ -728,6 +879,7 @@ class BookPlayer extends ChangeNotifier {
             break;
           } catch (e) {
             debugPrint('[BookPlayer] 候选音轨 $i 打开失败: $e');
+            if (!stillCurrent()) return false;
             if (i < candidates.length - 1) {
               await _player.stop();
             }
@@ -740,16 +892,29 @@ class BookPlayer extends ChangeNotifier {
       }
       // 在线与离线两条路径都要抢占音频焦点
       unawaited(AudioFocus.instance.request());
+      _book = retryBook;
+      _chapters = retryChapters;
+      _chaptersComplete = retryComplete;
+      _rate = rate;
+      _lastAudio = targetAudio ?? prevAudio;
       _index = index;
       _loaded = true;
       AppAnalytics.onEvent('play_start');
     } catch (e) {
-      _error = '播放失败，请稍后重试';
+      if (stillCurrent()) {
+        _error = '播放失败，请稍后重试';
+        if (retryBook != null) {
+          _failedTarget = (book: retryBook, chapters: retryChapters,
+            index: index, positionMs: resumeMs, complete: retryComplete);
+        }
+      }
       debugPrint('[BookPlayer] 加载失败: $e');
     } finally {
+      if (stillCurrent()) {
       if (!ok) {
         _book = prevBook;
         _chapters = prevChapters;
+        _chaptersComplete = prevComplete;
         _index = prevIndex;
         _loaded = prevLoaded;
         _playbackUrl = prevUrl;
@@ -759,22 +924,42 @@ class BookPlayer extends ChangeNotifier {
         try {
           await _player.setRate(prevRate);
         } catch (_) {}
-        _mediaReady = false;
+        if (stillCurrent()) _mediaReady = false;
       }
-      _loading = false;
-      _pushNowPlaying();
-      notifyListeners();
+      if (stillCurrent()) {
+        _nativeLoadGeneration = null;
+        _nativeLoadError = null;
+        _loading = false;
+        _pushNowPlaying();
+        notifyListeners();
+      }
+      }
     }
     return ok;
   }
 
+  Completer<void> _beginNativeLoad(int generation) {
+    _nativeLoadGeneration = generation;
+    final error = Completer<void>();
+    _nativeLoadError = error;
+    return error;
+  }
+
+  Future<void> _waitForNativeLoad(Completer<void> error) async {
+    await Future.any<void>([_waitForDuration(), error.future]);
+    if (error.isCompleted) throw StateError('原生音源加载失败');
+  }
+
   /// 精确续播：等媒体就绪后跳转，并校验落点（首次 seek 可能被播放器忽略）
-  Future<void> _seekToResume(int resumeMs) async {
+  Future<void> _seekToResume(int resumeMs, {bool Function()? stillCurrent}) async {
     final target = Duration(milliseconds: resumeMs);
     await _waitForDuration();
+    if (stillCurrent != null && !stillCurrent()) return;
     await _player.seek(target);
+    if (stillCurrent != null && !stillCurrent()) return;
     await _player.play();
     await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (stillCurrent != null && !stillCurrent()) return;
     final off = (_player.state.position - target).inMilliseconds.abs();
     if (off > 5000) {
       debugPrint('[BookPlayer] 续播落点偏差 ${off}ms，重新跳转');
@@ -801,14 +986,17 @@ class BookPlayer extends ChangeNotifier {
       };
 
   /// 候选音频地址列表：AAC 优先（稳定），flac/dolby 兜底；百度 http 转 https
-  Future<List<String>> _fetchStreamCandidates(int cid) async {
+  Future<({List<String> urls, BookAudio? audio})> _fetchStreamCandidates(int cid, {
+    required String bvid, bool Function()? stillCurrent,
+  }) async {
+    if (stillCurrent != null && !stillCurrent()) return (urls: <String>[], audio: null);
     final cached = _urlCache[cid];
     if (cached != null) {
       final ageMs = DateTime.now().millisecondsSinceEpoch - cached.ts;
-      if (ageMs < 90 * 60 * 1000) return [cached.url];
+      if (ageMs < 90 * 60 * 1000) return (urls: [cached.url], audio: null);
     }
-    final audio = await _api.playUrl(_book!.bvid, cid);
-    _lastAudio = audio;
+    final audio = await _api.playUrl(bvid, cid);
+    if (stillCurrent != null && !stillCurrent()) return (urls: <String>[], audio: null);
     debugPrint('[BookPlayer] 拿到音频: ${audio.tracks.length}条AAC '
         'flac=${audio.flac?.baseUrl.isNotEmpty} dolby=${audio.dolby?.baseUrl.isNotEmpty}');
 
@@ -839,7 +1027,7 @@ class BookPlayer extends ChangeNotifier {
         _urlCache.remove(eldest);
       }
     }
-    return uniq;
+    return (urls: uniq, audio: audio);
   }
 
   // ---------- 系统媒体会话 ----------
@@ -929,16 +1117,22 @@ class BookPlayer extends ChangeNotifier {
   }
 
   Future<void> resume() async {
+    final generation = _loadGeneration;
+    final session = _session;
+    bool stillCurrent() => generation == _loadGeneration && session == _session;
     _pausedByInterruption = false;
     await _restoreVolumeIfDucked();
+    if (!stillCurrent() || _loading || _reconnecting) return;
     // 音源确实不在了（重连彻底失败）时重新载入当前章节再播。
     // 注意用 _mediaReady 判断，不能用 _playbackUrl：离线播放时 URL 本来就是 null，
     // 否则每次恢复都会重新开一次本地文件（多一次 loading 与跳转延迟）。
     if (_loaded && !_mediaReady && !_reconnecting) {
       final ok = await _reconnect();
-      if (ok) return;
+      if (ok || !stillCurrent()) return;
     }
+    if (!stillCurrent()) return;
     await _player.play();
+    if (!stillCurrent()) return;
     unawaited(AudioFocus.instance.request());
     _pushState(force: true);
   }
@@ -975,7 +1169,14 @@ class BookPlayer extends ChangeNotifier {
     _pausedByInterruption = false;
     // 会话代号自增：让进行中的重连立即作废，避免「按了停止声音又出来」
     _session++;
+    final generation = ++_loadGeneration;
+    _nativeLoadGeneration = null;
+    _nativeLoadError = null;
+    _failedTarget = null;
+    _error = null;
+    _loading = false;
     await _player.stop();
+    if (generation != _loadGeneration) return;
     unawaited(AudioFocus.instance.abandon());
     _loaded = false;
     _playbackUrl = null;
@@ -1010,6 +1211,7 @@ class BookPlayer extends ChangeNotifier {
 
   /// 累计真实播放时长；满 1 分钟且不在书架上时自动加入
   void _tallyPlayTime() {
+    if (_loading) return;
     final book = _book;
     if (book == null || !_loaded || !book.contentMode.autoShelf) return;
     if (currentDuration <= Duration.zero) return;
@@ -1050,6 +1252,7 @@ class BookPlayer extends ChangeNotifier {
 
   /// 播到接近结尾（>=95%）自动打「已听」标记，不等 completed 事件
   void _markDoneIfReached(Duration pos) {
+    if (_loading) return;
     final chapter = currentChapter;
     final book = _book;
     final dur = currentDuration;
@@ -1097,17 +1300,28 @@ class BookPlayer extends ChangeNotifier {
   /// 返回结果要区分「文件真的没了」和「其它原因打不开」——
   /// 两者对用户是完全不同的处境，不能一律提示「缓存文件已失效」。
   Future<CachePlayOutcome> playCachedEntry(
-      String bvid, int cid, Book book) async {
+      String bvid, int cid, Book book) {
+    final generation = _beginLoad();
+    notifyListeners();
+    return _playCachedEntry(bvid, cid, book, generation);
+  }
+
+  Future<CachePlayOutcome> _playCachedEntry(
+      String bvid, int cid, Book book, int generation) async {
     _ensureNotificationPermission();
 
     // 文件得真的在，否则没有「离线播放」这回事
     final local = await _cachedPathOf(bvid, cid);
+    if (generation != _loadGeneration) return CachePlayOutcome.failed;
     if (local == null) {
+      _loading = false;
+      notifyListeners();
       _cache.logEvent('播放缓存失败：文件不存在 $bvid/$cid');
       return CachePlayOutcome.fileMissing;
     }
 
     final resolved = await resolveChapters(bvid);
+    if (generation != _loadGeneration) return CachePlayOutcome.failed;
     final chapters = resolved.chapters;
     var index = chapters.indexWhere((c) => c.cid == cid);
     if (index < 0) {
@@ -1127,6 +1341,7 @@ class BookPlayer extends ChangeNotifier {
     // 保留听书缓存入口自动入架；其他类型只保存独立收听记录。
     if (!_shelf.isOnShelf(bvid) && target.contentMode.autoShelf) {
       await _shelf.add(target);
+      if (generation != _loadGeneration) return CachePlayOutcome.failed;
       progress = _shelf.progressByBvid(bvid);
     }
     // 离线播放同样要续播：只有当书架记录的就是这一集时才恢复进度
@@ -1140,7 +1355,9 @@ class BookPlayer extends ChangeNotifier {
         resumeMs: start.positionMs,
         newBook: target,
         newChapters: chapters,
-        chaptersComplete: resolved.complete);
+        chaptersComplete: resolved.complete,
+        requestGeneration: generation);
+    if (generation != _loadGeneration) return CachePlayOutcome.failed;
 
     if (!ok) {
       // 文件在却没能起播：交给统一路径已经尝试过在线回退，这里只报「没播成」

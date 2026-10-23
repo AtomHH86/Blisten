@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -14,7 +15,19 @@ class LocalBiliFixture extends HttpOverrides {
   static const concert = 'BV1xx411c7mC';
   static const imported = 'BV1xx411c7mD';
   static const cached = 'BV1xx411c7mE';
-  static const ids = [audiobook, music, concert, imported, cached];
+  static const retryMusic = 'BV1xx411c7mF';
+  static const retryBook = 'BV1xx411c7mG';
+  static const retryUrl = 'BV1xx411c7mH';
+  static const ids = [
+    audiobook,
+    music,
+    concert,
+    imported,
+    cached,
+    retryMusic,
+    retryBook,
+    retryUrl,
+  ];
   static const seconds = 90;
 
   late final HttpServer _server;
@@ -24,6 +37,35 @@ class LocalBiliFixture extends HttpOverrides {
   final unexpectedRequests = <String>[];
   bool mediaAvailable = true;
   bool apiAvailable = true;
+  int audioGeneration = 0;
+  int minimumAudioGeneration = 0;
+  final playUrlRequests = <int>[];
+  final _pageListGates = <String, FixtureRequestGate>{};
+  final _playUrlGates = <int, FixtureRequestGate>{};
+  final _gates = <FixtureRequestGate>[];
+
+  FixtureRequestGate gatePageList(String bvid) {
+    final gate = FixtureRequestGate();
+    _pageListGates[bvid] = gate;
+    _gates.add(gate);
+    return gate;
+  }
+
+  FixtureRequestGate gatePlayUrl(int cid) {
+    final gate = FixtureRequestGate();
+    _playUrlGates[cid] = gate;
+    _gates.add(gate);
+    return gate;
+  }
+
+  void releaseGates() {
+    for (final gate in _gates) {
+      gate.release();
+    }
+    _gates.clear();
+    _pageListGates.clear();
+    _playUrlGates.clear();
+  }
 
   Future<void> start() async {
     _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -57,13 +99,14 @@ class LocalBiliFixture extends HttpOverrides {
   }
 
   Future<void> close() async {
+    releaseGates();
     await _server.close(force: true);
     await _mediaServer.close(force: true);
     await _tlsDirectory.delete(recursive: true);
   }
 
   String audioUrl(int cid) =>
-      'https://127.0.0.1:${_mediaServer.port}/audio/$cid.wav';
+      'https://127.0.0.1:${_mediaServer.port}/audio/$cid.wav?generation=$audioGeneration';
 
   static int cid(String bvid, int page) => (ids.indexOf(bvid) + 1) * 100 + page;
 
@@ -132,43 +175,67 @@ class LocalBiliFixture extends HttpOverrides {
     final path = request.uri.path;
     final query = request.uri.queryParameters;
     if (path.startsWith('/audio/')) {
-      if (!mediaAvailable) {
-        request.response.statusCode = HttpStatus.serviceUnavailable;
+      try {
+        final generation = int.tryParse(query['generation'] ?? '') ?? 0;
+        if (!mediaAvailable || generation < minimumAudioGeneration) {
+          request.response.statusCode = HttpStatus.serviceUnavailable;
+          await request.response.close();
+          return;
+        }
+        final range = request.headers.value(HttpHeaders.rangeHeader);
+        final match = range == null
+            ? null
+            : RegExp(r'bytes=(\d+)-(\d*)').firstMatch(range);
+        final start = match == null ? 0 : int.parse(match[1]!);
+        final requestedEnd = match == null || match[2]!.isEmpty
+            ? _wav.length - 1
+            : int.parse(match[2]!);
+        final end = requestedEnd.clamp(0, _wav.length - 1);
+        if (start >= _wav.length) {
+          request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+        } else {
+          request.response.headers
+            ..contentType = ContentType('audio', 'wav')
+            ..set(HttpHeaders.acceptRangesHeader, 'bytes')
+            ..contentLength = end - start + 1;
+          if (match != null) {
+            request.response.statusCode = HttpStatus.partialContent;
+            request.response.headers.set(
+              HttpHeaders.contentRangeHeader,
+              'bytes $start-$end/${_wav.length}',
+            );
+          }
+          if (request.method != 'HEAD') {
+            request.response.add(_wav.sublist(start, end + 1));
+          }
+        }
         await request.response.close();
-        return;
-      }
-      final range = request.headers.value(HttpHeaders.rangeHeader);
-      final match = range == null
-          ? null
-          : RegExp(r'bytes=(\d+)-(\d*)').firstMatch(range);
-      final start = match == null ? 0 : int.parse(match[1]!);
-      final requestedEnd = match == null || match[2]!.isEmpty
-          ? _wav.length - 1
-          : int.parse(match[2]!);
-      final end = requestedEnd.clamp(0, _wav.length - 1);
-      if (start >= _wav.length) {
-        request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
-      } else {
-        request.response.headers
-          ..contentType = ContentType('audio', 'wav')
-          ..set(HttpHeaders.acceptRangesHeader, 'bytes')
-          ..contentLength = end - start + 1;
-        if (match != null) {
-          request.response.statusCode = HttpStatus.partialContent;
-          request.response.headers.set(
-            HttpHeaders.contentRangeHeader,
-            'bytes $start-$end/${_wav.length}',
-          );
-        }
-        if (request.method != 'HEAD') {
-          request.response.add(_wav.sublist(start, end + 1));
+      } on SocketException catch (error) {
+        // Native stop/open cancels the previous local media response. Only
+        // peer reset and broken-pipe aborts are expected; other failures escape.
+        if (![32, 54, 104].contains(error.osError?.errorCode)) rethrow;
+      } on HttpException catch (error) {
+        final message = error.message.toLowerCase();
+        if (!message.contains('connection closed') &&
+            !message.contains('connection reset') &&
+            !message.contains('broken pipe')) {
+          rethrow;
         }
       }
-      await request.response.close();
       return;
     }
 
-    if (!apiAvailable) {
+    FixtureRequestGate? gate;
+    if (path == '/x/player/pagelist') {
+      gate = _pageListGates.remove(query['bvid']);
+    } else if (path == '/x/player/wbi/playurl') {
+      final cid = int.tryParse(query['cid'] ?? '') ?? 0;
+      playUrlRequests.add(cid);
+      gate = _playUrlGates.remove(cid);
+    }
+    if (gate != null) await gate.wait();
+
+    if (!apiAvailable || (gate?.fail ?? false)) {
       request.response.statusCode = HttpStatus.serviceUnavailable;
       request.response.headers.contentType = ContentType.json;
       request.response.write(
@@ -329,4 +396,21 @@ class _RedirectClient implements HttpClient {
   void close({bool force = false}) => _client.close(force: force);
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A one-shot HTTP boundary gate. Production code still uses the real API and
+/// native player; tests control only when the remote response arrives.
+class FixtureRequestGate {
+  final entered = Completer<void>();
+  final _released = Completer<void>();
+  bool fail = false;
+
+  Future<void> wait() async {
+    if (!entered.isCompleted) entered.complete();
+    await _released.future;
+  }
+
+  void release() {
+    if (!_released.isCompleted) _released.complete();
+  }
 }

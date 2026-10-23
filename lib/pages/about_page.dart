@@ -22,7 +22,7 @@ class AboutPage extends StatelessWidget {
             AppMeta.name,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 21,
+              fontSize: 24,
               fontWeight: FontWeight.w800,
               color: AppTheme.textMain,
             ),
@@ -31,13 +31,13 @@ class AboutPage extends StatelessWidget {
           Text(
             AppMeta.tagline,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppTheme.textSub),
+            style: TextStyle(fontSize: 14, color: AppTheme.textSub),
           ),
           const SizedBox(height: 4),
           Text(
             '版本 ${AppMeta.version}',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11.5, color: AppTheme.textHint),
+            style: TextStyle(fontSize: 12, color: AppTheme.textHint),
           ),
           const SizedBox(height: 22),
           _buildIntro(context),
@@ -49,7 +49,7 @@ class AboutPage extends StatelessWidget {
           Center(
             child: Text(
               '感谢每一位反馈问题的你',
-              style: TextStyle(fontSize: 11.5, color: AppTheme.textHint),
+              style: TextStyle(fontSize: 12, color: AppTheme.textHint),
             ),
           ),
         ],
@@ -64,13 +64,6 @@ class AboutPage extends StatelessWidget {
         height: 84,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.accent.withValues(alpha: 0.18),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(22),
@@ -79,7 +72,7 @@ class AboutPage extends StatelessWidget {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stack) => Container(
               color: AppTheme.surfaceHigh,
-              child: Icon(Icons.headset_rounded, size: 40, color: AppTheme.accent),
+              child: Icon(Icons.headset_rounded, size: 40, color: AppTheme.actionText),
             ),
           ),
         ),
@@ -98,7 +91,7 @@ class AboutPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.divider),
       ),
       child: Column(
@@ -117,7 +110,7 @@ class AboutPage extends StatelessWidget {
                       height: 4,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppTheme.accent,
+                        color: AppTheme.actionText,
                       ),
                     ),
                   ),
@@ -125,7 +118,7 @@ class AboutPage extends StatelessWidget {
                     child: Text(
                       p,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 14,
                         color: AppTheme.textSub,
                         height: 1.7,
                       ),
@@ -144,7 +137,7 @@ class AboutPage extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.divider),
       ),
       child: Column(
@@ -215,7 +208,7 @@ class AboutPage extends StatelessWidget {
                 color: AppTheme.accent.withValues(alpha: 0.13),
                 borderRadius: BorderRadius.circular(9),
               ),
-              child: Icon(icon, size: 18, color: AppTheme.accent),
+              child: Icon(icon, size: 18, color: AppTheme.actionText),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -225,7 +218,7 @@ class AboutPage extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textMain,
                     ),
@@ -233,9 +226,9 @@ class AboutPage extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     url.isEmpty ? '尚未配置 B听的对应入口' : subtitle,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11.5, color: AppTheme.textSub),
+                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
                   ),
                 ],
               ),
@@ -264,7 +257,7 @@ class AboutPage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.divider),
       ),
       child: Column(
@@ -274,14 +267,14 @@ class AboutPage extends StatelessWidget {
             children: [
               Icon(Icons.gavel_rounded, size: 16, color: AppTheme.textSub),
               const SizedBox(width: 6),
-              Text(
+              Expanded(child: Text(
                 '隐私与内容说明',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textMain,
                 ),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 10),
@@ -298,7 +291,7 @@ class AboutPage extends StatelessWidget {
             '独立项目的更新与反馈入口尚未配置，原项目链接仅用于来源致谢。\n\n'
             '6. 喜欢某部作品时，请前往官方平台支持作者。',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               color: AppTheme.textSub,
               height: 1.7,
             ),

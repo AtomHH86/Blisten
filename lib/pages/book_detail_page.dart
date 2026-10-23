@@ -14,6 +14,7 @@ import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/shelf_common.dart';
 import 'cache_sheet.dart';
 import 'player_page.dart';
 import 'up_home_page.dart';
@@ -87,7 +88,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       })),
       body: _loading
           ?  Center(
-              child: CircularProgressIndicator(color: AppTheme.accent),
+              child: CircularProgressIndicator(color: AppTheme.actionText),
             )
           : _error != null
               ? _buildError()
@@ -158,10 +159,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
-                  child: Row(
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                        Icon(Icons.format_list_bulleted,
-                          size: 18, color: AppTheme.accent),
+                          size: 18, color: AppTheme.actionText),
                       const SizedBox(width: 8),
 Text(
                           '目录（${chapters.length} ${book.contentMode.unitLabel}）',
@@ -177,10 +181,9 @@ Text(
                           child: Text(
                             '已听 $doneCount',
                             style: TextStyle(
-                                fontSize: 12, color: AppTheme.accent),
+                                fontSize: 12, color: AppTheme.actionText),
                           ),
                         ),
-                      const Spacer(),
                       TextButton.icon(
                         onPressed: chapters.isEmpty
                             ? null
@@ -244,88 +247,75 @@ Text(
   }
 
   Widget _buildHeader(Book book) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(
+    return LayoutBuilder(builder: (context, constraints) {
+      final stacked = constraints.maxWidth < 380 ||
+          MediaQuery.textScalerOf(context).scale(16) > 24;
+      final information = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BookCover(url: book.pic, width: 110, height: 146),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  book.cleanTitle,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style:  TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
-                    color: AppTheme.textMain,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _meta('${book.pages} ${book.contentMode.unitLabel}', Icons.library_books_outlined),
-                    const SizedBox(width: 12),
-                    _meta(book.durationText, Icons.schedule),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _meta(Fmt.count(book.play), Icons.play_arrow_rounded),
-                    const SizedBox(width: 12),
-                    _meta(book.like.toString(), Icons.thumb_up_alt_outlined),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: () => _openUp(book),
-                  borderRadius: BorderRadius.circular(6),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 10,
-                          backgroundColor: AppTheme.surfaceHigh,
-                          backgroundImage: book.authorFace.isNotEmpty
-                              ? NetworkImage(book.authorFace)
-                              : null,
-                          child: book.authorFace.isEmpty
-                              ? const Icon(Icons.person, size: 12)
-                              : null,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          book.author.isEmpty ? '未知 UP 主' : 'UP 主 · ${book.author}',
-                          style: TextStyle(
-                              fontSize: 13, color: AppTheme.textSub),
-                        ),
-                        // UP 主名可点，进入他的主页只看他的作品
-                        if (book.mid != 0)
-                          Icon(Icons.chevron_right_rounded,
-                              size: 16, color: AppTheme.textHint),
-                        const Spacer(),
-                        Text(
-                          Fmt.date(book.pubdate),
-                          style: TextStyle(
-                              fontSize: 12, color: AppTheme.textHint),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+          Text(
+            book.cleanTitle,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+              color: AppTheme.textMain,
             ),
           ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _meta('${book.pages} ${book.contentMode.unitLabel}', Icons.library_books_outlined),
+              _meta(book.durationText, Icons.schedule),
+              _meta(Fmt.count(book.play), Icons.play_arrow_rounded),
+              _meta(book.like.toString(), Icons.thumb_up_alt_outlined),
+            ],
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => _openUp(book),
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: AppTheme.surfaceHigh,
+                    backgroundImage: book.authorFace.isNotEmpty ? NetworkImage(book.authorFace) : null,
+                    child: book.authorFace.isEmpty ? const Icon(Icons.person, size: 16) : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(
+                    book.author.isEmpty ? '未知 UP 主' : 'UP 主 · ${book.author}',
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSub),
+                  )),
+                  // UP 主名可点，进入他的主页只看他的作品
+                  if (book.mid != 0)
+                    Icon(Icons.chevron_right_rounded, size: 20, color: AppTheme.textHint),
+                ],
+              ),
+            ),
+          ),
+          Text(Fmt.date(book.pubdate), style: TextStyle(fontSize: 12, color: AppTheme.textHint)),
         ],
-      ),
-    );
+      );
+      final cover = BookCover(url: book.pic, width: 110, height: 146);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: stacked
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [Center(child: cover), const SizedBox(height: 16), information],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [cover, const SizedBox(width: 16), Expanded(child: information)],
+              ),
+      );
+    });
   }
 
   Widget _meta(String text, IconData icon) {
@@ -359,12 +349,14 @@ Text(
         child: Row(
           children: [
             IconButton.outlined(
+              tooltip: onShelf ? '移出收藏' : '添加到收藏',
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: () => _toggleShelf(onShelf),
               icon: Icon(
                 onShelf
                     ? Icons.collections_bookmark_rounded
                     : Icons.bookmark_add_outlined,
-                color: onShelf ? AppTheme.accent : AppTheme.textSub,
+                color: onShelf ? AppTheme.actionText : AppTheme.textSub,
               ),
             ),
             const SizedBox(width: 12),
@@ -390,13 +382,13 @@ Text(
                                 size: 22,
                               ),
                               const SizedBox(width: 6),
-                              Text(
+                              Flexible(child: Text(
                                 requestedPage != null
                                     ? '播放第 $requestedPage ${book.contentMode.unitLabel}'
                                     : (hasProgress ? '继续收听' : '开始收听'),
                                 style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
+                              )),
                             ],
                           ),
                           if (hasProgress)
@@ -440,10 +432,10 @@ Text(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      player.isPlaying ? '正在播放' : '已暂停',
+                      player.error != null ? '暂时无法播放' : (player.isPlaying ? '正在播放' : '已暂停'),
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.accent,
+                        color: AppTheme.actionText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -461,23 +453,25 @@ Text(
                 ),
               ),
               if (player.loading)
-                const Padding(
-                  padding: EdgeInsets.all(10),
+                Padding(
+                  padding: const EdgeInsets.all(10),
                   child: SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppTheme.accent),
+                        strokeWidth: 2, color: AppTheme.actionText),
                   ),
                 )
               else
                 IconButton(
-                  onPressed: player.togglePlay,
+                  tooltip: player.error != null ? '重试播放' : (player.isPlaying ? '暂停' : '播放'),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  onPressed: player.error != null ? player.retryPlayback : player.togglePlay,
                   icon: Icon(
-                    player.isPlaying
+                    player.error != null ? Icons.refresh_rounded : (player.isPlaying
                         ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
-                    color: AppTheme.accent,
+                        : Icons.play_arrow_rounded),
+                    color: AppTheme.actionText,
                     size: 28,
                   ),
                 ),
@@ -491,7 +485,9 @@ Text(
   void _toggleShelf(bool onShelf) async {
     final shelf = context.read<ShelfStore>();
     if (onShelf) {
-      await shelf.remove(widget.bvid);
+      final saved = shelf.byBvid(widget.bvid);
+      if (saved != null) await confirmRemoveFromShelf(context, saved);
+      return;
     } else {
       await shelf.add(_book!);
       AppAnalytics.onEvent('shelf_add_manual');
@@ -671,14 +667,14 @@ class _ChapterTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color titleColor;
     if (isCurrent) {
-      titleColor = AppTheme.accent;
+      titleColor = AppTheme.actionText;
     } else if (listened) {
       titleColor = AppTheme.textHint;
     } else {
       titleColor = AppTheme.textMain;
     }
     final numberColor = isCurrent
-        ? AppTheme.accent
+        ? AppTheme.actionText
         : (listened ? AppTheme.textHint : AppTheme.textSub);
 
     return InkWell(
@@ -689,7 +685,7 @@ class _ChapterTile extends StatelessWidget {
           children: [
             if (isPlaying)
                Icon(Icons.graphic_eq_rounded,
-                  size: 18, color: AppTheme.accent)
+                  size: 18, color: AppTheme.actionText)
             else if (_hasOwnIndex)
               SizedBox(
                 width: 18,
@@ -767,9 +763,9 @@ class _CacheButton extends StatelessWidget {
     final busy = task != null && !task.done && !task.failed;
 
     if (busy) {
-      return SizedBox(
-        width: 52,
-        child: Row(
+      return ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
@@ -777,33 +773,35 @@ class _CacheButton extends StatelessWidget {
               height: 13,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: AppTheme.accent,
+                color: AppTheme.actionText,
                 value: task.progress > 0 ? task.progress : null,
               ),
             ),
-            const SizedBox(width: 3),
+            const SizedBox(height: 4),
             Text(
               '${(task.progress * 100).round()}%',
-              style: TextStyle(fontSize: 10, color: AppTheme.accent),
+              style: TextStyle(fontSize: 10, color: AppTheme.actionText),
             ),
           ],
         ),
       );
     }
 
-    return InkWell(
+    return Tooltip(
+      message: cached ? '本分 P 已缓存' : '缓存本分 P',
+      child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: cached
+      borderRadius: BorderRadius.circular(12),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        child: Center(child: cached
             ? Text(
                 '已缓存',
-                style: TextStyle(fontSize: 11, color: AppTheme.accent),
+                style: TextStyle(fontSize: 11, color: AppTheme.actionText),
               )
             : Icon(Icons.download_rounded,
-                size: 18, color: AppTheme.textHint),
+                size: 20, color: AppTheme.textHint)),
       ),
-    );
+    ));
   }
 }

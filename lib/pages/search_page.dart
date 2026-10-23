@@ -327,7 +327,7 @@ class _SearchPageState extends State<SearchPage> {
             icon: const Icon(Icons.add_link_rounded),
           ),
           IconButton(
-            tooltip: '回到发现页',
+            tooltip: '返回上一页',
             onPressed: () => Navigator.of(context).maybePop(),
             icon: Icon(Icons.close_rounded,
                 color: AppTheme.textSub),
@@ -340,7 +340,7 @@ class _SearchPageState extends State<SearchPage> {
               heroTag: 'search-top',
               onPressed: _scrollToTop,
               backgroundColor: AppTheme.accent,
-              foregroundColor: Colors.white,
+              foregroundColor: AppTheme.onPrimary,
               child: const Icon(Icons.arrow_upward_rounded),
             )
           : null,
@@ -349,18 +349,11 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: Container(
-              height: 50,
+              constraints: const BoxConstraints(minHeight: 56),
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                gradient: AppTheme.accentGradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.accent.withValues(alpha: 0.22),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                border: Border.all(color: AppTheme.outline),
               ),
               child: Container(
                 decoration: BoxDecoration(
@@ -383,7 +376,7 @@ class _SearchPageState extends State<SearchPage> {
                     hintStyle: TextStyle(
                         fontSize: 14, color: AppTheme.textHint),
                     prefixIcon: Icon(Icons.manage_search_rounded,
-                        color: AppTheme.accent),
+                        color: AppTheme.actionText),
                     suffixIcon: _controller.text.isEmpty
                         ? null
                         : IconButton(
@@ -391,7 +384,7 @@ class _SearchPageState extends State<SearchPage> {
                                 color: AppTheme.textHint, size: 18),
                             onPressed: _clearSearch,
                           ),
-                    // 关闭主题自带的浅色填充与边框，内层只承接渐变描边
+                    // 输入框沿用外层清晰边界，避免叠加两层描边
                     filled: false,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -404,16 +397,13 @@ class _SearchPageState extends State<SearchPage> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: ContentMode.values.map((mode) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: ChoiceChip(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: ContentMode.values.map((mode) => ChoiceChip(
                     label: Text(mode.label),
                     selected: _mode == mode,
                     onSelected: (_) => _switchMode(mode),
-                  ),
-                ),
               )).toList(),
             ),
           ),
@@ -433,7 +423,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           Expanded(
             child: Container(
-              height: 36,
+              constraints: const BoxConstraints(minHeight: 48),
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 color: AppTheme.surfaceHigh,
@@ -444,10 +434,16 @@ class _SearchPageState extends State<SearchPage> {
                 children: List.generate(2, (i) {
                   final active = _tab == i;
                   return Expanded(
-                    child: GestureDetector(
+                    child: Semantics(
+                      key: ValueKey('search-result-tab-$i'),
+                      selected: active,
+                      button: true,
+                      child: GestureDetector(
                       onTap: () => _switchTab(i),
                       behavior: HitTestBehavior.opaque,
                       child: Container(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color:
@@ -456,14 +452,16 @@ class _SearchPageState extends State<SearchPage> {
                         ),
                         child: Text(
                           i == 0 ? '${_mode.label}结果' : 'UP主',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight:
                                 active ? FontWeight.w700 : FontWeight.w400,
                             color:
-                                active ? Colors.white : AppTheme.textSub,
+                                active ? AppTheme.onPrimary : AppTheme.textSub,
                           ),
                         ),
+                      ),
                       ),
                     ),
                   );
@@ -561,7 +559,7 @@ class _SearchPageState extends State<SearchPage> {
             backgroundImage:
                 up.face.isNotEmpty ? NetworkImage(up.face) : null,
             child: up.face.isEmpty
-                ? Icon(Icons.person, color: AppTheme.accent)
+                ? Icon(Icons.person, color: AppTheme.actionText)
                 : null,
           ),
           title: Text(
@@ -588,7 +586,7 @@ class _SearchPageState extends State<SearchPage> {
             style: FilledButton.styleFrom(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: const Size(0, 30),
+              minimumSize: const Size(48, 48),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
@@ -613,7 +611,7 @@ class _SearchPageState extends State<SearchPage> {
       child: Row(
         children: [
           Icon(Icons.manage_search_rounded,
-              size: 15, color: AppTheme.accent),
+              size: 15, color: AppTheme.actionText),
           const SizedBox(width: 6),
           Expanded(
             child: Text.rich(
@@ -623,9 +621,9 @@ class _SearchPageState extends State<SearchPage> {
                   const TextSpan(text: '“'),
                   TextSpan(
                     text: _searchedKeyword,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.accent,
+                      color: AppTheme.actionText,
                     ),
                   ),
                   const TextSpan(text: '” 的搜索结果'),
@@ -760,7 +758,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppTheme.accent),
+        Icon(icon, size: 18, color: AppTheme.actionText),
         const SizedBox(width: 6),
         Text(
           title,
@@ -809,19 +807,17 @@ class _KeywordChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            Flexible(child: Text(
               label,
               style: TextStyle(fontSize: 13, color: AppTheme.textMain),
-            ),
+            )),
             if (onDelete != null)
-              InkWell(
-                onTap: onDelete,
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(Icons.close_rounded,
-                      size: 14, color: AppTheme.textHint),
-                ),
+              IconButton(
+                tooltip: '删除搜索历史：$label',
+                onPressed: onDelete,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(Icons.close_rounded,
+                    size: 18, color: AppTheme.textHint),
               ),
           ],
         ),
@@ -846,9 +842,9 @@ class _RankChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = rank <= 3;
     final rankColor = switch (rank) {
-      1 => AppTheme.accentSoft,
-      2 => AppTheme.accent,
-      3 => AppTheme.accentViolet,
+      1 => AppTheme.actionText,
+      2 => AppTheme.actionText,
+      3 => AppTheme.actionText,
       _ => AppTheme.textHint,
     };
     return InkWell(
@@ -868,8 +864,8 @@ class _RankChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 18,
-              height: 18,
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              padding: const EdgeInsets.all(3),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -880,19 +876,19 @@ class _RankChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: top ? AppTheme.surface : AppTheme.textSub,
+                  color: top ? AppTheme.bg : AppTheme.textSub,
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            Text(
+            Flexible(child: Text(
               label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: top ? FontWeight.w600 : FontWeight.w400,
                 color: AppTheme.textMain,
               ),
-            ),
+            )),
           ],
         ),
       ),
@@ -914,7 +910,9 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 48, color: AppTheme.textHint),
@@ -929,6 +927,7 @@ class _ErrorState extends StatelessWidget {
             FilledButton(onPressed: onTap, child: const Text('重试')),
           ],
         ],
+        ),
       ),
     );
   }

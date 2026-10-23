@@ -65,7 +65,7 @@ class MyPage extends StatelessWidget {
           _menuTile(
             context,
             icon: Icons.collections_bookmark_rounded,
-            color: AppTheme.accent,
+            color: AppTheme.actionText,
             title: '我的收藏',
             subtitle: books.isEmpty ? '还没有收藏' : '${books.length} 项 · 点击选择收听',
             onTap: () => _push(context, const FavoritesPage()),
@@ -156,7 +156,7 @@ class MyPage extends StatelessWidget {
           Text(
             text,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
               color: AppTheme.textHint,
               letterSpacing: 1.2,
@@ -196,7 +196,7 @@ class MyPage extends StatelessWidget {
                     : null,
               ),
               child: auth.userFace.isEmpty
-                  ? Icon(Icons.person_rounded, size: 36, color: AppTheme.accent)
+                  ? Icon(Icons.person_rounded, size: 36, color: AppTheme.actionText)
                   : null,
             ),
             const SizedBox(width: 14),
@@ -209,7 +209,7 @@ class MyPage extends StatelessWidget {
                         ? auth.userName
                         : (auth.isLogin ? 'B 站用户' : '未登录'),
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.textMain,
                     ),
@@ -219,7 +219,7 @@ class MyPage extends StatelessWidget {
                     auth.isLogin
                         ? '已登录 · 已收藏 ${shelf.books.length} 项'
                         : '未登录 · 点此进入系统设置',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                   ),
                 ],
               ),
@@ -239,7 +239,7 @@ class MyPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.divider),
         ),
         child: Row(
@@ -273,12 +273,12 @@ class MyPage extends StatelessWidget {
       {VoidCallback? onTap}) {
     final content = Column(
       children: [
-        Icon(icon, size: 18, color: AppTheme.accent),
+        Icon(icon, size: 18, color: AppTheme.actionText),
         const SizedBox(height: 6),
         Text(
           value,
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 20,
             fontWeight: FontWeight.w700,
             color: AppTheme.textMain,
           ),
@@ -286,7 +286,7 @@ class MyPage extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(fontSize: 11, color: AppTheme.textSub),
+          style: TextStyle(fontSize: 12, color: AppTheme.textSub),
         ),
       ],
     );
@@ -305,6 +305,7 @@ class MyPage extends StatelessWidget {
   }
 
   Widget _buildContinueReading(BuildContext context, List<ShelfBook> reading) {
+    const lineHeight = 1.5;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -313,12 +314,12 @@ class MyPage extends StatelessWidget {
           child: Row(
             children: [
               Icon(Icons.play_circle_outline_rounded,
-                  size: 18, color: AppTheme.accent),
+                  size: 18, color: AppTheme.actionText),
               const SizedBox(width: 6),
               Text(
                 '最近收听',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textMain,
                 ),
@@ -327,7 +328,8 @@ class MyPage extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 132,
+          height: 88 + MediaQuery.textScalerOf(context).scale(14) * lineHeight
+              + MediaQuery.textScalerOf(context).scale(12) * lineHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -365,7 +367,7 @@ class MyPage extends StatelessWidget {
                               child: Text(
                                 '${(sb.percent * 100).round()}%',
                                 style: const TextStyle(
-                                    fontSize: 10, color: Colors.white),
+                                    fontSize: 12, color: AppTheme.onPrimary),
                               ),
                             ),
                           ),
@@ -377,7 +379,8 @@ class MyPage extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
+                          height: lineHeight,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textMain,
                         ),
@@ -385,8 +388,9 @@ class MyPage extends StatelessWidget {
                       Text(
                         '第 ${sb.lastChapterIndex + 1} ${sb.book.contentMode.unitLabel} · ${sb.positionText}',
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style:
-                            TextStyle(fontSize: 11, color: AppTheme.textSub),
+                            TextStyle(fontSize: 12, height: lineHeight, color: AppTheme.textSub),
                       ),
                     ],
                   ),
@@ -430,7 +434,7 @@ class MyPage extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textMain,
                     ),
@@ -438,9 +442,9 @@ class MyPage extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                   ),
                 ],
               ),
@@ -501,7 +505,7 @@ class MyPage extends StatelessWidget {
           result.latestName?.isNotEmpty == true
               ? result.latestName!
               : '发现新版本 ${result.latestVersion}',
-          style: TextStyle(color: AppTheme.textMain, fontSize: 17),
+          style: TextStyle(color: AppTheme.textMain, fontSize: 20),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -511,14 +515,14 @@ class MyPage extends StatelessWidget {
               Text(
                 '当前版本 ${AppMeta.version} · 最新 ${result.latestVersion}',
                 style: TextStyle(
-                    fontSize: 13, color: AppTheme.textSub),
+                    fontSize: 14, color: AppTheme.textSub),
               ),
               if ((result.changelog ?? '').isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(
                   '更新内容：\n${result.changelog}',
 style: TextStyle(
-                    fontSize: 12, color: AppTheme.textSub, height: 1.6),
+                    fontSize: 14, color: AppTheme.textSub, height: 1.6),
                 ),
               ],
             ],
@@ -535,7 +539,7 @@ style: TextStyle(
                 Navigator.of(ctx).pop();
                 _openUrl(context, apk);
               },
-              child: const Text('下载更新', style: TextStyle(color: AppTheme.accent)),
+              child: Text('下载更新', style: TextStyle(color: AppTheme.actionText)),
             ),
         ],
       ),

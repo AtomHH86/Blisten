@@ -1,0 +1,162 @@
+[
+  {
+    "path": "assets/logo.png",
+    "width": 512,
+    "height": 512,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 247737
+  },
+  {
+    "path": "assets/mascot.png",
+    "width": 512,
+    "height": 512,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 187306
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+    "width": 108,
+    "height": 108,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 12612
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+    "width": 48,
+    "height": 48,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 3478
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-mdpi/splash_logo.png",
+    "width": 96,
+    "height": 96,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 10413
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+    "width": 162,
+    "height": 162,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 24648
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    "width": 72,
+    "height": 72,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 6506
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-hdpi/splash_logo.png",
+    "width": 144,
+    "height": 144,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 20118
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+    "width": 432,
+    "height": 432,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 140228
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+    "width": 192,
+    "height": 192,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 37935
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxxhdpi/splash_logo.png",
+    "width": 384,
+    "height": 384,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 113755
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+    "width": 324,
+    "height": 324,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 82177
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+    "width": 144,
+    "height": 144,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 21963
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xxhdpi/splash_logo.png",
+    "width": 288,
+    "height": 288,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 66918
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+    "width": 216,
+    "height": 216,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 40051
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+    "width": 96,
+    "height": 96,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 10564
+  },
+  {
+    "path": "android/app/src/main/res/mipmap-xhdpi/splash_logo.png",
+    "width": 192,
+    "height": 192,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 32854
+  },
+  {
+    "path": "android/app/src/main/res/drawable-nodpi/splash_mascot_art.png",
+    "width": 1024,
+    "height": 1024,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 643010
+  },
+  {
+    "path": "docs/design/bting-v1/production/mascot-source.png",
+    "width": 1254,
+    "height": 1254,
+    "bit_depth": 8,
+    "color_type": 6,
+    "bytes": 838243
+  },
+  {
+    "path": "docs/design/bting-v1/production/icon-source.png",
+    "width": 1254,
+    "height": 1254,
+    "bit_depth": 8,
+    "color_type": 2,
+    "bytes": 1223219
+  }
+]

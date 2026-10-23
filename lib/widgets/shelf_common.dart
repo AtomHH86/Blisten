@@ -6,6 +6,7 @@ import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
 import '../player/book_player.dart';
 import '../pages/player_page.dart';
+import 'resource_import_dialog.dart';
 
 /// 书架进度徽标（百分比）
 class ShelfProgressBadge extends StatelessWidget {
@@ -22,7 +23,7 @@ class ShelfProgressBadge extends StatelessWidget {
       ),
       child: Text(
         '${(percent * 100).round()}%',
-        style: const TextStyle(fontSize: 11, color: Colors.white),
+        style: const TextStyle(fontSize: 12, color: AppTheme.onPrimary),
       ),
     );
   }
@@ -33,47 +34,87 @@ class EmptyShelfView extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
+  final bool showImport;
+  final bool showMascot;
 
   const EmptyShelfView({
     super.key,
     this.title = '收藏还是空的',
-    this.subtitle = '去「发现」搜索想听的内容吧',
+    this.subtitle = '搜索或粘贴 B 站链接，添加想听的内容',
     this.icon = Icons.library_books_outlined,
+    this.showImport = false,
+    this.showMascot = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 72, color: AppTheme.textHint),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textSub,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: (constraints.maxWidth - 48).clamp(0.0, double.infinity),
+              minHeight: (constraints.maxHeight - 48).clamp(
+                0.0,
+                double.infinity,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (showMascot)
+                  Image.asset(
+                    'assets/mascot.png',
+                    width: 160,
+                    height: 160,
+                    excludeFromSemantics: true,
+                    errorBuilder: (_, _, _) =>
+                        Icon(icon, size: 72, color: AppTheme.textHint),
+                  )
+                else
+                  Icon(icon, size: 72, color: AppTheme.textHint),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMain,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: AppTheme.textHint),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).maybePop();
+                    HomeTabs.switchTo(1);
+                  },
+                  icon: const Icon(Icons.explore_outlined, size: 18),
+                  label: const Text('去发现'),
+                ),
+                if (showImport) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => showResourceImportDialog(context),
+                    icon: const Icon(Icons.link_rounded, size: 20),
+                    label: const Text(
+                      '粘贴链接 / BV号',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: AppTheme.textHint),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).maybePop();
-              HomeTabs.switchTo(1);
-            },
-            icon: const Icon(Icons.explore_outlined, size: 18),
-            label: const Text('去发现'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -107,24 +148,30 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppTheme.surface,
-          title: Text('作品已下架',
-              style: TextStyle(color: AppTheme.textMain, fontSize: 17)),
+          title: Text(
+            '作品已下架',
+            style: TextStyle(color: AppTheme.textMain, fontSize: 17),
+          ),
           content: Text(
             '《${sb.book.cleanTitle}》在平台上已无法访问（可能被删除或下架），'
             '本地也没有它的离线缓存。\n\n要将它移出收藏吗？\n收听进度也会一并清除。',
             style: TextStyle(
-                color: AppTheme.textSub, fontSize: 13, height: 1.6),
+              color: AppTheme.textSub,
+              fontSize: 13,
+              height: 1.6,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child:
-                  Text('仅关闭', style: TextStyle(color: AppTheme.textSub)),
+              child: Text('仅关闭', style: TextStyle(color: AppTheme.textSub)),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text('移出并关闭',
-                  style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+              child: Text(
+                '移出并关闭',
+                style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+              ),
             ),
           ],
         ),
@@ -176,7 +223,7 @@ Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text('移出', style: TextStyle(color: AppTheme.accent)),
+          child: Text('移出', style: TextStyle(color: AppTheme.error)),
         ),
       ],
     ),

@@ -97,7 +97,7 @@ class _RecentTile extends StatelessWidget {
                       minHeight: 4,
                       backgroundColor: AppTheme.surfaceHigh,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.accent),
+                          AlwaysStoppedAnimation<Color>(AppTheme.actionText),
                     ),
                   ),
                 ],
@@ -114,7 +114,7 @@ class _RecentTile extends StatelessWidget {
                     ? Icons.equalizer_rounded
                     : Icons.play_circle_fill_rounded,
                 size: 36,
-                color: AppTheme.accent,
+                color: AppTheme.actionText,
               ),
             ),
           ],

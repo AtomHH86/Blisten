@@ -45,7 +45,8 @@ class _MiniPlayerState extends State<MiniPlayer>
 
     final chapter = player.currentChapter;
     final playing = player.isPlaying;
-    _syncSpin(playing);
+    _syncSpin(playing && !MediaQuery.disableAnimationsOf(context) &&
+        !MediaQuery.accessibleNavigationOf(context));
 
     return Material(
       color: AppTheme.surface,
@@ -79,9 +80,10 @@ class _MiniPlayerState extends State<MiniPlayer>
                         color: AppTheme.textMain,
                       ),
                     ),
-                    if (chapter != null)
+                    if (player.error != null || chapter != null)
                       Text(
-                        '第 ${chapter.page} ${player.book!.contentMode.unitLabel} · ${chapter.part}',
+                        player.error != null ? '播放失败，可重试' :
+                        '第 ${chapter!.page} ${player.book!.contentMode.unitLabel} · ${chapter.part}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 11, color: AppTheme.textSub),
@@ -105,7 +107,7 @@ class _MiniPlayerState extends State<MiniPlayer>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          RotationTransition(
+          ExcludeSemantics(child: RotationTransition(
             turns: _spin,
             child: ClipOval(
               child: BookCover(
@@ -115,16 +117,16 @@ class _MiniPlayerState extends State<MiniPlayer>
                 borderRadius: BorderRadius.circular(22),
               ),
             ),
-          ),
+          )),
           if (!playing)
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.black.withValues(alpha: 0.35),
+                color: AppTheme.onPrimary.withValues(alpha: 0.75),
               ),
               child: const Icon(
                 Icons.play_arrow_rounded,
-                color: Colors.white,
+                color: AppTheme.accent,
                 size: 22,
               ),
             ),
@@ -136,8 +138,8 @@ class _MiniPlayerState extends State<MiniPlayer>
   Widget _buildButton(BookPlayer player) {
     if (player.loading) {
       return const SizedBox(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         child: Center(
           child: SizedBox(
             width: 20,
@@ -151,14 +153,17 @@ class _MiniPlayerState extends State<MiniPlayer>
       );
     }
     final enabled = player.loaded;
-    return IconButton(
-      onPressed: enabled ? player.togglePlay : null,
+    return IconButton.filled(
+      style: IconButton.styleFrom(backgroundColor: AppTheme.accent),
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      onPressed: enabled ? (player.error != null ? player.retryPlayback : player.togglePlay) : null,
       icon: Icon(
-        player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-        color: enabled ? AppTheme.accent : AppTheme.textHint,
+        player.error != null ? Icons.refresh_rounded :
+        (player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+        color: enabled ? AppTheme.onPrimary : AppTheme.textHint,
         size: 32,
       ),
-      tooltip: player.isPlaying ? '暂停' : '播放',
+      tooltip: player.error != null ? '重试播放' : (player.isPlaying ? '暂停' : '播放'),
     );
   }
 }

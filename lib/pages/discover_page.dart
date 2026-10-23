@@ -53,7 +53,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   void _switchCategory(int i) {
     if (i == _cat) return;
-    setState(() => _cat = i);
+    setState(() {
+      _cat = i;
+      _browseBooks = [];
+    });
     _loadBrowse();
   }
 
@@ -97,7 +100,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       if (_cat != catIndex) return;
       setState(() {
         _browseLoading = false;
-        _browseError = '$e';
+        _browseError = '加载失败，请重试';
       });
     }
   }
@@ -136,7 +139,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 44,
+                    height: 56,
                     child: InkWell(
                       onTap: _openSearch,
                       borderRadius: BorderRadius.circular(12),
@@ -146,14 +149,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
                         decoration: BoxDecoration(
                           color: AppTheme.surface,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.divider),
+                          border: Border.all(color: AppTheme.outline),
                         ),
                         child: Row(
                           children: [
                             Icon(Icons.search,
                                 size: 18, color: AppTheme.textHint),
                             const SizedBox(width: 8),
-                            Text(
+                            Expanded(child: Text(
                               switch (DiscoverSeeds.categories[_cat].mode) {
                                 ContentMode.audiobook => '搜索书名 / 作者 / 主播',
                                 ContentMode.music => '搜索歌名 / 歌手 / UP 主',
@@ -163,7 +166,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                 fontSize: 14,
                                 color: AppTheme.textHint,
                               ),
-                            ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            )),
                           ],
                         ),
                       ),
@@ -186,7 +191,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       children: [
         // 分类栏
         SizedBox(
-          height: 46,
+          height: 60 * MediaQuery.textScalerOf(context).scale(1),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -195,7 +200,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
             itemBuilder: (context, i) {
               final c = DiscoverSeeds.categories[i];
               final selected = i == _cat;
-              return GestureDetector(
+              return Semantics(
+                key: ValueKey('discover-category-$i'),
+                selected: selected,
+                button: true,
+                child: GestureDetector(
                 onTap: () => _switchCategory(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -214,7 +223,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                       Icon(c.icon,
                           size: 16,
                           color: selected
-                              ? Colors.white
+                              ? AppTheme.onPrimary
                               : AppTheme.textSub),
                       const SizedBox(width: 6),
                       Text(
@@ -224,11 +233,12 @@ class _DiscoverPageState extends State<DiscoverPage> {
                           fontWeight:
                               selected ? FontWeight.w600 : FontWeight.w400,
                           color:
-                              selected ? Colors.white : AppTheme.textSub,
+                              selected ? AppTheme.onPrimary : AppTheme.textSub,
                         ),
                       ),
                     ],
                   ),
+                ),
                 ),
               );
             },
@@ -250,7 +260,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   List<Widget> _buildBrowseChildren(DiscoverCategory cat) {
-    if (_browseLoading) {
+    if (_browseLoading && _browseBooks.isEmpty) {
       return [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 64),
@@ -261,6 +271,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       ];
     }
     return [
+      if (_browseLoading) const LinearProgressIndicator(),
       if (_browseError != null) ...[
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -269,7 +280,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               Icon(Icons.cloud_off_outlined, size: 36, color: AppTheme.textHint),
               const SizedBox(height: 8),
               Text(
-                '检测到当前无网络，已自动切换离线播放',
+                _browseError!,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: AppTheme.textSub),
               ),
@@ -282,13 +293,29 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ),
         ),
         ..._buildOfflineSection(),
-      ] else if (_browseBooks.isNotEmpty)
-        ..._buildRealResults(cat),
+      ],
+      if (_browseBooks.isNotEmpty)
+        ..._buildRealResults(cat)
+      else if (_browseError == null && !_browseLoading)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(children: [
+            Icon(Icons.search_off_rounded, size: 40, color: AppTheme.textHint),
+            const SizedBox(height: 12),
+            Text('暂时没有相关内容', style: TextStyle(color: AppTheme.textMain)),
+            const SizedBox(height: 8),
+            Text('可以换个分类，或搜索想听的内容',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppTheme.textSub)),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: _openSearch, child: const Text('去搜索')),
+          ]),
+        ),
       ..._buildAnchorsSection(cat),
     ];
   }
 
-  /// 无网络时用已缓存的书籍兜底，让用户还能继续听已下载的内容
+  /// 请求失败时单独检查真实缓存，提供已下载内容入口
   List<Widget> _buildOfflineSection() {
     final cached = context.watch<CacheStore>().cachedBooks();
     if (cached.isEmpty) return const [];
@@ -297,7 +324,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         padding: const EdgeInsets.fromLTRB(4, 4, 4, 10),
         child: Row(
           children: [
-            Icon(Icons.download_done_rounded, size: 17, color: AppTheme.accent),
+            Icon(Icons.download_done_rounded, size: 17, color: AppTheme.actionText),
             const SizedBox(width: 6),
             Text('已缓存的内容',
                 style: TextStyle(
@@ -309,7 +336,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const CachePage())),
               child: Text('全部 ${cached.length} 项',
-                  style: TextStyle(fontSize: 13, color: AppTheme.accent)),
+                  style: TextStyle(fontSize: 13, color: AppTheme.actionText)),
             ),
           ],
         ),
@@ -338,11 +365,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
             IconButton(
               onPressed: () => _loadBrowse(force: true),
               icon: Icon(Icons.refresh_rounded,
-                  size: 19, color: AppTheme.accent),
+                  size: 19, color: AppTheme.actionText),
               tooltip: '刷新',
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             ),
             const SizedBox(width: 6),
             Expanded(
@@ -361,9 +388,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             TextButton.icon(
               onPressed: () => _openMore(cat),
               icon: Icon(Icons.open_in_new_rounded,
-                  size: 14, color: AppTheme.accent),
+                  size: 14, color: AppTheme.actionText),
               label: Text('更多',
-                  style: TextStyle(fontSize: 12.5, color: AppTheme.accent)),
+                  style: TextStyle(fontSize: 12.5, color: AppTheme.actionText)),
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -375,8 +402,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
       GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.sizeOf(context).width < 360 ||
+                  MediaQuery.textScalerOf(context).scale(1) > 1.3 ? 2 : 3,
           mainAxisSpacing: 14,
           crossAxisSpacing: 12,
           childAspectRatio: 0.55,
@@ -409,26 +437,25 @@ class _DiscoverPageState extends State<DiscoverPage> {
         padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
         child: Row(
           children: [
-            Icon(Icons.mic_rounded, size: 18, color: AppTheme.accent),
+            Icon(Icons.mic_rounded, size: 18, color: AppTheme.actionText),
             const SizedBox(width: 6),
-            Text(
+            Expanded(child: Text(
               '精选主播',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.textMain,
               ),
-            ),
-            const Spacer(),
-            Text(
+            )),
+            Flexible(child: Text(
               '点击查看 TA 的作品',
               style: TextStyle(fontSize: 11, color: AppTheme.textHint),
-            ),
+            )),
           ],
         ),
       ),
       SizedBox(
-        height: 116,
+        height: 96 + 40 * MediaQuery.textScalerOf(context).scale(1),
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -480,18 +507,18 @@ class _AnchorTile extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    a.color.withValues(alpha: 0.9),
-                    a.color.withValues(alpha: 0.55),
+                    AppTheme.accent,
+                    AppTheme.accentSoft,
                   ],
                 ),
               ),
               alignment: Alignment.center,
               child: Text(
                 a.name.characters.first,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppTheme.onPrimary,
                 ),
               ),
             ),
@@ -520,7 +547,7 @@ class _AnchorTile extends StatelessWidget {
     );
   }
 }
-/// 无网络时展示的「已缓存书籍」卡片，点一下直接离线播放
+/// 已缓存书籍卡片，复用缓存播放路径
 class _OfflineBookTile extends StatelessWidget {
   final Book book;
   final int count;
@@ -561,7 +588,7 @@ class _OfflineBookTile extends StatelessWidget {
               return;
             case CachePlayOutcome.failed:
               messenger.showSnackBar(const SnackBar(
-                  content: Text('当前无网络，且该集无法播放')));
+                  content: Text('暂时无法播放该缓存，请重试')));
               return;
           }
         },
@@ -586,7 +613,7 @@ class _OfflineBookTile extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.offline_pin_rounded,
-                            size: 13, color: AppTheme.accent),
+                            size: 13, color: AppTheme.actionText),
                         const SizedBox(width: 4),
                         Text('已缓存 $count ${book.contentMode.unitLabel} · 离线可听',
                             style: TextStyle(
@@ -597,7 +624,7 @@ class _OfflineBookTile extends StatelessWidget {
                 ),
               ),
               Icon(Icons.play_arrow_rounded,
-                  size: 26, color: AppTheme.accent),
+                  size: 26, color: AppTheme.actionText),
             ],
           ),
         ),

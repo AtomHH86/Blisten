@@ -92,15 +92,10 @@ class _BookshelfPageState extends State<BookshelfPage> {
         ],
       ),
       body: books.isEmpty
-          ? const EmptyShelfView()
+          ? const EmptyShelfView(showImport: true, showMascot: true)
           : GridView.builder(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.52,
-              ),
+              gridDelegate: bookGridDelegate(context),
               itemCount: books.length,
               itemBuilder: (context, i) {
                 final sb = books[i];
@@ -162,7 +157,7 @@ class _ShelfResumeButtonState extends State<_ShelfResumeButton>
     final book = liveBook ?? widget.last?.book;
     if (book == null) return const SizedBox.shrink();
     final playing = liveBook != null && player.isPlaying;
-    _syncSpin(playing);
+    _syncSpin(playing && !MediaQuery.disableAnimationsOf(context));
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -185,8 +180,8 @@ class _ShelfResumeButtonState extends State<_ShelfResumeButton>
             }
           },
           child: SizedBox(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             child: Stack(
               fit: StackFit.expand,
               children: [

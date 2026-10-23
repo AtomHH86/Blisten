@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "project": "Blisten",
+  "branch": "codex/bting-design-v1",
+  "base_commit": "59e6ff4",
+  "command": "tool/test-android.sh all",
+  "exit_code": 0,
+  "local_run_directory": "build/desktop-tests/20261024-012252-62702",
+  "local_run_log_sha256": "6c62be0b007f59edd90c944812f15921a5b59039ac327ccab36fcd2963ac6463",
+  "code_snapshot": {
+    "method": "SHA-256 of sorted UTF-8 lines: SHA-256(file) + two spaces + relative path + LF; Git-listed source/test/tool/platform/assets files and pubspec files, excluding docs/build/cache",
+    "file_count": 157,
+    "sha256": "959b6adfe03a54e42c735a8e717f61ffcb3ab2217c19ef4f6bd81f09e99637b7"
+  },
+  "environment": {
+    "host": "Intel Mac / macOS 13.7.8",
+    "flutter": "3.38.10",
+    "dart": "3.10.9",
+    "java": "17",
+    "emulator": "36.5.11",
+    "device": "emulator-5554",
+    "android": "15 / API 35",
+    "abi": "x86_64",
+    "resolution_px": [
+      720,
+      1280
+    ],
+    "density_dpi": 320
+  },
+  "checks": [
+    {
+      "name": "flutter_analyze",
+      "result": "passed",
+      "passed_tests": 0,
+      "skipped_tests": 0
+    },
+    {
+      "name": "flutter_unit_widget",
+      "result": "passed",
+      "passed_tests": 102,
+      "skipped_tests": 1
+    },
+    {
+      "name": "python_apk_packaging",
+      "result": "passed",
+      "passed_tests": 10,
+      "skipped_tests": 0
+    },
+    {
+      "name": "android_audio_modes",
+      "result": "passed",
+      "passed_tests": 5,
+      "skipped_tests": 0
+    },
+    {
+      "name": "android_retry_playback",
+      "result": "passed",
+      "passed_tests": 15,
+      "skipped_tests": 0
+    },
+    {
+      "name": "android_restart_seed",
+      "result": "passed",
+      "passed_tests": 1,
+      "skipped_tests": 0
+    },
+    {
+      "name": "android_restart_verify",
+      "result": "passed",
+      "passed_tests": 1,
+      "skipped_tests": 0
+    },
+    {
+      "name": "android_visual_design",
+      "result": "passed",
+      "passed_tests": 4,
+      "skipped_tests": 0
+    }
+  ],
+  "count_notes": {
+    "native_scenarios": 26,
+    "native_setup_teardown_hooks_excluded": true,
+    "skipped_case": "Existing optional UI export case requires ABTS_CAPTURE_UI=1; real Android visual suite ran separately."
+  },
+  "notifications_denied": {
+    "result": "passed",
+    "method": "pm revoke POST_NOTIFICATIONS + user-set/user-fixed flags; visual suite asserts denied or permanentlyDenied",
+    "included_in_visual_scenarios": true,
+    "script_exit_trap": "clears denial flags and grants permission"
+  },
+  "normal_entry": {
+    "result": "passed",
+    "command": "flutter build apk --debug --target-platform android-x64 --target lib/main.dart --no-pub",
+    "build_log_sha256": "45a18d2b1b3e7a51111afaceff31ed83cf93ac0be1ff2f3d837fe247d726f142",
+    "launch_status": "ok",
+    "launch_state": "COLD",
+    "activity": "com.bting.audio.debug/com.bting.audio.MainActivity",
+    "launch_log_sha256": "52d9a3f59223230e5c6eb9d50b7aadd6ae9bea33ce0a03a8fce948229a87a70b",
+    "startup_timing_is_benchmark": false
+  },
+  "talkback": {
+    "result": "basic_smoke_only",
+    "service_bound": true,
+    "focus_observed": "Collection heading",
+    "full_spoken_output_and_focus_order_verified": false,
+    "local_dump_sha256": "20e0344aaf19434fcec5636756b289429db7d03d9d5f069524d0429a3e1606c2"
+  },
+  "screenshots": [
+    {
+      "path": "docs/screenshots/bting-v1/android-launcher.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "d86a4ee25c715e3900e1ed3425b6417308b5db29ed73dfedab1f0c02fd634cbf",
+      "source": "native_manual_smoke"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/android-native-splash.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "dd3730f20e420a42d0563749a39bfd52edd516b23fc8f1e616d3dc96b6281201",
+      "source": "native_manual_smoke"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-collection-playing.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "8f662fb023b9ec98f07cf1ea2688f7b5cdbffaaae449069177c1e0319fab2f80",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-discover.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "c52a8dee1358a01b75d7f6998e0df003321d68cc59867a71dece23d8462d5d55",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-empty-collection.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "6c5cc7ddf35b7def22e5ec82541812a77a41931597cfc30b3d387bbbfd3adfe1",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-import.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "79d40d6c81451f5548d00bbb93d3e7b09e8c1f0f6c4f3e7a39c79afa54208f06",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-large-collection.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "20a0360819c57d43ea9e2097740f813164514c6d369b1ade5822972d9006c220",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-large-my.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "55df3dcf1a2e44e163a71dae1be9d5b9232d8d4a4f01fcd4b8973f05e02d3b68",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-large-player-controls.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "7314d50248fdbe8d5366df0142b03ac9cad1596204051f9bc74c5afe795098ef",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-large-player.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "2fda5e436035b046a6e5454ad7dced886fc709ff8307c49ef433736768a81613",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-my.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "858d5a412d7922964580e2f1406ca1b965bcec406394f559df7bf1c9cf47b484",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-player.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "67ad071402aea5802256dab183894b7beac302952294f6be5d8e9d2c668ecfb6",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-splash.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "38510cab19073a9567f0c29bc86f20d14cd97c460a1dccfa144ba58c616c80b4",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/dark-theme-switch-playing.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "ca99964270246377e2453bc588f45d4b1c95a1a34cee7a5a9a5a4897e6271c84",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-collection-playing.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "261f54d8face90966374763452561b1118889b1645183e2610cc422f16b626f5",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-discover.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "383c23256e434f9bd3f3ae49caa2494c33764d864b712fa4c3b67fdb0a0228d3",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-empty-collection.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "261f54d8face90966374763452561b1118889b1645183e2610cc422f16b626f5",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-import.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "bc5d1814517fd7a930ba4ed6fdf82491c1b994d3d619b9870e3de726b0f1e04f",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-large-collection.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "8723aecd9c2fde5f9a427f9e1882afda74fe8140d17e1393401c102e94732ff5",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-large-my.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "c1ea78d51f69ebfa2c34e812e22118488df724227d4f44ce8ac3c92453e4e922",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-large-player-controls.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "e38b763540d9f87813396c028a7f3dfb2b076f72a7284babd487ed9c30f54623",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-large-player.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "adf5788c42c6ceb461e524a782f623056f8649affe51f53fb3c7e91edefa314e",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-my.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "ca99964270246377e2453bc588f45d4b1c95a1a34cee7a5a9a5a4897e6271c84",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-player.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "3a0d8602a6df10b3bb9acab23bb39a301b47585929a87b5a8cbb098d7fb20d74",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-splash.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "88505dcc4a1165a7b2463cff29b1a2445b2841a1cf25c2233097e51b01373fc6",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/light-theme-switch-playing.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "5b8ffed0b4d2221d7cd59032c913bc153794550e74da9e00638247c545460f22",
+      "source": "final_visual_suite"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/normal-entry-home.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "ea5804a42afaafd9f98f3402d79f7d16c0e44a75b6a297041b25cf2457692a7a",
+      "source": "native_manual_smoke"
+    },
+    {
+      "path": "docs/screenshots/bting-v1/talkback-focus-smoke.png",
+      "width": 720,
+      "height": 1280,
+      "sha256": "56dcac15d47d600caffd5f6f43e4b597139318927b221e201baf6ffa4522cb95",
+      "source": "native_manual_smoke"
+    }
+  ],
+  "not_verified_this_round": [
+    "Live Bilibili online suite",
+    "Full TalkBack reading and focus flow",
+    "Notification direct controls / lock screen / Bluetooth / calls / vendor battery policy / prolonged playback",
+    "Android API 24 / tablets / 16 KiB page devices",
+    "Windows build"
+  ],
+  "not_produced": [
+    "Four formally signed release APKs",
+    "GitHub remote repository or Release"
+  ],
+  "evidence_note": "Only sanitized summary and selected images are versioned. Full execution logs remain under ignored build/. Screenshot capture is not pixel-golden comparison."
+}

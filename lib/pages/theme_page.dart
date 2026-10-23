@@ -16,7 +16,7 @@ class ThemePage extends StatelessWidget {
   String _desc(ThemeMode m) => switch (m) {
         ThemeMode.system => '自动匹配系统深色/浅色外观',
         ThemeMode.light => '明亮配色，适合白天',
-        ThemeMode.dark => '深色护眼，适合夜间收听',
+        ThemeMode.dark => '深蓝底色，适合夜间收听',
       };
 
   @override
@@ -32,8 +32,8 @@ class ThemePage extends StatelessWidget {
             onChanged: (v) {
               if (v != null) tc.setMode(v);
             },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: ListView(
+              padding: const EdgeInsets.only(top: 8, bottom: 24),
               children: [
                 for (final m in const [
                   ThemeMode.system,
@@ -42,7 +42,7 @@ class ThemePage extends StatelessWidget {
                 ])
                   RadioListTile<ThemeMode>(
                     value: m,
-                    activeColor: AppTheme.accent,
+                    activeColor: AppTheme.actionText,
                     secondary: Icon(
                       switch (m) {
                         ThemeMode.system => Icons.brightness_auto_rounded,
@@ -53,10 +53,10 @@ class ThemePage extends StatelessWidget {
                     ),
                     title: Text(_label(m),
                         style:
-                            TextStyle(fontSize: 14, color: AppTheme.textMain)),
+                            TextStyle(fontSize: 16, color: AppTheme.textMain)),
                     subtitle: Text(_desc(m),
                         style: TextStyle(
-                            fontSize: 12, color: AppTheme.textHint)),
+                            fontSize: 14, color: AppTheme.textHint)),
                   ),
               ],
             ),

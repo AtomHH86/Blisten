@@ -125,9 +125,9 @@ class _CacheSheetState extends State<CacheSheet> {
     final chapters = _chapters;
 
     if (!_initDone || chapters.isEmpty || book == null) {
-      return const SizedBox(
+      return SizedBox(
         height: 220,
-        child: Center(child: CircularProgressIndicator(color: AppTheme.accent)),
+        child: Center(child: CircularProgressIndicator(color: AppTheme.actionText)),
       );
     }
 
@@ -135,135 +135,132 @@ class _CacheSheetState extends State<CacheSheet> {
 
     final running = _running;
     return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.72,
+      height: MediaQuery.of(context).size.height * 0.85,
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 12, 8),
-            child: Row(
-              children: [
-                Icon(Icons.download_for_offline_outlined,
-                    size: 20, color: AppTheme.accent),
-                const SizedBox(width: 8),
-                Text(
-                  '选择缓存内容',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textMain,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: running
-                      ? null
-                      : () {
-                          setState(() {
-                            if (_selected.length == chapters.length) {
-                              _selected.clear();
-                            } else {
-                              _selected
-                                ..clear()
-                                ..addAll(List.generate(chapters.length, (i) => i));
-                            }
-                          });
-                        },
-                  child: Text(
-                    _selected.length == chapters.length ? '取消全选' : '全选',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: running ? AppTheme.textHint : AppTheme.accent,
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.download_for_offline_outlined,
+                                size: 20, color: AppTheme.actionText),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '选择缓存内容',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textMain,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: running
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        if (_selected.length == chapters.length) {
+                                          _selected.clear();
+                                        } else {
+                                          _selected
+                                            ..clear()
+                                            ..addAll(List.generate(chapters.length, (i) => i));
+                                        }
+                                      });
+                                    },
+                              child: Text(
+                                _selected.length == chapters.length ? '取消全选' : '全选',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${book.cleanTitle} · 共 ${chapters.length} ${book.contentMode.unitLabel}\n'
+                          '已缓存 ${cache.countOf(bvid)} ${book.contentMode.unitLabel} · 占用 ${cache.totalSizeText}',
+                          style: TextStyle(fontSize: 14, color: AppTheme.textSub),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '开始后可离开本页，下载会在后台继续，完成后可在「我的 → 离线缓存」查看',
+                          style: TextStyle(fontSize: 12, color: AppTheme.textHint),
+                        ),
+                      ],
                     ),
                   ),
+                ),
+                const SliverToBoxAdapter(child: Divider(height: 1)),
+                SliverList.builder(
+                  itemCount: chapters.length,
+                  itemBuilder: (context, i) {
+                    final c = chapters[i];
+                    final cached = cache.isCached(bvid, c.cid);
+                    final task = cache.taskOf(bvid, c.cid);
+                    final busy = task != null && !task.done && !task.failed;
+                    return CheckboxListTile(
+                      value: _selected.contains(i),
+                      onChanged: running
+                          ? null
+                          : (v) => setState(() {
+                                if (v == true) {
+                                  _selected.add(i);
+                                } else {
+                                  _selected.remove(i);
+                                }
+                              }),
+                      title: Text(
+                        '${c.page} · ${c.part}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: cached ? AppTheme.textHint : AppTheme.textMain,
+                        ),
+                      ),
+                      subtitle: Text(
+                        busy
+                            ? '下载中 ${(task.progress * 100).round()}%'
+                            : cached
+                                ? '已缓存'
+                                : c.durationText,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: busy || cached ? AppTheme.actionText : AppTheme.textSub,
+                        ),
+                      ),
+                      secondary: cached && !busy
+                          ? Icon(Icons.offline_pin_rounded,
+                              size: 20, color: AppTheme.success)
+                          : null,
+                    );
+                  },
                 ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              '${book.cleanTitle} · 共 ${chapters.length} ${book.contentMode.unitLabel}\n'
-              '已缓存 ${cache.countOf(bvid)} ${book.contentMode.unitLabel} · 占用 ${cache.totalSizeText}',
-              style: TextStyle(fontSize: 12, color: AppTheme.textSub),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          Expanded(
-            child: ListView.builder(
-              itemCount: chapters.length,
-              itemBuilder: (context, i) {
-                final c = chapters[i];
-                final cached = cache.isCached(bvid, c.cid);
-                final task = cache.taskOf(bvid, c.cid);
-                final busy = task != null && !task.done && !task.failed;
-                return CheckboxListTile(
-                  value: _selected.contains(i),
-                  onChanged: running
-                      ? null
-                      : (v) => setState(() {
-                            if (v == true) {
-                              _selected.add(i);
-                            } else {
-                              _selected.remove(i);
-                            }
-                          }),
-                  dense: true,
-                  title: Text(
-                    '${c.page} · ${c.part}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: cached ? AppTheme.textHint : AppTheme.textMain,
-                    ),
-                  ),
-                  subtitle: Text(
-                    busy
-                        ? '下载中 ${(task.progress * 100).round()}%'
-                        : cached
-                            ? '已缓存'
-                            : c.durationText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: busy || cached ? AppTheme.accent : AppTheme.textSub,
-                    ),
-                  ),
-                  secondary: cached && !busy
-                      ? Icon(Icons.offline_pin_rounded,
-                          size: 20, color: AppTheme.accent)
-                      : null,
-                );
-              },
-            ),
-          ),
           SafeArea(
+            top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: (_running || _selected.isEmpty) ? null : _start,
-                      icon: const Icon(Icons.download_rounded, size: 18),
-                      label: Text(
-                        running
-                            ? '正在后台缓存…'
-                            : '缓存选中的 ${_selected.length} ${book.contentMode.unitLabel}（后台）',
-                      ),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                      ),
-                    ),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: (_running || _selected.isEmpty) ? null : _start,
+                  icon: const Icon(Icons.download_rounded, size: 18),
+                  label: Text(
+                    running
+                        ? '正在后台缓存…'
+                        : '缓存选中的 ${_selected.length} ${book.contentMode.unitLabel}',
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '开始后可离开本页，下载会在后台继续，完成后可在「我的 → 离线缓存」查看',
-                    style: TextStyle(fontSize: 11, color: AppTheme.textHint),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

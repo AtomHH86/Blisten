@@ -59,10 +59,10 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: Text('退出登录',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 17)),
+            style: TextStyle(color: AppTheme.textMain, fontSize: 20)),
         content: Text(
           '退出后需要重新扫码登录，收藏与收听进度仍保留在本机。',
-          style: TextStyle(color: AppTheme.textSub, fontSize: 13, height: 1.5),
+          style: TextStyle(color: AppTheme.textSub, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
@@ -71,7 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('退出', style: TextStyle(color: AppTheme.accent)),
+            child: Text('退出', style: TextStyle(color: AppTheme.actionText)),
           ),
         ],
       ),
@@ -98,12 +98,12 @@ class _SettingsPageState extends State<SettingsPage> {
           SwitchListTile(
             value: _ignoring,
             onChanged: _loading ? null : _toggle,
-            activeThumbColor: AppTheme.accent,
+            activeThumbColor: AppTheme.onPrimary,
             secondary:
-                Icon(Icons.battery_saver_rounded, color: AppTheme.accent),
+                Icon(Icons.battery_saver_rounded, color: AppTheme.actionText),
             title: Text(
               '后台留存保护',
-              style: TextStyle(fontSize: 14, color: AppTheme.textMain),
+              style: TextStyle(fontSize: 16, color: AppTheme.textMain),
             ),
             subtitle: Text(
               _loading
@@ -111,7 +111,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   : _ignoring
                       ? '已豁免电池优化，退到后台更不易被系统清理'
                       : '未开启，长时间后台播放可能被系统中断',
-              style: TextStyle(fontSize: 12, color: AppTheme.textSub),
+              style: TextStyle(fontSize: 14, color: AppTheme.textSub),
             ),
           ),
           Padding(
@@ -128,7 +128,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 '开启「后台留存保护」可进一步降低被清理的概率。\n\n'
                 '若仍被中断，建议在系统设置中为本应用打开「自启动」并设置「无限制」后台策略。',
                 style: TextStyle(
-                    fontSize: 12, color: AppTheme.textSub, height: 1.6),
+                    fontSize: 14, color: AppTheme.textSub, height: 1.6),
               ),
             ),
           ),
@@ -143,7 +143,7 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 15,
+          fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppTheme.textMain,
         ),
@@ -154,87 +154,101 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 账号信息：未登录显示登录入口，已登录显示昵称头像与退出登录
   Widget _buildAccountCard(LoginStore auth) {
     final logged = auth.isLogin;
+    final action = logged
+        ? OutlinedButton(
+            onPressed: _logout,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.textSub,
+              side: BorderSide(color: AppTheme.outline),
+            ),
+            child: const Text('退出登录', style: TextStyle(fontSize: 14)),
+          )
+        : FilledButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
+            },
+            child: const Text('登录', style: TextStyle(fontSize: 14)),
+          );
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.divider),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.surfaceHigh,
-                border: Border.all(color: AppTheme.divider),
-                image: logged && auth.userFace.isNotEmpty
-                    ? DecorationImage(
-                        image: NetworkImage(auth.userFace),
-                        fit: BoxFit.cover,
-                        onError: (_, _) {},
-                      )
-                    : null,
-              ),
-              child: !logged || auth.userFace.isEmpty
-                  ? Icon(Icons.person_rounded, size: 28, color: AppTheme.accent)
-                  : null,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final profile = Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.surfaceHigh,
+                    border: Border.all(color: AppTheme.divider),
+                    image: logged && auth.userFace.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(auth.userFace),
+                            fit: BoxFit.cover,
+                            onError: (_, _) {},
+                          )
+                        : null,
+                  ),
+                  child: !logged || auth.userFace.isEmpty
+                      ? Icon(Icons.person_rounded, size: 28, color: AppTheme.actionText)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        logged
+                            ? (auth.userName.isEmpty ? 'B 站用户' : auth.userName)
+                            : '未登录',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textMain,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        logged ? '已登录' : '登录后可同步昵称与头像',
+                        style: TextStyle(fontSize: 14, color: AppTheme.textSub),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+            if (constraints.maxWidth < 320 ||
+                MediaQuery.textScalerOf(context).scale(16) > 20) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    logged
-                        ? (auth.userName.isEmpty ? 'B 站用户' : auth.userName)
-                        : '未登录',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textMain,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    logged ? '已登录' : '登录后可同步昵称与头像',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSub),
-                  ),
+                  profile,
+                  const SizedBox(height: 12),
+                  Align(alignment: Alignment.centerRight, child: action),
                 ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (logged)
-              OutlinedButton(
-                onPressed: _logout,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.textSub,
-                  side: BorderSide(color: AppTheme.divider),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  minimumSize: const Size(0, 34),
-                ),
-                child: const Text('退出登录', style: TextStyle(fontSize: 13)),
-              )
-            else
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  minimumSize: const Size(0, 34),
-                ),
-                child: const Text('登录', style: TextStyle(fontSize: 13)),
-              ),
-          ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: profile),
+                const SizedBox(width: 12),
+                action,
+              ],
+            );
+          },
         ),
       ),
     );

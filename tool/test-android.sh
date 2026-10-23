@@ -28,6 +28,10 @@ finish() {
   result=$?
   if [ -n "${device_id:-}" ] && adb -s "$device_id" get-state >/dev/null 2>&1; then
     adb -s "$device_id" shell am force-stop com.bting.audio.debug >/dev/null 2>&1 || true
+    if [ "${notification_denial_test:-false}" = true ]; then
+      adb -s "$device_id" shell pm clear-permission-flags com.bting.audio.debug android.permission.POST_NOTIFICATIONS user-set user-fixed >/dev/null 2>&1 || true
+      adb -s "$device_id" shell pm grant com.bting.audio.debug android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
+    fi
   fi
   printf '%s\n' "$result" > "$run_dir/exit-code.txt"
   echo "Result: $result; logs: $run_dir"
@@ -71,9 +75,20 @@ if [ "$suite" != unit ]; then
     run_integration integration_test/bili_live_test.dart
   else
     run_integration integration_test/audio_modes_test.dart
+    run_integration integration_test/retry_playback_test.dart
     run_integration integration_test/restart_test.dart --dart-define=ABTS_RESTART_PHASE=seed
     # run_integration force-stops without uninstalling between these processes.
     run_integration integration_test/restart_test.dart --dart-define=ABTS_RESTART_PHASE=verify
+    # Verify foreground navigation/playback after a real Android permission
+    # denial. Fixed flags model a prior denial and prevent a native dialog.
+    notification_denial_test=true
+    adb -s "$device_id" shell pm revoke com.bting.audio.debug android.permission.POST_NOTIFICATIONS
+    adb -s "$device_id" shell pm set-permission-flags com.bting.audio.debug android.permission.POST_NOTIFICATIONS user-set user-fixed
+    BLISTEN_SCREENSHOT_DIR="$run_dir/screenshots" flutter drive \
+      --driver=test_driver/visual.dart --target=integration_test/visual_design_test.dart \
+      -d "$device_id" --no-pub --keep-app-running --timeout=600 \
+      --dart-define=BLISTEN_EXPECT_NOTIFICATIONS_DENIED=true
+    adb -s "$device_id" shell am force-stop com.bting.audio.debug
   fi
 fi
 echo 'Requested checks passed.'

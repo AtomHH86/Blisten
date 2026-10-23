@@ -5,6 +5,7 @@ import '../core/storage/follow_store.dart';
 import '../core/theme/app_theme.dart';
 import '../utils/format.dart';
 import 'up_home_page.dart';
+import 'search_page.dart';
 
 /// 我关注的 UP 主
 class FollowPage extends StatelessWidget {
@@ -19,7 +20,7 @@ class FollowPage extends StatelessWidget {
       appBar: AppBar(title: const Text('关注的 UP 主')),
       body: list.isEmpty
           ? Center(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -32,6 +33,14 @@ class FollowPage extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style:
                           TextStyle(fontSize: 13, color: AppTheme.textSub),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SearchPage(autofocus: true)),
+                      ),
+                      icon: const Icon(Icons.search_rounded),
+                      label: const Text('去搜索'),
                     ),
                   ],
                 ),
@@ -50,7 +59,7 @@ class FollowPage extends StatelessWidget {
                     backgroundImage:
                         up.face.isNotEmpty ? NetworkImage(up.face) : null,
                     child: up.face.isEmpty
-                        ? Icon(Icons.person, color: AppTheme.accent)
+                        ? Icon(Icons.person, color: AppTheme.actionText)
                         : null,
                   ),
                   title: Text(
@@ -75,7 +84,7 @@ class FollowPage extends StatelessWidget {
                   trailing: IconButton(
                     tooltip: '取消关注',
                     icon: Icon(Icons.check_circle_rounded,
-                        size: 22, color: AppTheme.accent),
+                        size: 22, color: AppTheme.actionText),
                     onPressed: () => store.toggle(up),
                   ),
                   onTap: () {

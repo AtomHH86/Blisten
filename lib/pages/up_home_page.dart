@@ -37,6 +37,7 @@ class _UpHomePageState extends State<UpHomePage> {
   bool _noMore = false;
   int _page = 1;
   String? _error;
+  String? _moreError;
 
   static const _pageSize = 30;
 
@@ -63,9 +64,7 @@ class _UpHomePageState extends State<UpHomePage> {
       _loading = true;
       _loadingMore = false;
       _error = null;
-      _books = [];
-      _page = 1;
-      _noMore = false;
+      _moreError = null;
     });
     try {
       final res = await _bili.upAudios(widget.up,
@@ -74,6 +73,7 @@ class _UpHomePageState extends State<UpHomePage> {
       setState(() {
         _books = res.books.map((book) => book.withContentMode(widget.contentMode)).toList();
         _loading = false;
+        _page = 1;
         // 是否还有更多由接口给出，不能按返回条数猜
         _noMore = !res.hasMore;
       });
@@ -87,10 +87,13 @@ class _UpHomePageState extends State<UpHomePage> {
     }
   }
 
-  Future<void> _loadMore() async {
-    if (_loading || _loadingMore || _noMore) return;
+  Future<void> _loadMore({bool retry = false}) async {
+    if (_loading || _loadingMore || _noMore || (_moreError != null && !retry)) return;
     final requestId = _requestId;
-    setState(() => _loadingMore = true);
+    setState(() {
+      _loadingMore = true;
+      _moreError = null;
+    });
     try {
       final next = _page + 1;
       final res =
@@ -109,7 +112,10 @@ class _UpHomePageState extends State<UpHomePage> {
       });
     } catch (e) {
       if (!mounted || requestId != _requestId) return;
-      setState(() => _loadingMore = false);
+      setState(() {
+        _loadingMore = false;
+        _moreError = '加载更多失败，请重试';
+      });
     }
   }
 
@@ -148,7 +154,7 @@ class _UpHomePageState extends State<UpHomePage> {
                   ? Icons.notifications_active_rounded
                   : Icons.notifications_none_rounded,
               size: 20,
-              color: following ? AppTheme.accent : AppTheme.textSub,
+              color: following ? AppTheme.actionText : AppTheme.textSub,
             ),
           ),
         ],
@@ -186,7 +192,7 @@ class _UpHomePageState extends State<UpHomePage> {
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.accent, width: 1.5),
+                  border: Border.all(color: AppTheme.actionText, width: 1.5),
                 ),
                 child: CircleAvatar(
                   radius: 27,
@@ -194,8 +200,8 @@ class _UpHomePageState extends State<UpHomePage> {
                   backgroundImage:
                       up.face.isNotEmpty ? NetworkImage(up.face) : null,
                   child: up.face.isEmpty
-                      ? const Icon(Icons.person_rounded,
-                          size: 28, color: AppTheme.accent)
+                      ? Icon(Icons.person_rounded,
+                          size: 28, color: AppTheme.actionText)
                       : null,
                 ),
               ),
@@ -217,22 +223,11 @@ class _UpHomePageState extends State<UpHomePage> {
                     ),
                     if (stats.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      Row(
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 4,
                         children: [
                           for (var i = 0; i < stats.length; i++) ...[
-                            if (i > 0)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8),
-                                child: Container(
-                                  width: 2,
-                                  height: 2,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppTheme.textHint,
-                                  ),
-                                ),
-                              ),
                             Text(
                               stats[i],
                               style: TextStyle(
@@ -246,13 +241,16 @@ class _UpHomePageState extends State<UpHomePage> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(alignment: Alignment.centerLeft, child:
               FilledButton.tonal(
                 onPressed: _toggleFollow,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
-                  minimumSize: const Size(0, 34),
+                  minimumSize: const Size(48, 48),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(
@@ -261,7 +259,6 @@ class _UpHomePageState extends State<UpHomePage> {
                       fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
-            ],
           ),
           if (up.sign.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -279,12 +276,12 @@ class _UpHomePageState extends State<UpHomePage> {
   }
 
   Widget _buildBody() {
-    if (_loading) {
+    if (_loading && _books.isEmpty) {
       return Center(
         child: CircularProgressIndicator(color: AppTheme.accent),
       );
     }
-    if (_error != null) {
+    if (_error != null && _books.isEmpty) {
       return _message(
         icon: Icons.cloud_off_outlined,
         title: '加载失败',
@@ -322,23 +319,31 @@ class _UpHomePageState extends State<UpHomePage> {
         itemCount: _books.length + 2,
         itemBuilder: (context, i) {
           if (i == 0) {
-            return Container(
+            return Column(children: [
+              if (_loading) const LinearProgressIndicator(),
+              if (_error != null) Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(children: [
+                  Text(_error!, style: TextStyle(color: AppTheme.error)),
+                  TextButton(onPressed: _load, child: const Text('重试')),
+                ]),
+              ),
+              Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               color: AppTheme.surface,
               child: Row(
                 children: [
                   Icon(Icons.video_library_outlined,
-                      size: 16, color: AppTheme.accent),
+                      size: 16, color: AppTheme.actionText),
                   const SizedBox(width: 6),
-                  Text(
+                  Expanded(child: Text(
                     '投稿内容 · ${widget.contentMode.label}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.textMain,
                     ),
-                  ),
-                  const Spacer(),
+                  )),
                   if (!_noMore)
                     Text(
                       '已加载 ${_books.length}',
@@ -347,7 +352,8 @@ class _UpHomePageState extends State<UpHomePage> {
                     ),
                 ],
               ),
-            );
+              ),
+            ]);
           }
           if (i == _books.length + 1) {
             return _buildFooter();
@@ -384,7 +390,9 @@ class _UpHomePageState extends State<UpHomePage> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
                             if (b.durationText.isNotEmpty)
                               Text(b.durationText,
@@ -411,7 +419,7 @@ class _UpHomePageState extends State<UpHomePage> {
                                 child: Text('已收藏',
                                     style: TextStyle(
                                         fontSize: 10,
-                                        color: AppTheme.accent)),
+                                        color: AppTheme.actionText)),
                               ),
                             ],
                           ],
@@ -429,6 +437,16 @@ class _UpHomePageState extends State<UpHomePage> {
   }
 
   Widget _buildFooter() {
+    if (_moreError != null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          Text(_moreError!, textAlign: TextAlign.center,
+              style: TextStyle(color: AppTheme.error)),
+          TextButton(onPressed: () => _loadMore(retry: true), child: const Text('重试')),
+        ]),
+      );
+    }
     if (_loadingMore) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
@@ -471,7 +489,7 @@ class _UpHomePageState extends State<UpHomePage> {
     VoidCallback? onAction,
   }) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -21,9 +21,9 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - 旧收藏、缓存和进度默认按听书读取。暂停后继续播放与主动重新选择歌曲是不同操作。
 - 音频来自 B 站视频；不提供独立歌曲库。不含跨视频歌单、随机/循环播放或整场演唱会自动分曲。
 
-以下为重命名前的模式功能测试截图，使用固定测试数据；不代表 B听最终视觉或线上资源可用性：
+以下为 B听 v1 在 Android 模拟器中的实测画面，使用固定测试数据；不代表线上资源可用性。更多深浅主题、大字和启动截图见[视觉与交互验收记录](docs/testing/2026-10-24-bting-design.md)。
 
-<img src="docs/screenshots/local-v1-search-modes-mobile.png" width="240" alt="歌曲模式搜索" /> <img src="docs/screenshots/local-v1-import-modes-mobile.png" width="240" alt="演唱会资源导入" />
+<img src="docs/screenshots/bting-v1/light-empty-collection.png" width="220" alt="B听浅色收藏空态" /> <img src="docs/screenshots/bting-v1/dark-player.png" width="220" alt="B听深色播放器" /> <img src="docs/screenshots/bting-v1/light-import.png" width="220" alt="B听三模式资源导入" />
 
 ## 当前应用身份
 
@@ -33,7 +33,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移旧收藏、进度、缓存或登录状态。
 - 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场。
 - 原作者统计 SDK 已移除；Blisten 仓库、官网、反馈地址和更新源尚未配置，不再检查上游 Release。
-- 已选 B「闭眼听友」图标方向并认可整体 UI 风格，[视觉与交互规范 v1.0](docs/design/bting-design-system-v1.md) 已建立；正式视觉资产与主题改造尚未实施。概念稿与提示词位于 [设计提案](docs/design/bting-v1/README.md)。
+- 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.0](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
 
 本应用直接请求 B 站接口，音频、封面等请求也会访问对应资源服务。登录信息、收藏、播放进度和用户选择的离线音频保存在本机；卸载或清除应用数据会影响这些本地资料。移除统计不表示播放功能无需网络。
 

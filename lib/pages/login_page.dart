@@ -13,18 +13,22 @@ import '../services/gallery_service.dart';
 
 /// B 站二维码登录页：生成二维码 → 前台轮询 → 成功后写入 Cookie 并持久化
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final BiliApi? api;
+  const LoginPage({super.key, this.api});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _api = BiliApi.instance;
+  late final _api = widget.api ?? BiliApi.instance;
   final _qrBoundaryKey = GlobalKey();
 
   bool _generating = true;
   bool _saving = false;
+  bool _polling = false;
+  bool _pollFailed = false;
+  int _generation = 0;
   String? _qrContent;
   String? _qrKey;
   String _status = '';
@@ -48,13 +52,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _generate() async {
+    _timer?.cancel();
+    final generation = ++_generation;
     setState(() {
       _generating = true;
+      _pollFailed = false;
+      _qrContent = null;
+      _qrKey = null;
       _status = '';
     });
     try {
       final qr = await _api.qrGenerate();
-      if (_destroyed) return;
+      if (_destroyed || generation != _generation) return;
       setState(() {
         _qrContent = qr.url;
         _qrKey = qr.qrKey;
@@ -63,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
       });
       _startPolling();
     } catch (e) {
-      if (_destroyed) return;
+      if (_destroyed || generation != _generation) return;
       setState(() {
         _generating = false;
         _status = '二维码获取失败，请点击刷新';
@@ -78,14 +87,25 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _poll() async {
     final key = _qrKey;
-    if (key == null || _qrContent == null) return;
+    if (key == null || _qrContent == null || _polling) return;
+    final generation = _generation;
+    _polling = true;
     String state;
     try {
       state = await _api.qrPoll(key);
     } catch (_) {
-      return; // 轮询网络抖动忽略，下轮再试
+      if (_destroyed || generation != _generation) return;
+      _timer?.cancel();
+      setState(() {
+        _pollFailed = true;
+        _status = '登录状态检查失败，请重试或刷新二维码';
+      });
+      return;
+    } finally {
+      _polling = false;
     }
-    if (_destroyed) return;
+    if (_destroyed || generation != _generation) return;
+    setState(() => _pollFailed = false);
     switch (state) {
       case 'success':
         _timer?.cancel();
@@ -161,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 8),
-        Icon(Icons.headset_rounded, size: 44, color: AppTheme.accent),
+        Icon(Icons.headset_rounded, size: 44, color: AppTheme.actionText),
         const SizedBox(height: 12),
         Text(
           '登录 B 站账号',
@@ -187,8 +207,8 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.white,
               child: _generating
                   ? const SizedBox(
-                      width: 220,
-                      height: 220,
+                      width: 200,
+                      height: 200,
                       child: Center(
                         child:
                             CircularProgressIndicator(color: AppTheme.accent),
@@ -196,8 +216,8 @@ class _LoginPageState extends State<LoginPage> {
                     )
                   : _qrContent == null
                       ? SizedBox(
-                          width: 220,
-                          height: 220,
+                          width: 200,
+                          height: 200,
                           child: Center(
                             child: Icon(Icons.qr_code_2_rounded,
                                 size: 72, color: AppTheme.textHint),
@@ -206,7 +226,7 @@ class _LoginPageState extends State<LoginPage> {
                       : QrImageView(
                           data: _qrContent!,
                           version: QrVersions.auto,
-                          size: 220,
+                          size: 200,
                           backgroundColor: Colors.white,
                         ),
             ),
@@ -216,12 +236,23 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           _status,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppTheme.textSub),
+          style: TextStyle(fontSize: 13,
+              color: _pollFailed ? AppTheme.error : AppTheme.textSub),
+        ),
+        if (_pollFailed) Center(
+          child: TextButton(
+            onPressed: () {
+              _startPolling();
+              _poll();
+            },
+            child: const Text('重试'),
+          ),
         ),
         const SizedBox(height: 16),
         Center(
           child: Wrap(
             spacing: 12,
+            runSpacing: 8,
             children: [
               OutlinedButton.icon(
                 onPressed: _generating ? null : _generate,
@@ -229,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
                 label: const Text('刷新二维码'),
               ),
               OutlinedButton.icon(
-                onPressed: (_generating || _saving) ? null : _saveQr,
+                onPressed: (_generating || _saving || _qrContent == null) ? null : _saveQr,
                 icon: _saving
                     ? const SizedBox(
                         width: 16,

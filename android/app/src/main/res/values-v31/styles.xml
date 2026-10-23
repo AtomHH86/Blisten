@@ -4,8 +4,8 @@
      splashscreen 参数生成启动画面，因此单独配置，保证品牌深空蓝 + LOGO 一致。 -->
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowSplashScreenBackground">#040F30</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/splash_logo</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_mascot</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">

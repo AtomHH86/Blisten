@@ -3,127 +3,70 @@ import 'package:flutter/material.dart';
 import '../core/app_meta.dart';
 import '../core/theme/app_theme.dart';
 
-/// 启动页：品牌深空蓝底 + LOGO + 加载动画。
-///
-/// 纯展示组件：耗时初始化由上层（BlistenApp）在后台执行，完成后切换首页。
-class SplashScreen extends StatefulWidget {
+/// 纯展示组件：耗时初始化由 BlistenApp 完成，不为品牌展示延长启动。
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _fade;
-
-  @override
-  void initState() {
-    super.initState();
-    _fade = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-      value: 1,
-    );
-  }
-
-  @override
-  void dispose() {
-    _fade.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final t = CurvedAnimation(parent: _fade, curve: Curves.easeOutCubic);
     return Scaffold(
-      backgroundColor: AppTheme.accentNavy,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 背景：品牌色 + 极淡的渐变光晕
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF040F30),
-                  Color(0xFF0A1738),
-                  Color(0xFF040F30),
-                ],
-              ),
-            ),
-          ),
-          Center(
-            child: FadeTransition(
-              opacity: t,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.accent.withValues(alpha: 0.35),
-                          blurRadius: 32,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+      backgroundColor: AppTheme.bg,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: (constraints.maxWidth - 48).clamp(
+                    0.0,
+                    double.infinity,
+                  ),
+                  minHeight: (constraints.maxHeight - 48).clamp(
+                    0.0,
+                    double.infinity,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/mascot.png',
+                      width: 176,
+                      height: 176,
+                      excludeFromSemantics: true,
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: Image.asset(
-                        'assets/logo.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) => const ColoredBox(
-                          color: Color(0xFF0A1738),
-                          child: Icon(
-                            Icons.headset_rounded,
-                            size: 44,
-                            color: AppTheme.accent,
-                          ),
-                        ),
+                    const SizedBox(height: 24),
+                    Text(
+                      AppMeta.name,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textMain,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 26),
-                  const Text(
-                    AppMeta.name,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.accentMoon,
-                      letterSpacing: 1.5,
+                    const SizedBox(height: 12),
+                    Text(
+                      AppMeta.tagline,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: AppTheme.textSub),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    AppMeta.tagline,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.accentIce.withValues(alpha: 0.7),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.actionText,
+                        semanticsLabel: '正在准备收听',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 44),
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      color: AppTheme.accent,
-                      backgroundColor:
-                          AppTheme.accent.withValues(alpha: 0.12),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

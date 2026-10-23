@@ -33,17 +33,14 @@ class FavoritesPage extends StatelessWidget {
       body: books.isEmpty
           ? const EmptyShelfView(
               icon: Icons.collections_bookmark_outlined,
+              showImport: true,
+              showMascot: true,
               title: '收藏还是空的',
               subtitle: '听书播放 1 分钟后自动加入；歌曲和演唱会请在详情页手动收藏',
             )
           : GridView.builder(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.52,
-              ),
+              gridDelegate: bookGridDelegate(context),
               itemCount: books.length,
               itemBuilder: (context, i) {
                 final sb = books[i];
