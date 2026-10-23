@@ -1,0 +1,16 @@
+{
+  "searchCounts": {
+    "audiobook": 12,
+    "music": 20,
+    "concert": 20
+  },
+  "bvid": "BV1wB4y1R7Sg",
+  "positionMs": 3250,
+  "online": true,
+  "date": "2026-10-23",
+  "emulator": "36.5.11",
+  "api": 35,
+  "abi": "x86_64",
+  "exit_code": 0,
+  "subjective_audio_quality": "not assessed"
+}

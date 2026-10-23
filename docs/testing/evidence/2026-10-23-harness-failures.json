@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-23",
+  "emulator": "36.5.11",
+  "api": 35,
+  "abi": "x86_64",
+  "checks": [
+    {
+      "scenario": "setup",
+      "expected_exit": "nonzero",
+      "actual_exit": 1,
+      "reported_failure": "harness setup",
+      "log_sha256": "e08c97352f3efa0b55b44707dd2bed5003fe3637abe149720be69156fc81490b"
+    },
+    {
+      "scenario": "teardown",
+      "expected_exit": "nonzero",
+      "actual_exit": 1,
+      "reported_failure": "harness teardown",
+      "log_sha256": "63d39af5160505de66542d9e25133087169bcc28e41ebd788d6562728d05d70a"
+    },
+    {
+      "scenario": "setup-timeout",
+      "expected_exit": "nonzero",
+      "actual_exit": 1,
+      "reported_failure": "harness setup",
+      "log_sha256": "2bc68fb1d7cbb7da72264afe17dc1539de4bd57e22721cc1bc503d1eb1107660"
+    }
+  ]
+}

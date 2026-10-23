@@ -16,6 +16,16 @@ if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Flutter defaults include plugin libraries for all ABIs even for one target.
+// The release script opts in to exact ABI filtering; normal/debug builds stay unchanged.
+val releaseTargetAbis = providers.gradleProperty("abtsTargetAbis").orNull?.let { raw ->
+    val abis = raw.split(',').map { it.trim() }.toSet()
+    require(abis.isNotEmpty() && abis.all { it in setOf("arm64-v8a", "armeabi-v7a", "x86_64") }) {
+        "abtsTargetAbis must contain only arm64-v8a, armeabi-v7a, x86_64"
+    }
+    abis
+}
+
 android {
     namespace = "dev.pages.abts"
     compileSdk = flutter.compileSdkVersion
@@ -56,6 +66,10 @@ android {
             applicationIdSuffix = ".debug"
         }
         release {
+            if (releaseTargetAbis != null) {
+                ndk.abiFilters.clear()
+                ndk.abiFilters.addAll(releaseTargetAbis)
+            }
             // 有 key.properties 时用正式证书签名，否则回退 debug 签名（便于他人构建）
             signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")

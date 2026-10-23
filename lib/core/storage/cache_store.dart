@@ -765,6 +765,11 @@ class CacheStore extends ChangeNotifier {
       for (final t in _tasks.values) {
         if (t.done || t.failed) continue;
         if (all.any((e) => e.bvid == t.bvid && e.cid == t.cid)) continue;
+        final active = _active;
+        if (active != null && active.bvid == t.bvid && active.cid == t.cid) {
+          all.add(active);
+          continue;
+        }
         all.add(CacheRequest(
           bvid: t.bvid,
           bookTitle: _active?.bvid == t.bvid ? _active?.bookTitle ?? '' : '',

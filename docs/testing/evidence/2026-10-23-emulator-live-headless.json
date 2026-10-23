@@ -1,0 +1,19 @@
+{
+  "searchCounts": {
+    "audiobook": 17,
+    "music": 20,
+    "concert": 20
+  },
+  "bvid": "BV1wB4y1R7Sg",
+  "positionMs": 3007,
+  "online": true,
+  "date": "2026-10-23",
+  "emulator": "36.5.11",
+  "api": 35,
+  "abi": "x86_64",
+  "display": "headless",
+  "exit_code": 0,
+  "run_directory": "build/desktop-tests/20261023-190707-39671",
+  "log_sha256": "36bd62386d4ea84e328024b7d9bf38e41d517e06aa5d84ead4701dc7eaf58d4a",
+  "subjective_audio_quality": "not assessed"
+}

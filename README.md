@@ -132,38 +132,39 @@ Flutter · Android · 永久免费 · 开源
 
 ## 下载
 
-前往 [Releases](../../releases) 下载 APK，安装即可（Android 7.0+，已签名、包名 `dev.pages.abts`，安装包彼此可覆盖升级）。
+上游发布版可在 [Releases](../../releases) 查找。当前分支的歌曲 / 演唱会改造尚未发布正式包；下表说明四种构建的选择方式，实际大小及校验和以构建清单为准。最低系统为 Android 7.0（API 24）。
 
 | 安装包 | 体积 | 适用设备 |
 | --- | --- | --- |
-| `abts-v1.2.0-arm64-v8a.apk` | ~26 MB | **绝大多数手机都选它**（2017 年后的主流安卓机基本都是 arm64） |
-| `abts-v1.2.0-armeabi-v7a.apk` | ~23 MB | 较老的 32 位手机 / 低端设备（armv7） |
-| `abts-v1.2.0-x86_64.apk` | ~28 MB | x86_64 模拟器 / 平板 / 部分盒子 |
-| `abts-v1.2.0-universal.apk` | ~73 MB | 不确定 CPU 架构时选它，一个包兼容所有架构（体积最大） |
+| `abts-v1.2.0-arm64-v8a.apk` | 构建后实测 | 大多数现代安卓手机；ARM64 Android 模拟器 |
+| `abts-v1.2.0-armeabi-v7a.apk` | 构建后实测 | 支持 32 位 ARM 应用且满足最低系统要求的设备 |
+| `abts-v1.2.0-x86_64.apk` | 构建后实测 | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
+| `abts-v1.2.0-universal.apk` | 构建后实测 | 同时包含上述三种 ABI，体积较大；不包含 32 位 x86 或 RISC-V |
 
-> 怎么确认架构：设置 → 我的设备 → 处理器型号；或用 CPU-Z / AIDA64 查看 ABI 一栏。
+> 用 `adb shell getprop ro.product.cpu.abilist` 查看设备支持的 ABI。Apple Silicon 上的 ARM64 模拟器应选 ARM64 包。覆盖升级还要求包名和签名一致、versionCode 不降低；自行签名的包通常不能覆盖原作者签名的版本。
 
 ## 从源码构建
 
 Android 真机调试可先运行 `flutter run -d <设备ID>`，或用 `flutter build apk --debug --target-platform android-arm64` 生成 ARM64 手机的调试包。调试版名称为“阿B听书·测试”，包名为 `dev.pages.abts.debug`，可与原版并存，收藏、进度和缓存各自独立。发布版仍使用原包名。
 
-本次构建与真机验收进度见 [Android 测试记录](docs/testing/2026-10-23-android-device.md)。
+电脑测试命令及覆盖范围见 [模拟器测试教程](docs/testing/android-desktop-guide.md) 与 [模拟器验收记录](docs/testing/2026-10-23-android-emulator.md)，实机验证见 [Android 测试记录](docs/testing/2026-10-23-android-device.md)。
 
 ```bash
-# 环境：Flutter 3.38.x（Dart 3.10+）、JDK 17、Android SDK
-flutter pub get
-flutter build apk --release            # 通用包
-flutter build apk --release --split-per-abi   # 按架构分包（体积更小）
-# 产物：build/app/outputs/flutter-apk/
+# 当前 Intel Mac 已配置持久工具链
+tool/test-android.sh               # 静态分析、单元/组件、模拟器、跨进程恢复
+tool/test-android.sh online        # 单独验证真实 B 站联网搜索与播放
+# 配置正式签名后再运行（本次不生成正式包）
+tool/build-android-apks.sh
 ```
 
-**签名说明**：若存在 `android/key.properties` 则用其中的证书签名，否则回退 debug 签名（便于他人直接构建）。配置格式：
+**签名说明**：四包脚本要求 `android/key.properties` 和正式证书，并核验产物签名；缺失即退出。直接使用原有 Gradle release 构建仍会在缺少配置时回退 debug 签名，不能将这种包作为正式发布包。四包脚本保留相同 versionCode；直接使用 Flutter 的 `--split-per-abi` 会产生不同版本号，不能据此承诺与通用包互相覆盖升级。配置格式：
 
 ```properties
 storePassword=你的密码
 keyPassword=你的密码
 keyAlias=你的别名
-storeFile=abitingshu.keystore   # 相对 android/app/ 目录
+# 相对 android/app/ 目录，或使用绝对路径
+storeFile=abitingshu.keystore
 ```
 
 ## 项目结构

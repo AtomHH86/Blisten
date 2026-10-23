@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-23",
+  "flutter": "3.38.10",
+  "dart": "3.10.9",
+  "emulator": "36.5.11",
+  "api": 35,
+  "abi": "x86_64",
+  "display": "headless",
+  "checks": [
+    {
+      "command": "tool/test-android.sh all",
+      "exit_code": 0,
+      "run_directory": "build/desktop-tests/20261023-190215-38204",
+      "log_sha256": "4e1c60a0acc41d949dc1725dfabf78d9aa8b0144d5ca6910d7c06886bc6c38de",
+      "native_business_cases_passed": 5,
+      "restart_phases_passed": [
+        "seed",
+        "verify"
+      ],
+      "seed_android_pid": 4302,
+      "verify_android_pid": 4453,
+      "analyze": "no issues",
+      "flutter_tests_passed": 58,
+      "flutter_optional_capture_skipped": 1,
+      "packaging_tests_passed": 10
+    },
+    {
+      "command": "tool/test-android.sh integration",
+      "exit_code": 0,
+      "run_directory": "build/desktop-tests/20261023-190430-39023",
+      "log_sha256": "1c5fd3f493953c588a5ef6c977d4d87ff2a871db179f7df93010a47320d114c1",
+      "native_business_cases_passed": 5,
+      "restart_phases_passed": [
+        "seed",
+        "verify"
+      ],
+      "seed_android_pid": 4870,
+      "verify_android_pid": 5018
+    }
+  ]
+}

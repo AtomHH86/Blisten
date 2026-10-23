@@ -327,6 +327,70 @@ void main() {
     expect(find.text('过时听书结果'), findsNothing);
   });
 
+  testWidgets('late song pagination cannot append to concert search results', (
+    tester,
+  ) async {
+    final api = _Api();
+    await tester.pumpWidget(
+      _host(
+        SearchPage(
+          initialKeyword: '现场',
+          initialMode: ContentMode.music,
+          api: api,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    api.defer = true;
+    await tester.drag(find.byType(ListView).first, const Offset(0, -4000));
+    await tester.pump();
+    expect(api.requests.last, (
+      keyword: '现场',
+      page: 2,
+      mode: ContentMode.music,
+    ));
+    await tester.tap(find.text('演唱会'));
+    await tester.pump();
+    api.pending.last.complete([_book(ContentMode.concert, '当前演唱会结果')]);
+    await tester.pumpAndSettle();
+    api.pending.first.complete([_book(ContentMode.music, '迟到的歌曲分页')]);
+    await tester.pumpAndSettle();
+    expect(find.text('当前演唱会结果'), findsOneWidget);
+    expect(find.text('迟到的歌曲分页'), findsNothing);
+  });
+
+  testWidgets('pagination retry retains submitted keyword, page and mode', (
+    tester,
+  ) async {
+    final api = _Api();
+    await tester.pumpWidget(
+      _host(
+        SearchPage(
+          initialKeyword: '原歌曲',
+          initialMode: ContentMode.music,
+          api: api,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '未提交的新词');
+    api.defer = true;
+    await tester.drag(find.byType(ListView).first, const Offset(0, -4000));
+    await tester.pump();
+    api.pending.single.completeError(Exception('temporary network failure'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    api.defer = false;
+    await tester.tap(find.text('重试'));
+    await tester.pumpAndSettle();
+    expect(api.requests.last, (
+      keyword: '原歌曲',
+      page: 2,
+      mode: ContentMode.music,
+    ));
+    expect(api.requests.where((request) => request.page == 2), hasLength(2));
+  });
+
   testWidgets(
     'switching to UP results ignores older video response and preserves mode',
     (tester) async {
