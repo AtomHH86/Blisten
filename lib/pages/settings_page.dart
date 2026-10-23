@@ -61,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text('退出登录',
             style: TextStyle(color: AppTheme.textMain, fontSize: 17)),
         content: Text(
-          '退出后需要重新扫码登录，书架与收听进度仍保留在本机。',
+          '退出后需要重新扫码登录，收藏与收听进度仍保留在本机。',
           style: TextStyle(color: AppTheme.textSub, fontSize: 13, height: 1.5),
         ),
         actions: [

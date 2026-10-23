@@ -5,5 +5,5 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <application android:label="阿B听书·测试" tools:replace="android:label" />
+    <application android:label="B听·测试" tools:replace="android:label" />
 </manifest>

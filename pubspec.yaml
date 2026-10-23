@@ -1,5 +1,5 @@
-name: abts
-description: "阿B听书：专注收听有声小说的 Flutter 播放器（搜索、分P连播、断点续播、后台播放、锁屏控制、睡眠定时）"
+name: blisten
+description: "B听：闭上眼听 B 站。支持听书、听歌、听现场的 Flutter 音频播放器。"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2.0+3
+version: 1.0.0+1
 
 environment:
   sdk: ^3.10.8
@@ -45,7 +45,6 @@ dependencies:
   permission_handler: 11.3.1
   share_plus: ^12.0.1
   qr_flutter: ^4.1.0
-  umeng_common_sdk: ^1.3.1
   path_provider: ^2.1.6
 
 dev_dependencies:

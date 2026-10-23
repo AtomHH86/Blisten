@@ -2,15 +2,15 @@
 // independently of app changes when the network/resource/API is unavailable.
 import 'dart:convert';
 
-import 'package:abts/core/network/bili_client.dart';
-import 'package:abts/core/network/cookie_jar.dart';
-import 'package:abts/core/storage/cache_store.dart';
-import 'package:abts/core/storage/shelf_store.dart';
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/player/bili_audio_handler.dart';
-import 'package:abts/player/book_player.dart';
-import 'package:abts/services/bili_api.dart';
-import 'package:abts/services/bili_resource.dart';
+import 'package:blisten/core/network/bili_client.dart';
+import 'package:blisten/core/network/cookie_jar.dart';
+import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/core/storage/shelf_store.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/player/bili_audio_handler.dart';
+import 'package:blisten/player/book_player.dart';
+import 'package:blisten/services/bili_api.dart';
+import 'package:blisten/services/bili_resource.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,8 +40,8 @@ void main() {
       final handler = await AudioService.init(
         builder: BiliAudioHandler.new,
         config: const AudioServiceConfig(
-          androidNotificationChannelId: 'dev.pages.abts.channel.audio',
-          androidNotificationChannelName: '阿B听书',
+          androidNotificationChannelId: 'com.bting.audio.channel.audio',
+          androidNotificationChannelName: 'B听',
           androidStopForegroundOnPause: false,
         ),
       );

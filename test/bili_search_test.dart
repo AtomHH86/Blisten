@@ -1,7 +1,7 @@
-import 'package:abts/core/network/bili_client.dart';
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/models/up_user.dart';
-import 'package:abts/services/bili_api.dart';
+import 'package:blisten/core/network/bili_client.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/models/up_user.dart';
+import 'package:blisten/services/bili_api.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 

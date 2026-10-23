@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:abts/core/storage/shelf_store.dart';
-import 'package:abts/core/theme/app_theme.dart';
-import 'package:abts/models/book.dart';
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/pages/player_page.dart';
-import 'package:abts/pages/recent_page.dart';
-import 'package:abts/player/book_player.dart';
+import 'package:blisten/core/storage/shelf_store.dart';
+import 'package:blisten/core/theme/app_theme.dart';
+import 'package:blisten/models/book.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/pages/player_page.dart';
+import 'package:blisten/pages/recent_page.dart';
+import 'package:blisten/player/book_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';

@@ -56,7 +56,7 @@ if [ -n "$certificate" ] && ! [[ "$certificate" =~ ^([[:xdigit:]]{2}:?){31}[[:xd
 fi
 parent="$(dirname "$output")"
 mkdir -p "$parent"
-stage="$(mktemp -d "$parent/.abts-apks.XXXXXX")"
+stage="$(mktemp -d "$parent/.blisten-apks.XXXXXX")"
 trap 'exit_code=$?; rm -rf "$stage"; exit "$exit_code"' EXIT
 
 flutter --version --machine > "$stage/flutter-version.json"
@@ -72,12 +72,12 @@ for variant in arm64-v8a armeabi-v7a x86_64 universal; do
     universal) target='android-arm,android-arm64,android-x64'; abis='armeabi-v7a,arm64-v8a,x86_64' ;;
   esac
   printf 'Building %s, version %s+%s\n' "$variant" "$version" "$build_number"
-  ORG_GRADLE_PROJECT_abtsTargetAbis="$abis" flutter build apk --release \
+  ORG_GRADLE_PROJECT_blistenTargetAbis="$abis" flutter build apk --release \
     --target-platform "$target" --build-name "$version" --build-number "$build_number"
-  name="abts-v$version-$variant.apk"
+  name="Blisten-v$version-$variant.apk"
   cp "$repo/build/app/outputs/flutter-apk/app-release.apk" "$stage/$name"
   python3 "$repo/tool/apk-metadata.py" "$stage/$name" --release \
-    --expect-abis "$abis" --expect-package dev.pages.abts --expect-version "$version" \
+    --expect-abis "$abis" --expect-package com.bting.audio --expect-version "$version" \
     --expect-code "$build_number" --expect-min-sdk 24 "$@" \
     > "$stage/$variant.json"
 done

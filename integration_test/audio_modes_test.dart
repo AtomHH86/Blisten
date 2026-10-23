@@ -1,24 +1,24 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:abts/core/network/bili_client.dart';
-import 'package:abts/core/storage/cache_store.dart';
-import 'package:abts/core/storage/follow_store.dart';
-import 'package:abts/core/storage/search_history_store.dart';
-import 'package:abts/core/storage/shelf_store.dart';
-import 'package:abts/core/theme/app_theme.dart';
-import 'package:abts/models/book.dart';
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/pages/book_detail_page.dart';
-import 'package:abts/pages/cache_page.dart';
-import 'package:abts/pages/home_shell.dart';
-import 'package:abts/pages/player_page.dart';
-import 'package:abts/pages/search_page.dart';
-import 'package:abts/player/bili_audio_handler.dart';
-import 'package:abts/player/book_player.dart';
-import 'package:abts/player/playback_preferences.dart';
-import 'package:abts/services/auth_store.dart';
-import 'package:abts/services/bili_api.dart';
+import 'package:blisten/core/network/bili_client.dart';
+import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/core/storage/follow_store.dart';
+import 'package:blisten/core/storage/search_history_store.dart';
+import 'package:blisten/core/storage/shelf_store.dart';
+import 'package:blisten/core/theme/app_theme.dart';
+import 'package:blisten/models/book.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/pages/book_detail_page.dart';
+import 'package:blisten/pages/cache_page.dart';
+import 'package:blisten/pages/home_shell.dart';
+import 'package:blisten/pages/player_page.dart';
+import 'package:blisten/pages/search_page.dart';
+import 'package:blisten/player/bili_audio_handler.dart';
+import 'package:blisten/player/book_player.dart';
+import 'package:blisten/player/playback_preferences.dart';
+import 'package:blisten/services/auth_store.dart';
+import 'package:blisten/services/bili_api.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,8 +75,8 @@ void main() {
       handler = await AudioService.init(
         builder: BiliAudioHandler.new,
         config: const AudioServiceConfig(
-          androidNotificationChannelId: 'dev.pages.abts.channel.audio',
-          androidNotificationChannelName: '阿B听书',
+          androidNotificationChannelId: 'com.bting.audio.channel.audio',
+          androidNotificationChannelName: 'B听',
           androidNotificationIcon: 'mipmap/ic_launcher',
           androidNotificationOngoing: false,
           androidStopForegroundOnPause: false,
@@ -386,7 +386,7 @@ void main() {
             find.text('本地有声小说测试').evaluate().isNotEmpty,
         'discovery tab and its fetched results',
       );
-      await tester.tap(find.text('歌曲').first);
+      await tester.tap(find.text('听歌').first);
       await _until(
         tester,
         () => find.text('本地三分钟歌曲').evaluate().isNotEmpty,
@@ -407,7 +407,7 @@ void main() {
       );
       expect(
         tester
-            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '歌曲'))
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '听歌'))
             .selected,
         isTrue,
       );
@@ -439,7 +439,7 @@ void main() {
         importField,
         'https://www.bilibili.com/video/${LocalBiliFixture.imported}?p=9',
       );
-      await tester.tap(find.widgetWithText(ChoiceChip, '演唱会').last);
+      await tester.tap(find.widgetWithText(ChoiceChip, '听现场').last);
       await tester.pump();
       expect(tester.widget<FilledButton>(importSubmit).onPressed, isNotNull);
       await tester.tap(importSubmit.hitTestable());

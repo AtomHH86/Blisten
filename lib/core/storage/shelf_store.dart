@@ -95,7 +95,7 @@ class ShelfBook {
   }
 
   String get progressText =>
-      positionMs <= 0 ? '未开始' : '读到 $positionText';
+      positionMs <= 0 ? '未开始' : '听到 $positionText';
 
   /// 这本书是否已经有收听进度（用于书架是否显示进度徽标）
   bool get hasProgress =>

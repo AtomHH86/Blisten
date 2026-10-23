@@ -18,16 +18,16 @@ if (hasReleaseKeystore) {
 
 // Flutter defaults include plugin libraries for all ABIs even for one target.
 // The release script opts in to exact ABI filtering; normal/debug builds stay unchanged.
-val releaseTargetAbis = providers.gradleProperty("abtsTargetAbis").orNull?.let { raw ->
+val releaseTargetAbis = providers.gradleProperty("blistenTargetAbis").orNull?.let { raw ->
     val abis = raw.split(',').map { it.trim() }.toSet()
     require(abis.isNotEmpty() && abis.all { it in setOf("arm64-v8a", "armeabi-v7a", "x86_64") }) {
-        "abtsTargetAbis must contain only arm64-v8a, armeabi-v7a, x86_64"
+        "blistenTargetAbis must contain only arm64-v8a, armeabi-v7a, x86_64"
     }
     abis
 }
 
 android {
-    namespace = "dev.pages.abts"
+    namespace = "com.bting.audio"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -41,7 +41,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.pages.abts"
+        applicationId = "com.bting.audio"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

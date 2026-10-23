@@ -15,7 +15,7 @@ tool/test-android.sh integration     # 仅模拟器回归及跨进程恢复
 tool/test-android.sh online          # 可选：真实 B 站联网冒烟测试
 ```
 
-脚本默认以无窗口模式启动专用模拟器 `abts_api35_x86_64`，图形和原生音频仍启用；只接受模拟器目标，并核对设备身份。若模拟器已经运行，会复用当前进程。测试使用 `dev.pages.abts.debug`（阿B听书·测试），会清理该模拟器测试包内的数据。不要在此专用测试应用中保存需要长期保留的收藏或登录账号。实体手机不参与这些命令。
+脚本默认以无窗口模式启动专用模拟器 `abts_api35_x86_64`，图形和原生音频仍启用；只接受模拟器目标，并核对设备身份。若模拟器已经运行，会复用当前进程。旧的 `dev.pages.abts.debug` 不作为测试目标。测试使用 `com.bting.audio.debug`（B听·测试），会清理该模拟器测试包内的数据。不要在此专用测试应用中保存需要长期保留的收藏或登录账号。实体手机不参与这些命令。
 
 结果位于 `build/desktop-tests/<时间>-<进程号>/`：`run.log`、工具版本、设备信息、`exit-code.txt`。返回码为 `0` 才表示所选检查全部通过；失败时脚本停止并保留日志。日志仅供本机排障，联网日志可能含临时网络信息，分享前应脱敏。
 
@@ -56,6 +56,6 @@ flutter run -d emulator-5554 -t lib/main.dart
 
 打包脚本分别构建 ARM64、ARMv7、x86_64 和包含这三种 ABI 的 universal，保留相同版本号，检查实际 ABI、签名、大小及 SHA-256。不要把之前估计的 26 / 23 / 28 / 73 MB 写成新版本实测结果。签名一致、包名一致且版本号不降低才满足覆盖升级的基本条件；发布时仍需验证实际安装和升级。
 
-正式发布这次功能改造前，还应统一提高 `pubspec.yaml` 与 `lib/core/app_meta.dart` 的版本，并提高构建号，避免与原始 v1.2.0 混淆。安装包名称和清单会自动采用项目中的版本。
+B听使用独立包名，源码从 `1.0.0+1` 开始；此后发布应同步 `pubspec.yaml` 与 `lib/core/app_meta.dart` 的版本并递增构建号。安装包名称为 `Blisten-v<版本>-<ABI>.apk`，清单自动采用项目版本。正式证书尚未配置，不能覆盖原作者的应用。
 
 方法参考：[Flutter 集成测试](https://docs.flutter.dev/testing/integration-tests)、[Android Emulator](https://developer.android.com/studio/run/emulator)、[Flutter Android 发布](https://docs.flutter.dev/deployment/android)。

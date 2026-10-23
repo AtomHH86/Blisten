@@ -35,11 +35,11 @@ class CacheNotifier {
       final stat = store.batchStat;
       final counter = stat.total > 0 ? '${stat.done + 1}/${stat.total}' : '';
       _update(
-        cur == null ? '正在缓存 · 剩余 $pending 集' : '正在缓存：${cur.title}',
+        cur == null ? '正在缓存 · 剩余 $pending 项' : '正在缓存：${cur.title}',
         [
           if (counter.isNotEmpty) counter,
           '$pct%',
-          if (pending > 1) '剩 $pending 集',
+          if (pending > 1) '剩 $pending 项',
         ].join(' · '),
         pct,
       );

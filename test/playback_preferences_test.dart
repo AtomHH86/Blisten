@@ -1,5 +1,5 @@
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/player/playback_preferences.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/player/playback_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

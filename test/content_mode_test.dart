@@ -1,4 +1,4 @@
-import 'package:abts/models/book.dart';
+import 'package:blisten/models/book.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

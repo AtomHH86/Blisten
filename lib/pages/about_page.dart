@@ -90,9 +90,9 @@ class AboutPage extends StatelessWidget {
   /// 一句话讲清它是干什么的
   Widget _buildIntro(BuildContext context) {
     const points = [
-      '把 B 站当作有声书库：有声小说、评书、相声、广播剧，搜到就能听',
-      '不登录也能用，没有广告、没有会员、没有弹窗',
-      '为长时间收听优化：倍速、断点续播、离线缓存、后台与锁屏控制',
+      '搜索有声书、歌曲与演唱会，也可粘贴 B 站链接或 BV 号添加内容',
+      '支持后台与熄屏播放、定时停止、分 P 连播和离线缓存',
+      '听书与现场可续播；歌曲再次选择从头播放，三种模式独立记忆倍速',
     ];
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -175,9 +175,17 @@ class AboutPage extends StatelessWidget {
           _divider(),
           _linkTile(
             context,
+            icon: Icons.history_rounded,
+            title: '原项目：阿B听书',
+            subtitle: 'B听基于阿B听书修改，感谢原作者与贡献者',
+            url: AppMeta.upstreamUrl,
+          ),
+          _divider(),
+          _linkTile(
+            context,
             icon: Icons.balance_rounded,
             title: '开源协议',
-            subtitle: 'MIT License',
+            subtitle: 'MIT License · 保留原作者版权声明',
             url: AppMeta.licenseUrl,
           ),
         ],
@@ -195,7 +203,7 @@ class AboutPage extends StatelessWidget {
     required String url,
   }) {
     return InkWell(
-      onTap: () => _open(context, url, title),
+      onTap: url.isEmpty ? null : () => _open(context, url, title),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
@@ -224,7 +232,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
+                    url.isEmpty ? '尚未配置 B听的对应入口' : subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 11.5, color: AppTheme.textSub),
@@ -232,7 +240,8 @@ class AboutPage extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.open_in_new_rounded, size: 16, color: AppTheme.textHint),
+            if (url.isNotEmpty)
+              Icon(Icons.open_in_new_rounded, size: 16, color: AppTheme.textHint),
           ],
         ),
       ),
@@ -266,7 +275,7 @@ class AboutPage extends StatelessWidget {
               Icon(Icons.gavel_rounded, size: 16, color: AppTheme.textSub),
               const SizedBox(width: 6),
               Text(
-                '免责声明',
+                '隐私与内容说明',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -279,14 +288,15 @@ class AboutPage extends StatelessWidget {
           Text(
             '1. 本应用为第三方个人开发的播放工具，与哔哩哔哩官方无任何关联，'
             '不代表、也不受哔哩哔哩官方授权或认可。\n\n'
-            '2. 应用内所有音频、封面、文字等内容均来自第三方平台的公开链接，'
-            '版权归原作者及相关权利人所有。本应用不存储、不修改、不二次分发任何内容。\n\n'
-            '3. 内容仅供个人学习、研究与试听交流使用，请勿用于任何商业用途；'
-            '请勿下载、录制或传播相关内容。\n\n'
-            '4. 请在试听后支持正版：如喜欢某部作品，建议前往官方平台购买、订阅或支持作者。\n\n'
-            '5. 若权利人认为本应用侵犯其合法权益，请通过「问题反馈」入口告知，'
-            '我们将在核实后及时处理（包括但不限于移除相关入口）。\n\n'
-            '6. 因使用本应用产生的任何直接或间接后果，由使用者自行承担。',
+            '2. 音频、封面与文字来自 B 站，版权归原作者及相关权利人所有。'
+            '播放可用性受平台、账号权限与原视频状态影响，请尊重权利人的授权范围。\n\n'
+            '3. 收藏、搜索历史、收听进度及设置保存在本机。离线缓存会将音频'
+            '保存到本机应用目录，可在「我的 → 离线缓存」中删除；应用不提供内容二次分发。\n\n'
+            '4. 登录后凭据保存在本机，用于向 B 站请求账号及播放服务；'
+            '退出登录会清除本机登录凭据，收藏与收听进度保留。\n\n'
+            '5. B听未接入第三方行为统计，搜索与播放仍需向 B 站发起请求。'
+            '独立项目的更新与反馈入口尚未配置，原项目链接仅用于来源致谢。\n\n'
+            '6. 喜欢某部作品时，请前往官方平台支持作者。',
             style: TextStyle(
               fontSize: 12,
               color: AppTheme.textSub,

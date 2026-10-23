@@ -70,7 +70,7 @@ class SleepTimerPage extends StatelessWidget {
                 final messenger = ScaffoldMessenger.of(context);
                 if (!player.loaded) {
                   messenger.showSnackBar(
-                    const SnackBar(content: Text('先开始听一本书再设定吧')),
+                    const SnackBar(content: Text('先开始播放再设定吧')),
                   );
                   return;
                 }
@@ -91,9 +91,9 @@ class SleepTimerPage extends StatelessWidget {
           SwitchListTile(
             value: player.stopAtChapterEnd,
             onChanged: (v) => player.setStopAtChapterEnd(v),
-            title: Text('播完本集自动暂停',
+            title: Text('播完当前${player.book?.contentMode.unitLabel ?? '项'}自动暂停',
                 style: TextStyle(fontSize: 14, color: AppTheme.textMain)),
-            subtitle: Text('本集播完即停，不自动播放下一集',
+            subtitle: Text('播完即停，不自动播放下一${player.book?.contentMode.unitLabel ?? '项'}',
                 style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
             activeThumbColor: AppTheme.accent,
           ),
@@ -117,7 +117,7 @@ class SleepTimerPage extends StatelessWidget {
   Future<void> _pickCustom(BuildContext context, BookPlayer player) async {
     if (!player.loaded) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('先开始听一本书再设定吧')),
+        const SnackBar(content: Text('先开始播放再设定吧')),
       );
       return;
     }

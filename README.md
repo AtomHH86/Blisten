@@ -1,6 +1,10 @@
-# Blisten
+# B听（Blisten）
 
-基于 Flutter 的 B 站音频播放器，支持 **听书、歌曲、演唱会**。从 [fengqiao57/abts](https://github.com/fengqiao57/abts) 派生，保留 MIT 许可与上游历史。
+**闭上眼听 B 站。**
+
+B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://github.com/fengqiao57/abts) 修改而来，在原有听书功能基础上，增加歌曲、演唱会模式、B 站链接/BV 号导入，以及按模式独立的倍速与续播规则。
+
+感谢原项目作者及贡献者。本项目保留原始 MIT 许可证和版权声明，是独立维护的衍生版本。
 
 当前是独立的本地开发项目，尚未创建 Blisten GitHub 远程仓库或发布正式 APK。后续开发以本目录为准，迁移来源见 [项目来源](docs/project-origin.md)。
 
@@ -17,15 +21,21 @@
 - 旧收藏、缓存和进度默认按听书读取。暂停后继续播放与主动重新选择歌曲是不同操作。
 - 音频来自 B 站视频；不提供独立歌曲库。不含跨视频歌单、随机/循环播放或整场演唱会自动分曲。
 
-以下为既有模式功能的测试数据界面截图，不能视为线上资源可用性证明：
+以下为重命名前的模式功能测试截图，使用固定测试数据；不代表 B听最终视觉或线上资源可用性：
 
 <img src="docs/screenshots/local-v1-search-modes-mobile.png" width="240" alt="歌曲模式搜索" /> <img src="docs/screenshots/local-v1-import-modes-mobile.png" width="240" alt="演唱会资源导入" />
 
 ## 当前应用身份
 
-这一步先建立新项目目录与仓库。应用显示名仍为“阿B听书”（调试版为“阿B听书·测试”），Android 包名仍为 `dev.pages.abts` / `dev.pages.abts.debug`，Dart 包名为 `abts`，安装包脚本沿用 `abts-v…` 文件名。应用更名范围确认后再同步这些入口；当前没有进行新包名或旧数据迁移。
+- 工程/仓库：Blisten；应用显示名：B听；口号：闭上眼听 B 站。
+- 正式包：`com.bting.audio`；调试包：`com.bting.audio.debug`（B听·测试）。
+- Dart 包：`blisten`；独立版本：`1.0.0+1`。此版本号属于源码，尚未发布正式 APK。
+- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移旧收藏、进度、缓存或登录状态。
+- 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场。
+- 原作者统计 SDK 已移除；Blisten 仓库、官网、反馈地址和更新源尚未配置，不再检查上游 Release。
+- 新图标和开屏视觉正在三方向选型，现有图形暂保留；名称与口号已同步到现有界面。概念稿与提示词位于 [设计提案](docs/design/bting-v1/README.md)。
 
-应用内仓库、更新与统计配置也仍来自原项目，不能据此将当前构建当作独立品牌的正式发布版本。创建 Blisten 正式版前需完成这些配置的归属调整，详见 [项目来源](docs/project-origin.md)。
+本应用直接请求 B 站接口，音频、封面等请求也会访问对应资源服务。登录信息、收藏、播放进度和用户选择的离线音频保存在本机；卸载或清除应用数据会影响这些本地资料。移除统计不表示播放功能无需网络。
 
 ## 开发与测试
 
@@ -57,12 +67,12 @@ GitHub Actions 使用固定 Flutter 版本执行同样的快速检查。工作�
 
 本次提供打包脚本，正式安装包稍后生成。体积和 SHA-256 以实际构建清单为准，不沿用旧版估算值。
 
-| ABI | 适用设备 |
+| 安装包 | 适用设备 |
 | --- | --- |
-| `arm64-v8a` | 大多数现代安卓手机、ARM64 Android 模拟器 |
-| `armeabi-v7a` | 支持 32 位 ARM 应用且满足最低系统版本的设备 |
-| `x86_64` | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
-| `universal` | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
+| `Blisten-v1.0.0-arm64-v8a.apk` | 大多数现代安卓手机、ARM64 Android 模拟器 |
+| `Blisten-v1.0.0-armeabi-v7a.apk` | 支持 32 位 ARM 应用且满足最低系统版本的设备 |
+| `Blisten-v1.0.0-x86_64.apk` | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
+| `Blisten-v1.0.0-universal.apk` | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
 
 配置 `android/key.properties` 和正式签名证书后运行：
 
@@ -94,7 +104,7 @@ docs/                操作教程、验收记录、项目来源和计划
 
 - [贡献指南](CONTRIBUTING.md) · [支持说明](SUPPORT.md) · [安全反馈](SECURITY.md)
 - [变更记录](CHANGELOG.md) · [开发约定](AGENTS.md) · [项目来源](docs/project-origin.md)
-- 上游项目：[fengqiao57/abts](https://github.com/fengqiao57/abts)
+- 上游项目：[阿B听书（fengqiao57/abts）](https://github.com/fengqiao57/abts)
 - 许可证：[MIT](LICENSE)，保留 `BiliTingShu Contributors` 原始版权声明。
 
 本项目与哔哩哔哩无官方关联。音频、封面和文字的权利属于原权利人；离线功能将用户选择的音频缓存到设备，本仓库不附带或分发这些媒体文件。请遵守平台规则和适用的内容授权。

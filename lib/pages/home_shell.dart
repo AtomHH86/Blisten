@@ -8,7 +8,7 @@ import 'bookshelf_page.dart';
 import 'discover_page.dart';
 import 'my_page.dart';
 
-/// 主框架：书架 / 发现 / 我的 + 底部迷你播放条
+/// 主框架：收藏 / 发现 / 我的 + 底部迷你播放条
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -19,7 +19,7 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _tab = HomeTabs.index.value;
 
-  static const _pageNames = ['书架', '发现', '我的'];
+  static const _pageNames = ['收藏', '发现', '我的'];
 
   @override
   void initState() {
@@ -71,7 +71,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.collections_bookmark_outlined),
             selectedIcon: Icon(Icons.collections_bookmark_rounded),
-            label: '书架',
+            label: '收藏',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),

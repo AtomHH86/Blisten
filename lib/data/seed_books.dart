@@ -39,7 +39,7 @@ class DiscoverSeeds {
 
   static const List<DiscoverCategory> categories = [
     DiscoverCategory(
-      label: '热门推荐',
+      label: '热门听书',
       keyword: '有声小说',
       icon: Icons.local_fire_department_rounded,
       anchors: [
@@ -82,14 +82,14 @@ class DiscoverSeeds {
       ],
     ),
     DiscoverCategory(
-      label: '歌曲',
+      label: '听歌',
       keyword: '歌曲 现场 MV',
       icon: Icons.music_note_rounded,
       mode: ContentMode.music,
       anchors: [],
     ),
     DiscoverCategory(
-      label: '演唱会',
+      label: '听现场',
       keyword: '演唱会 完整版',
       icon: Icons.stadium_rounded,
       mode: ContentMode.concert,

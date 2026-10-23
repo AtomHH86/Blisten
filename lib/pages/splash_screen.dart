@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../core/app_meta.dart';
 import '../core/theme/app_theme.dart';
 
 /// 启动页：品牌深空蓝底 + LOGO + 加载动画。
 ///
-/// 纯展示组件：耗时初始化由上层（AbTingShuApp）在后台执行，完成后切换首页。
+/// 纯展示组件：耗时初始化由上层（BlistenApp）在后台执行，完成后切换首页。
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -91,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 26),
                   const Text(
-                    '阿B听书',
+                    AppMeta.name,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -101,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '把有声小说装进一个专注「听」的播放器',
+                    AppMeta.tagline,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.accentIce.withValues(alpha: 0.7),

@@ -7,7 +7,7 @@ import '../core/app_meta.dart';
 /// 发布后把下面两个常量改成你的仓库即可，例如：
 /// ```dart
 /// static const githubOwner = 'your-name';
-/// static const githubRepo = 'abts';
+/// static const githubRepo = 'Blisten';
 /// ```
 class UpdateResult {
   const UpdateResult({
@@ -55,8 +55,8 @@ class AppUpdate {
   AppUpdate._();
 
   /// GitHub 仓库（检查更新数据源）
-  static const String githubOwner = 'fengqiao57';
-  static const String githubRepo = 'abts';
+  static const String githubOwner = '';
+  static const String githubRepo = '';
 
   static bool get configured => githubOwner.isNotEmpty && githubRepo.isNotEmpty;
 

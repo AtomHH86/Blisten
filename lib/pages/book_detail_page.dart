@@ -80,7 +80,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.contentMode.label}详情')),
+      appBar: AppBar(title: Text(switch (widget.contentMode) {
+        ContentMode.audiobook => '听书详情',
+        ContentMode.music => '歌曲详情',
+        ContentMode.concert => '演唱会详情',
+      })),
       body: _loading
           ?  Center(
               child: CircularProgressIndicator(color: AppTheme.accent),

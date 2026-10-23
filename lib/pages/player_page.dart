@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../core/app_meta.dart';
 import '../core/network/api_config.dart';
 import '../core/storage/shelf_store.dart';
 import '../core/theme/app_theme.dart';
@@ -155,7 +156,7 @@ class _PlayerPageState extends State<PlayerPage> {
       await SharePlus.instance.share(
         ShareParams(
           subject: b.cleanTitle,
-          text: '我在「阿B听书」收听《${b.cleanTitle}》\n$url',
+          text: '我在「${AppMeta.name}」收听《${b.cleanTitle}》\n$url',
         ),
       );
     } catch (e) {
@@ -654,13 +655,13 @@ class _PlayerPageState extends State<PlayerPage> {
               SwitchListTile(
                 value: ctx.watch<BookPlayer>().stopAtChapterEnd,
                 onChanged: (v) => player.setStopAtChapterEnd(v),
-                title: const Text(
-                  '播完本集自动暂停',
-                  style: TextStyle(fontSize: 15),
+                title: Text(
+                  '播完当前${player.book?.contentMode.unitLabel ?? '项'}自动暂停',
+                  style: const TextStyle(fontSize: 15),
                 ),
-                subtitle: const Text(
-                  '本集播完即停，不自动播放下一集',
-                  style: TextStyle(fontSize: 12),
+                subtitle: Text(
+                  '播完即停，不自动播放下一${player.book?.contentMode.unitLabel ?? '项'}',
+                  style: const TextStyle(fontSize: 12),
                 ),
                 activeThumbColor: AppTheme.accent,
               ),

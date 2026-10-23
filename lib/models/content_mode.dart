@@ -6,8 +6,8 @@ enum ContentMode {
 
   String get label => switch (this) {
     audiobook => '听书',
-    music => '歌曲',
-    concert => '演唱会',
+    music => '听歌',
+    concert => '听现场',
   };
 
   String get unitLabel => switch (this) {

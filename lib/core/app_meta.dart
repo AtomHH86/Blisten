@@ -5,21 +5,22 @@
 class AppMeta {
   AppMeta._();
 
-  static const String name = '阿B听书';
-  static const String version = '1.2.0';
+  static const String name = 'B听';
+  static const String version = '1.0.0';
 
   /// 副标题 / 一句话介绍
-  static const String tagline = '免登录、无广告、专注收听的 B 站有声小说播放器';
+  static const String tagline = '闭上眼听 B 站';
 
   /// 开源仓库
-  static const String repoUrl = 'https://github.com/fengqiao57/abts';
+  static const String repoUrl = '';
 
   /// 官网
-  static const String siteUrl = 'https://abts.pages.dev/';
+  static const String siteUrl = '';
 
-  /// 开源协议
-  static const String licenseUrl = '$repoUrl/blob/main/LICENSE';
+  /// 原项目来源与保留的 MIT 许可证
+  static const String upstreamUrl = 'https://github.com/fengqiao57/abts';
+  static const String licenseUrl = '$upstreamUrl/blob/main/LICENSE';
 
   /// 问题反馈
-  static const String issuesUrl = '$repoUrl/issues';
+  static const String issuesUrl = '';
 }

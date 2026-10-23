@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:abts/core/storage/cache_store.dart';
-import 'package:abts/models/content_mode.dart';
+import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/models/content_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

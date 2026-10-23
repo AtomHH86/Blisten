@@ -15,7 +15,7 @@ ABIS = ['arm64-v8a', 'armeabi-v7a', 'x86_64']
 CERT = 'a' * 64
 
 
-def write_apk(path, abis, *, debug=False, code=3, min_sdk=24, extra_abi=None):
+def write_apk(path, abis, *, debug=False, code=1, min_sdk=24, extra_abi=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(path, 'w') as archive:
         for abi in abis:
@@ -24,7 +24,7 @@ def write_apk(path, abis, *, debug=False, code=3, min_sdk=24, extra_abi=None):
         if extra_abi:
             archive.writestr(f'lib/{extra_abi}/libmpv.so', b'fixture')
         archive.writestr('badging.txt', (
-            f"package: name='dev.pages.abts' versionCode='{code}' versionName='1.2.0'\n"
+            f"package: name='com.bting.audio' versionCode='{code}' versionName='1.0.0'\n"
             f"sdkVersion:'{min_sdk}'\ntargetSdkVersion:'36'\n"
         ))
         archive.writestr('signature.txt', (
@@ -55,8 +55,8 @@ class PackagingTests(unittest.TestCase):
         return subprocess.run([
             sys.executable, str(ROOT / 'tool/apk-metadata.py'), str(apk),
             '--build-tools', str(self.tools), '--release',
-            '--expect-abis', 'arm64-v8a', '--expect-package', 'dev.pages.abts',
-            '--expect-version', '1.2.0', '--expect-code', '3', '--expect-min-sdk', '24',
+            '--expect-abis', 'arm64-v8a', '--expect-package', 'com.bting.audio',
+            '--expect-version', '1.0.0', '--expect-code', '1', '--expect-min-sdk', '24',
             *extra,
         ], text=True, capture_output=True)
 
@@ -66,7 +66,7 @@ class PackagingTests(unittest.TestCase):
         result = self.inspect(apk, '--certificate-sha256', CERT)
         self.assertEqual(result.returncode, 0, result.stderr)
         metadata = json.loads(result.stdout)
-        self.assertEqual(metadata.get('version_code'), 3)
+        self.assertEqual(metadata.get('version_code'), 1)
         self.assertEqual(metadata['abis'], ['arm64-v8a'])
         self.assertEqual(metadata['size_bytes'], apk.stat().st_size)
         self.assertEqual(metadata['sha256'], hashlib.sha256(apk.read_bytes()).hexdigest())
@@ -127,8 +127,8 @@ class PackagingTests(unittest.TestCase):
         (project / 'lib/core').mkdir(parents=True)
         for name in ['build-android-apks.sh', 'apk-metadata.py', 'android-env.sh']:
             shutil.copy2(ROOT / 'tool' / name, project / 'tool' / name)
-        (project / 'pubspec.yaml').write_text('version: 1.2.0+3\n')
-        (project / 'lib/core/app_meta.dart').write_text("static const String version = '1.2.0';\n")
+        (project / 'pubspec.yaml').write_text('version: 1.0.0+1\n')
+        (project / 'lib/core/app_meta.dart').write_text("static const String version = '1.0.0';\n")
         if signing:
             (project / 'android/key.properties').write_text(
                 'storeFile=fixture.keystore\nstorePassword=fixture\nkeyAlias=release\nkeyPassword=fixture\n')
@@ -139,8 +139,8 @@ import json, os, pathlib, sys, zipfile
 if '--version' in sys.argv:
     print(json.dumps({'frameworkVersion': 'test fixture', 'dartSdkVersion': 'test fixture'}))
     sys.exit(0)
-with open(os.environ['BUILD_LOG'], 'a') as log: log.write(json.dumps({'args': sys.argv[1:], 'abis': os.environ.get('ORG_GRADLE_PROJECT_abtsTargetAbis')}) + '\\n')
-abis = os.environ['ORG_GRADLE_PROJECT_abtsTargetAbis'].split(',')
+with open(os.environ['BUILD_LOG'], 'a') as log: log.write(json.dumps({'args': sys.argv[1:], 'abis': os.environ.get('ORG_GRADLE_PROJECT_blistenTargetAbis')}) + '\\n')
+abis = os.environ['ORG_GRADLE_PROJECT_blistenTargetAbis'].split(',')
 target = sys.argv[sys.argv.index('--target-platform') + 1]
 expected = {'android-arm64': 'arm64-v8a', 'android-arm': 'armeabi-v7a', 'android-x64': 'x86_64'}
 if set(abis) != {expected[p] for p in target.split(',')}: sys.exit(9)
@@ -150,8 +150,8 @@ with zipfile.ZipFile(path, 'w') as z:
     for abi in abis:
         for lib in ['libapp.so', 'libflutter.so', 'libmpv.so', 'libmediakitandroidhelper.so']:
             z.writestr(f'lib/{abi}/{lib}', b'fixture')
-    code = 2003 if os.getenv('BAD_APK') and 'x86_64' in abis else 3
-    z.writestr('badging.txt', f"package: name='dev.pages.abts' versionCode='{code}' versionName='1.2.0'\\nsdkVersion:'24'\\ntargetSdkVersion:'36'\\n")
+    code = 2003 if os.getenv('BAD_APK') and 'x86_64' in abis else 1
+    z.writestr('badging.txt', f"package: name='com.bting.audio' versionCode='{code}' versionName='1.0.0'\\nsdkVersion:'24'\\ntargetSdkVersion:'36'\\n")
     z.writestr('signature.txt', 'Verifies\\nSigner #1 certificate DN: CN=Release Fixture\\nSigner #1 certificate SHA-256 digest: ' + 'a'*64 + '\\n')
 ''')
         self.executable(self.root / 'java/bin/java', '#!/bin/sh\nprintf "fixture JDK 17\\n" >&2\n')
@@ -191,8 +191,12 @@ with zipfile.ZipFile(path, 'w') as z:
         result = self.build(project, env, output)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(len(list(output.glob('*.apk'))), 4)
+        self.assertEqual(
+            sorted(p.name for p in output.glob('*.apk')),
+            sorted(f'Blisten-v1.0.0-{variant}.apk' for variant in [*ABIS, 'universal']),
+        )
         manifest = json.loads((output / 'manifest.json').read_text())
-        self.assertEqual([item['version_code'] for item in manifest['artifacts']], [3] * 4)
+        self.assertEqual([item['version_code'] for item in manifest['artifacts']], [1] * 4)
         self.assertEqual(len((output / 'SHA256SUMS').read_text().splitlines()), 4)
         calls = [json.loads(line) for line in Path(env['BUILD_LOG']).read_text().splitlines()]
         self.assertEqual(len(calls), 4)
@@ -209,7 +213,7 @@ with zipfile.ZipFile(path, 'w') as z:
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('versionCode', result.stderr)
         self.assertFalse(output.exists())
-        self.assertFalse(list(self.root.glob('.abts-apks.*')))
+        self.assertFalse(list(self.root.glob('.blisten-apks.*')))
 
 
 if __name__ == '__main__':

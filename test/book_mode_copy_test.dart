@@ -1,6 +1,6 @@
-import 'package:abts/models/book.dart';
-import 'package:abts/models/chapter.dart';
-import 'package:abts/models/content_mode.dart';
+import 'package:blisten/models/book.dart';
+import 'package:blisten/models/chapter.dart';
+import 'package:blisten/models/content_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

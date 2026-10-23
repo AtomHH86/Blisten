@@ -116,7 +116,7 @@ class BookListTile extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        subtitle ?? '${book.pages} 章 · ${book.durationText}',
+                        subtitle ?? '${book.pages} ${book.contentMode.unitLabel} · ${book.durationText}',
                         style:  TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSub,

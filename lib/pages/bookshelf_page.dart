@@ -74,7 +74,7 @@ class _BookshelfPageState extends State<BookshelfPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('书架'),
+        title: const Text('收藏'),
         actions: [
           // 有可续播的书、或正在播：右上角换成封面角标
           if (last != null || live != null)
@@ -84,7 +84,7 @@ class _BookshelfPageState extends State<BookshelfPage> {
               padding: const EdgeInsets.only(right: 12),
               child: Center(
                 child: Text(
-                  '${books.length} 本',
+                  '${books.length} 项',
                   style: TextStyle(color: AppTheme.textSub, fontSize: 13),
                 ),
               ),
@@ -169,7 +169,9 @@ class _ShelfResumeButtonState extends State<_ShelfResumeButton>
       child: Tooltip(
         message: liveBook != null
             ? '正在收听《${book.cleanTitle}》· 点一下回到播放页'
-            : '继续收听《${book.cleanTitle}》',
+            : book.contentMode.resumesPosition
+                ? '继续收听《${book.cleanTitle}》'
+                : '从头播放《${book.cleanTitle}》',
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: () {

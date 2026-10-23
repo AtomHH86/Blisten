@@ -2,23 +2,23 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:abts/core/storage/search_history_store.dart';
-import 'package:abts/core/storage/follow_store.dart';
-import 'package:abts/core/storage/cache_store.dart';
-import 'package:abts/core/theme/app_theme.dart';
-import 'package:abts/core/storage/shelf_store.dart';
-import 'package:abts/models/book.dart';
-import 'package:abts/models/chapter.dart';
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/models/up_user.dart';
-import 'package:abts/pages/search_page.dart';
-import 'package:abts/pages/discover_page.dart';
-import 'package:abts/pages/book_detail_page.dart';
-import 'package:abts/pages/up_home_page.dart';
-import 'package:abts/player/book_player.dart';
-import 'package:abts/services/bili_api.dart';
-import 'package:abts/services/bili_resource.dart';
-import 'package:abts/widgets/resource_import_dialog.dart';
+import 'package:blisten/core/storage/search_history_store.dart';
+import 'package:blisten/core/storage/follow_store.dart';
+import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/core/theme/app_theme.dart';
+import 'package:blisten/core/storage/shelf_store.dart';
+import 'package:blisten/models/book.dart';
+import 'package:blisten/models/chapter.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/models/up_user.dart';
+import 'package:blisten/pages/search_page.dart';
+import 'package:blisten/pages/discover_page.dart';
+import 'package:blisten/pages/book_detail_page.dart';
+import 'package:blisten/pages/up_home_page.dart';
+import 'package:blisten/player/book_player.dart';
+import 'package:blisten/services/bili_api.dart';
+import 'package:blisten/services/bili_resource.dart';
+import 'package:blisten/widgets/resource_import_dialog.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -66,7 +66,7 @@ class _Api implements BiliApi {
 
   @override
   Future<List<Book>> rankHotNovel({int limit = 30}) async => [
-    _book(ContentMode.audiobook, '热门听书'),
+    _book(ContentMode.audiobook, '推荐测试作品'),
   ];
 
   @override
@@ -216,7 +216,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.requests.single.mode, ContentMode.audiobook);
       expect(find.text('audiobook 第 1 页'), findsOneWidget);
-      await tester.tap(find.text('歌曲'));
+      await tester.tap(find.text('听歌'));
       await tester.pumpAndSettle();
       expect(api.requests.last.mode, ContentMode.music);
       expect(find.text('music 第 1 页'), findsOneWidget);
@@ -229,7 +229,7 @@ void main() {
         ),
         isTrue,
       );
-      await tester.tap(find.text('演唱会'));
+      await tester.tap(find.text('听现场'));
       await tester.pumpAndSettle();
       expect(api.requests.last.mode, ContentMode.concert);
     },
@@ -243,7 +243,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
     expect(find.text('热门听书'), findsOneWidget);
-    await tester.tap(find.text('歌曲'));
+    expect(find.text('推荐测试作品'), findsOneWidget);
+    await tester.tap(find.text('听歌'));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
     expect(api.requests.last.mode, ContentMode.music);
@@ -253,7 +254,7 @@ void main() {
     expect(api.requests.last.keyword, '歌曲 现场 MV');
     expect(api.requests.last.mode, ContentMode.music);
     final selected = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, '歌曲'),
+      find.widgetWithText(ChoiceChip, '听歌'),
     );
     expect(selected.selected, isTrue);
   });
@@ -317,7 +318,7 @@ void main() {
     final api = _Api()..defer = true;
     await tester.pumpWidget(_host(SearchPage(initialKeyword: '现场', api: api)));
     await tester.pump();
-    await tester.tap(find.text('歌曲'));
+    await tester.tap(find.text('听歌'));
     await tester.pump();
     api.pending[1].complete([_book(ContentMode.music, '最新歌曲条目')]);
     await tester.pumpAndSettle();
@@ -349,7 +350,7 @@ void main() {
       page: 2,
       mode: ContentMode.music,
     ));
-    await tester.tap(find.text('演唱会'));
+    await tester.tap(find.text('听现场'));
     await tester.pump();
     api.pending.last.complete([_book(ContentMode.concert, '当前演唱会结果')]);
     await tester.pumpAndSettle();
@@ -411,7 +412,7 @@ void main() {
       api.pending.single.complete([_book(ContentMode.concert, '旧视频结果')]);
       await tester.pumpAndSettle();
       expect(find.text('旧视频结果'), findsNothing);
-      await tester.tap(find.text('演唱会结果'));
+      await tester.tap(find.text('听现场结果'));
       await tester.pump();
       expect(api.requests.last.mode, ContentMode.concert);
       api.pending.last.complete([_book(ContentMode.concert, '新演唱会结果')]);
@@ -454,7 +455,7 @@ void main() {
       expect(ShelfStore.instance.books, isEmpty);
       resolver.fail = false;
       await tester.enterText(find.byType(TextField), 'BV1xx411c7mD');
-      await tester.tap(find.text('演唱会'));
+      await tester.tap(find.text('听现场'));
       await tester.tap(find.text('添加资源'));
       await tester.pumpAndSettle();
       expect(api.detailMode, ContentMode.concert);
@@ -560,7 +561,12 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text('${mode.label}详情'), findsOneWidget);
+        final detailTitle = switch (mode) {
+          ContentMode.audiobook => '听书详情',
+          ContentMode.music => '歌曲详情',
+          ContentMode.concert => '演唱会详情',
+        };
+        expect(find.text(detailTitle), findsOneWidget);
         expect(
           find.text(mode.resumesPosition ? '继续收听' : '开始收听'),
           findsOneWidget,
@@ -710,7 +716,7 @@ void main() {
       );
       await tester.tap(find.byTooltip('添加 B 站资源'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ChoiceChip, '演唱会').last);
+      await tester.tap(find.widgetWithText(ChoiceChip, '听现场').last);
       await tester.enterText(
         find.byType(TextField).last,
         'https://www.bilibili.com/video/BV1xx411c7mD?p=2',

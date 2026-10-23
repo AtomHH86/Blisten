@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:abts/core/network/bili_client.dart';
-import 'package:abts/core/storage/cache_store.dart';
-import 'package:abts/core/storage/shelf_store.dart';
-import 'package:abts/models/content_mode.dart';
-import 'package:abts/player/bili_audio_handler.dart';
-import 'package:abts/player/book_player.dart';
-import 'package:abts/player/playback_preferences.dart';
-import 'package:abts/services/bili_api.dart';
+import 'package:blisten/core/network/bili_client.dart';
+import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/core/storage/shelf_store.dart';
+import 'package:blisten/models/content_mode.dart';
+import 'package:blisten/player/bili_audio_handler.dart';
+import 'package:blisten/player/book_player.dart';
+import 'package:blisten/player/playback_preferences.dart';
+import 'package:blisten/services/bili_api.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,8 +82,8 @@ void main() {
       final handler = await AudioService.init(
         builder: BiliAudioHandler.new,
         config: const AudioServiceConfig(
-          androidNotificationChannelId: 'dev.pages.abts.channel.audio',
-          androidNotificationChannelName: '阿B听书',
+          androidNotificationChannelId: 'com.bting.audio.channel.audio',
+          androidNotificationChannelName: 'B听',
           androidNotificationIcon: 'mipmap/ic_launcher',
           androidNotificationOngoing: false,
           androidStopForegroundOnPause: false,

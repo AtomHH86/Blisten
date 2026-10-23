@@ -27,7 +27,7 @@ exec > >(tee "$run_dir/run.log") 2>&1
 finish() {
   result=$?
   if [ -n "${device_id:-}" ] && adb -s "$device_id" get-state >/dev/null 2>&1; then
-    adb -s "$device_id" shell am force-stop dev.pages.abts.debug >/dev/null 2>&1 || true
+    adb -s "$device_id" shell am force-stop com.bting.audio.debug >/dev/null 2>&1 || true
   fi
   printf '%s\n' "$result" > "$run_dir/exit-code.txt"
   echo "Result: $result; logs: $run_dir"
@@ -53,19 +53,19 @@ if [ "$suite" != unit ]; then
   adb -s "$device_id" shell getprop ro.product.cpu.abi > "$run_dir/abi.txt"
   # Grant runtime permissions once on the dedicated emulator. Flutter's next
   # install preserves these, so tests do not wait on native permission dialogs.
-  if [ -z "$(adb -s "$device_id" shell pm path dev.pages.abts.debug)" ]; then
+  if [ -z "$(adb -s "$device_id" shell pm path com.bting.audio.debug)" ]; then
     flutter build apk --debug --target-platform android-x64 \
       --target integration_test/audio_modes_test.dart --no-pub
     adb -s "$device_id" install -r -g build/app/outputs/flutter-apk/app-debug.apk
   fi
-  adb -s "$device_id" shell pm grant dev.pages.abts.debug android.permission.POST_NOTIFICATIONS
+  adb -s "$device_id" shell pm grant com.bting.audio.debug android.permission.POST_NOTIFICATIONS
 
   run_integration() {
     # flutter test uninstalls the Android package at completion. The drive
     # adapter with keep-app-running preserves native settings for restart tests.
     flutter drive --driver=test_driver/integration.dart --target="$1" \
       -d "$device_id" --no-pub --keep-app-running --timeout=600 "${@:2}"
-    adb -s "$device_id" shell am force-stop dev.pages.abts.debug
+    adb -s "$device_id" shell am force-stop com.bting.audio.debug
   }
   if [ "$suite" = online ]; then
     run_integration integration_test/bili_live_test.dart

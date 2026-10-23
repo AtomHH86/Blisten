@@ -651,7 +651,7 @@ class BookPlayer extends ChangeNotifier {
     var ok = false;
     try {
       if (_chapters.isEmpty || index < 0 || index >= _chapters.length) {
-        throw StateError('章节索引越界：$index');
+        throw StateError('分 P 索引越界：$index');
       }
       _rate = await _preferences.rateFor(
           _book?.contentMode ?? ContentMode.audiobook);
@@ -702,7 +702,7 @@ class BookPlayer extends ChangeNotifier {
       if (!ok) {
         final candidates = await _fetchStreamCandidates(chapter.cid);
         if (candidates.isEmpty) {
-          throw StateError('获取音频链接失败（章节可能无法播放）');
+          throw StateError('获取音频链接失败（内容可能无法播放）');
         }
 
         for (var i = 0; i < candidates.length; i++) {
@@ -736,7 +736,7 @@ class BookPlayer extends ChangeNotifier {
       }
 
       if (!ok) {
-        throw StateError('无法播放该章节');
+        throw StateError('无法播放该内容');
       }
       // 在线与离线两条路径都要抢占音频焦点
       unawaited(AudioFocus.instance.request());

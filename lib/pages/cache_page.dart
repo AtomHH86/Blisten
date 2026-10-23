@@ -126,12 +126,12 @@ class CachePage extends StatelessWidget {
             () {
               final stat = cache.batchStat;
               if (stat.total > 0) {
-                return '本批共 ${stat.total} 集，已完成 ${stat.done} 集'
-                    '${stat.failed > 0 ? ' · 失败 ${stat.failed} 集' : ''}'
-                    '${cache.queueLength > 0 ? ' · 排队 ${cache.queueLength} 集' : ''}'
+                return '本批共 ${stat.total} 项，已完成 ${stat.done} 项'
+                    '${stat.failed > 0 ? ' · 失败 ${stat.failed} 项' : ''}'
+                    '${cache.queueLength > 0 ? ' · 排队 ${cache.queueLength} 项' : ''}'
                     ' · 可离开本页';
               }
-              return '排队 ${cache.queueLength} 集 · 可离开本页';
+              return '排队 ${cache.queueLength} 项 · 可离开本页';
             }(),
             style: TextStyle(fontSize: 11, color: AppTheme.textHint),
           ),
@@ -168,7 +168,7 @@ class CachePage extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${failures.length} 集缓存失败',
+                  '${failures.length} 项缓存失败',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -185,7 +185,7 @@ class CachePage extends StatelessWidget {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('已重新加入缓存队列（${failures.length} 集）'),
+                      content: Text('已重新加入缓存队列（${failures.length} 项）'),
                       duration: const Duration(seconds: 2),
                     ),
                   );
@@ -213,7 +213,7 @@ class CachePage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Text(
-                '还有 ${failures.length - 5} 集失败…',
+                '还有 ${failures.length - 5} 项失败…',
                 style: TextStyle(fontSize: 11, color: AppTheme.textHint),
               ),
             ),
@@ -245,7 +245,7 @@ class CachePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '已缓存 $count 集',
+                  '已缓存 $count 项',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -348,6 +348,7 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
       builder: (ctx) => _BookChaptersSheet(
         bvid: bvid,
         title: initial.isEmpty ? '' : initial.first.bookTitle,
+        unitLabel: initial.isEmpty ? '项' : initial.first.contentMode.unitLabel,
       ),
     );
   }
@@ -365,7 +366,7 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: const Text('清空缓存'),
-        content: Text('清空全部 ${cache.entries.length} 集离线缓存？此操作不可撤销。',
+        content: Text('清空全部 ${cache.entries.length} 项离线缓存？此操作不可撤销。',
             style: TextStyle(color: AppTheme.textMain, fontSize: 14)),
         actions: [
           TextButton(
@@ -387,7 +388,12 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
 class _BookChaptersSheet extends StatelessWidget {
   final String bvid;
   final String title;
-  const _BookChaptersSheet({required this.bvid, required this.title});
+  final String unitLabel;
+  const _BookChaptersSheet({
+    required this.bvid,
+    required this.title,
+    required this.unitLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -420,7 +426,7 @@ class _BookChaptersSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '已缓存 ${list.length} ${list.first.contentMode.unitLabel} · ${CachePage.sizeText(size)}',
+                        '已缓存 ${list.length} $unitLabel · ${CachePage.sizeText(size)}',
                         style:
                             TextStyle(fontSize: 12, color: AppTheme.textSub),
                       ),
@@ -585,7 +591,7 @@ class _BookChaptersSheet extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
-        title: const Text('删除这一集的缓存'),
+        title: Text('删除这一${e.contentMode.unitLabel}的缓存'),
         content: Text(
           '「${e.chapterTitle}」${e.sizeText.isEmpty ? '' : '（${e.sizeText}）'}\n'
           '删除后需要重新缓存才能离线收听。',
@@ -656,7 +662,7 @@ class _BookChaptersSheet extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: const Text('删除缓存'),
-        content: Text('删除这 ${list.length} 集离线缓存？',
+        content: Text('删除这 ${list.length} $unitLabel离线缓存？',
             style: TextStyle(color: AppTheme.textMain, fontSize: 14)),
         actions: [
           TextButton(

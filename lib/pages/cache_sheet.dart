@@ -146,7 +146,7 @@ class _CacheSheetState extends State<CacheSheet> {
                     size: 20, color: AppTheme.accent),
                 const SizedBox(width: 8),
                 Text(
-                  '缓存选集',
+                  '选择缓存内容',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,

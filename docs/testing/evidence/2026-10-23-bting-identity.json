@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-23",
+  "app": "B听",
+  "project": "Blisten",
+  "version": "1.0.0+1",
+  "debug_package": "com.bting.audio.debug",
+  "baseline": "1fe9f9c",
+  "command": "tool/test-android.sh all",
+  "run_directory": "build/desktop-tests/20261023-231548-50106",
+  "exit_code": 0,
+  "log_sha256": "05f5492a37ff6ce24351cef4edf39a4cfb360716d15168d06c76aec19fe1b193",
+  "analysis_issues": 0,
+  "unit_widget_passed": 63,
+  "optional_capture_skipped": 1,
+  "packaging_python_passed": 10,
+  "native_functional_cases": 5,
+  "restart_processes": {
+    "seed": 3383,
+    "verify": 3542
+  },
+  "visual_selection": "pending",
+  "online_rerun": false,
+  "formal_apks_generated": false,
+  "remote_ci_run": false,
+  "normal_startup_and_coexistence": {
+    "old_package": {
+      "appId": "10210",
+      "versionCode": "3",
+      "versionName": "1.2.0",
+      "firstInstallTime": "2026-10-23 18:18:59",
+      "lastUpdateTime": "2026-10-23 21:24:56",
+      "dataDir": "/data/user/0/dev.pages.abts.debug",
+      "ceDataInode": "344691"
+    },
+    "new_package": {
+      "appId": "10209",
+      "versionCode": "1",
+      "versionName": "1.0.0",
+      "firstInstallTime": "2026-10-23 23:16:42",
+      "lastUpdateTime": "2026-10-23 23:19:53",
+      "dataDir": "/data/user/0/com.bting.audio.debug",
+      "ceDataInode": "360544"
+    },
+    "old_identity_unchanged": true,
+    "distinct_app_ids_and_data_dirs": true,
+    "home_labels_verified": true,
+    "umeng_classes_found": false
+  },
+  "normal_debug_apk": {
+    "application_id": "com.bting.audio.debug",
+    "version_name": "1.0.0",
+    "version_code": 1,
+    "min_sdk": 24,
+    "target_sdk": 36,
+    "debuggable": true,
+    "flutter_abis": [
+      "x86_64"
+    ],
+    "size_bytes": 97347198,
+    "sha256": "c9472be379dc0b66afe806f394ca8fec8e79c0e86c231112724e8bba2c301813"
+  }
+}

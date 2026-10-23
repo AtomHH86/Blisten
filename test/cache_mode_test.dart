@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:abts/core/storage/cache_store.dart';
-import 'package:abts/core/storage/shelf_store.dart';
-import 'package:abts/models/book.dart';
+import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/core/storage/shelf_store.dart';
+import 'package:blisten/models/book.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

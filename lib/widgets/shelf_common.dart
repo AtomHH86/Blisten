@@ -36,8 +36,8 @@ class EmptyShelfView extends StatelessWidget {
 
   const EmptyShelfView({
     super.key,
-    this.title = '书架还是空的',
-    this.subtitle = '去「发现」搜索一本喜欢的书吧',
+    this.title = '收藏还是空的',
+    this.subtitle = '去「发现」搜索想听的内容吧',
     this.icon = Icons.library_books_outlined,
   });
 
@@ -82,7 +82,7 @@ class EmptyShelfView extends StatelessWidget {
 ///
 /// 不在这里先等加载结果再跳转——那样没网或加载慢的时候，用户点一下
 /// 会对着书架干等。现在立刻跳转，播放页自己显示进度和错误。
-/// 长按仍然走移出书架；要进书籍详情可以在播放页点书名。
+/// 长按仍然走移出收藏；要进书籍详情可以在播放页点书名。
 Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
   final navigator = Navigator.of(context);
   final messenger = ScaffoldMessenger.of(context);
@@ -111,7 +111,7 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
               style: TextStyle(color: AppTheme.textMain, fontSize: 17)),
           content: Text(
             '《${sb.book.cleanTitle}》在平台上已无法访问（可能被删除或下架），'
-            '本地也没有它的离线缓存。\n\n要把这本书移出书架吗？',
+            '本地也没有它的离线缓存。\n\n要将它移出收藏吗？\n收听进度也会一并清除。',
             style: TextStyle(
                 color: AppTheme.textSub, fontSize: 13, height: 1.6),
           ),
@@ -134,7 +134,7 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
         await shelf.remove(sb.book.bvid);
         if (!context.mounted) return;
         messenger.showSnackBar(
-          SnackBar(content: Text('已将《${sb.book.cleanTitle}》移出书架')),
+          SnackBar(content: Text('已将《${sb.book.cleanTitle}》移出收藏')),
         );
       }
       // 只在播放页还留在最上层时关它，避免用户已手动关掉后误关别的页面
@@ -145,7 +145,7 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
       // 这里只补一条提示，用户可以直接关掉播放页
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('加载失败：请检查网络，或先缓存这本书再离线收听'),
+          content: Text('加载失败：请检查网络，或先缓存内容再离线收听'),
           duration: Duration(seconds: 3),
         ),
       );
@@ -153,7 +153,7 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
   }
 }
 
-/// 确认后把书移出书架（收听进度一并清除）
+/// 确认后把书移出收藏（收听进度一并清除）
 Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
   final shelf = context.read<ShelfStore>();
   final messenger = ScaffoldMessenger.of(context);
@@ -162,11 +162,11 @@ Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
     builder: (ctx) => AlertDialog(
       backgroundColor: AppTheme.surface,
       title: Text(
-        '移出书架',
+        '移出收藏',
         style: TextStyle(color: AppTheme.textMain, fontSize: 17),
       ),
       content: Text(
-        '确定将《${sb.book.cleanTitle}》移出书架吗？\n收听进度也会一并清除。',
+        '确定将《${sb.book.cleanTitle}》移出收藏吗？\n收听进度也会一并清除。',
         style: TextStyle(color: AppTheme.textSub, fontSize: 13, height: 1.5),
       ),
       actions: [
@@ -184,6 +184,6 @@ Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
   if (ok != true) return;
   await shelf.remove(sb.book.bvid);
   messenger.showSnackBar(
-    SnackBar(content: Text('已将《${sb.book.cleanTitle}》移出书架')),
+    SnackBar(content: Text('已将《${sb.book.cleanTitle}》移出收藏')),
   );
 }

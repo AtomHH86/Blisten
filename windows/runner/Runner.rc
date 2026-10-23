@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.biliting" "\0"
-            VALUE "FileDescription", "bili_ting_shu" "\0"
+            VALUE "CompanyName", "Blisten" "\0"
+            VALUE "FileDescription", "Blisten" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "bili_ting_shu" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.biliting. All rights reserved." "\0"
-            VALUE "OriginalFilename", "bili_ting_shu.exe" "\0"
-            VALUE "ProductName", "bili_ting_shu" "\0"
+            VALUE "InternalName", "Blisten" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 BiliTingShu Contributors and Blisten contributors. MIT License." "\0"
+            VALUE "OriginalFilename", "Blisten.exe" "\0"
+            VALUE "ProductName", "Blisten" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

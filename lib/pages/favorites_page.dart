@@ -16,14 +16,14 @@ class FavoritesPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的书架'),
+        title: const Text('我的收藏'),
         actions: [
           if (books.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: Center(
                 child: Text(
-                  '${books.length} 本',
+                  '${books.length} 项',
                   style: TextStyle(color: AppTheme.textSub, fontSize: 13),
                 ),
               ),
@@ -33,7 +33,7 @@ class FavoritesPage extends StatelessWidget {
       body: books.isEmpty
           ? const EmptyShelfView(
               icon: Icons.collections_bookmark_outlined,
-              title: '书架还是空的',
+              title: '收藏还是空的',
               subtitle: '听书播放 1 分钟后自动加入；歌曲和演唱会请在详情页手动收藏',
             )
           : GridView.builder(

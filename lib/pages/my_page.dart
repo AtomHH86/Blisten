@@ -61,13 +61,13 @@ class MyPage extends StatelessWidget {
           const SizedBox(height: 4),
           _statRow(books, reading, cacheCount, follows, context),
           if (reading.isNotEmpty) _buildContinueReading(context, reading),
-          _groupLabel('听书'),
+          _groupLabel('收听'),
           _menuTile(
             context,
             icon: Icons.collections_bookmark_rounded,
             color: AppTheme.accent,
-            title: '我的书架',
-            subtitle: books.isEmpty ? '还没有收藏' : '${books.length} 本 · 点击直接续播',
+            title: '我的收藏',
+            subtitle: books.isEmpty ? '还没有收藏' : '${books.length} 项 · 点击选择收听',
             onTap: () => _push(context, const FavoritesPage()),
           ),
           _menuTile(
@@ -76,8 +76,8 @@ class MyPage extends StatelessWidget {
             color: AppTheme.toneCyan,
             title: '最近收听',
             subtitle: reading.isEmpty
-                ? '去发现找一本想听的书'
-                : '共 ${reading.length} 本在听',
+                ? '去发现找想听的内容'
+                : '共 ${reading.length} 项收听记录',
             onTap: () => _push(context, const RecentPage()),
           ),
           _menuTile(
@@ -95,8 +95,8 @@ class MyPage extends StatelessWidget {
             color: AppTheme.toneIce,
             title: '离线缓存',
             subtitle: cacheCount == 0
-                ? '详情页可缓存选集，无网也能听'
-                : '已缓存 $cacheCount 集 · $cacheSize',
+                ? '详情页可选择缓存内容，无网也能听'
+                : '已缓存 $cacheCount 项 · $cacheSize',
             onTap: () => _push(context, const CachePage()),
           ),
           _menuTile(
@@ -217,7 +217,7 @@ class MyPage extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     auth.isLogin
-                        ? '已登录 · ${shelf.books.length} 本在书架'
+                        ? '已登录 · 已收藏 ${shelf.books.length} 项'
                         : '未登录 · 点此进入系统设置',
                     style: TextStyle(fontSize: 12, color: AppTheme.textSub),
                   ),
@@ -245,7 +245,7 @@ class MyPage extends StatelessWidget {
         child: Row(
           children: [
             // 统计项可点击直达对应页面
-            _statCell('${books.length}', '书架',
+            _statCell('${books.length}', '收藏',
                 Icons.collections_bookmark_outlined,
                 onTap: () => _push(context, const FavoritesPage())),
             _divider(),
@@ -316,7 +316,7 @@ class MyPage extends StatelessWidget {
                   size: 18, color: AppTheme.accent),
               const SizedBox(width: 6),
               Text(
-                '继续收听',
+                '最近收听',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -383,7 +383,7 @@ class MyPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '第 ${sb.lastChapterIndex + 1} 章 · ${sb.positionText}',
+                        '第 ${sb.lastChapterIndex + 1} ${sb.book.contentMode.unitLabel} · ${sb.positionText}',
                         maxLines: 1,
                         style:
                             TextStyle(fontSize: 11, color: AppTheme.textSub),

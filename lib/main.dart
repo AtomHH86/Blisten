@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 
+import 'core/app_meta.dart';
 import 'core/network/bili_client.dart';
 import 'core/storage/cache_store.dart';
 import 'core/storage/follow_store.dart';
@@ -19,7 +20,6 @@ import 'player/bili_audio_handler.dart';
 import 'player/book_player.dart';
 import 'services/auth_store.dart';
 import 'services/cache_notifier.dart';
-import 'services/umeng_analytics.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
 
   // 立即渲染启动页（LOGO + 加载动画），初始化在启动页展示期间执行，避免白屏
-  runApp(const AbTingShuApp());
+  runApp(const BlistenApp());
 }
 
 /// 第一阶段：启动关键初始化。
@@ -64,9 +64,9 @@ Future<void> _bootstrap() async {
     final handler = await AudioService.init(
       builder: () => BiliAudioHandler(),
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'dev.pages.abts.channel.audio',
-        androidNotificationChannelName: '阿B听书',
-        androidNotificationChannelDescription: '播放有声小说',
+        androidNotificationChannelId: 'com.bting.audio.channel.audio',
+        androidNotificationChannelName: AppMeta.name,
+        androidNotificationChannelDescription: '听书、听歌与听现场',
         androidNotificationIcon: 'mipmap/ic_launcher',
         // 暂停（含来电打断）时保留前台服务与通知，避免打断后通知栏直接消失。
         // 注意：audio_service 要求此时 androidNotificationOngoing 必须为 false。
@@ -81,27 +81,26 @@ Future<void> _bootstrap() async {
   }
 }
 
-/// 第二阶段：非关键请求（统计 / 网络预热 / 登录态刷新）。
+/// 第二阶段：非关键请求（网络预热 / 登录态刷新）。
 ///
 /// 全部在进入主界面之后后台执行，即使全部失败或长时间无响应，
 /// 也只影响对应功能的可用性，绝不阻塞用户进入页面。
 /// （通知权限改为首次播放时按需申请，见 BookPlayer）
 void _bootstrapBackground() {
-  unawaited(AppAnalytics.init());
   unawaited(BiliClient.instance.warmupIfNeeded());
   if (BiliClient.instance.isLoggedIn) {
     unawaited(LoginStore.instance.refreshFromNav());
   }
 }
 
-class AbTingShuApp extends StatefulWidget {
-  const AbTingShuApp({super.key});
+class BlistenApp extends StatefulWidget {
+  const BlistenApp({super.key});
 
   @override
-  State<AbTingShuApp> createState() => _AbTingShuAppState();
+  State<BlistenApp> createState() => _BlistenAppState();
 }
 
-class _AbTingShuAppState extends State<AbTingShuApp>
+class _BlistenAppState extends State<BlistenApp>
     with WidgetsBindingObserver {
   bool _ready = false;
 
@@ -149,7 +148,7 @@ class _AbTingShuAppState extends State<AbTingShuApp>
         builder: (context, _) {
           AppTheme.mode = tc.mode;
           return MaterialApp(
-            title: '阿B听书',
+            title: AppMeta.name,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
