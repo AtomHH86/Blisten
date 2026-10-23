@@ -1,0 +1,451 @@
+{
+  "date": "2026-10-24",
+  "scope": "Opaque sRGB design token pairs only, not rendered application compliance",
+  "method": "WCAG relative luminance: sRGB <= 0.04045 -> c/12.92; otherwise ((c+0.055)/1.055)^2.4; weights 0.2126/0.7152/0.0722; ratio (Lighter+0.05)/(Darker+0.05)",
+  "source": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html",
+  "count": 49,
+  "passed": 49,
+  "checks": [
+    {
+      "mode": "dark",
+      "role": "text",
+      "foreground": "#FFF4DE",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 14.2469,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "text",
+      "foreground": "#FFF4DE",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 11.7396,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "text",
+      "foreground": "#FFF4DE",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 9.5819,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "secondary",
+      "foreground": "#BBC6DC",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 9.0484,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "secondary",
+      "foreground": "#BBC6DC",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 7.456,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "secondary",
+      "foreground": "#BBC6DC",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 6.0856,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "hint",
+      "foreground": "#BBC6DC",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 9.0484,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "hint",
+      "foreground": "#BBC6DC",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 7.456,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "hint",
+      "foreground": "#BBC6DC",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 6.0856,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "action",
+      "foreground": "#F58F9C",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 6.8777,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "action",
+      "foreground": "#F58F9C",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 5.6673,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "action",
+      "foreground": "#F58F9C",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 4.6257,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "success",
+      "foreground": "#8ED1B2",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 8.8183,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "success",
+      "foreground": "#8ED1B2",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 7.2664,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "success",
+      "foreground": "#8ED1B2",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 5.9308,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "warning",
+      "foreground": "#F0C36A",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 9.4149,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "warning",
+      "foreground": "#F0C36A",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 7.758,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "warning",
+      "foreground": "#F0C36A",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 6.3321,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "error",
+      "foreground": "#FFADB3",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 8.794,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "error",
+      "foreground": "#FFADB3",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 7.2464,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "error",
+      "foreground": "#FFADB3",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 5.9145,
+      "minimum": 4.5
+    },
+    {
+      "mode": "dark",
+      "role": "outline",
+      "foreground": "#899BB7",
+      "background_role": "bg",
+      "background": "#152342",
+      "contrast_ratio": 5.5042,
+      "minimum": 3
+    },
+    {
+      "mode": "dark",
+      "role": "outline",
+      "foreground": "#899BB7",
+      "background_role": "surface",
+      "background": "#203252",
+      "contrast_ratio": 4.5355,
+      "minimum": 3
+    },
+    {
+      "mode": "dark",
+      "role": "outline",
+      "foreground": "#899BB7",
+      "background_role": "surfaceHigh",
+      "background": "#2B4061",
+      "contrast_ratio": 3.7019,
+      "minimum": 3
+    },
+    {
+      "mode": "light",
+      "role": "text",
+      "foreground": "#152342",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 14.7315,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "text",
+      "foreground": "#152342",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 15.5444,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "text",
+      "foreground": "#152342",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 13.1565,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "secondary",
+      "foreground": "#53617A",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 5.9255,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "secondary",
+      "foreground": "#53617A",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 6.2524,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "secondary",
+      "foreground": "#53617A",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 5.2919,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "hint",
+      "foreground": "#5E6A7D",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 5.1913,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "hint",
+      "foreground": "#5E6A7D",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 5.4778,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "hint",
+      "foreground": "#5E6A7D",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 4.6363,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "action",
+      "foreground": "#AC4157",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 5.4557,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "action",
+      "foreground": "#AC4157",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 5.7568,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "action",
+      "foreground": "#AC4157",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 4.8724,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "success",
+      "foreground": "#216846",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 6.3519,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "success",
+      "foreground": "#216846",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 6.7023,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "success",
+      "foreground": "#216846",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 5.6728,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "warning",
+      "foreground": "#805400",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 6.2467,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "warning",
+      "foreground": "#805400",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 6.5914,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "warning",
+      "foreground": "#805400",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 5.5789,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "error",
+      "foreground": "#B52B43",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 5.8684,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "error",
+      "foreground": "#B52B43",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 6.1922,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "error",
+      "foreground": "#B52B43",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 5.241,
+      "minimum": 4.5
+    },
+    {
+      "mode": "light",
+      "role": "outline",
+      "foreground": "#6C788B",
+      "background_role": "bg",
+      "background": "#FFF8ED",
+      "contrast_ratio": 4.2371,
+      "minimum": 3
+    },
+    {
+      "mode": "light",
+      "role": "outline",
+      "foreground": "#6C788B",
+      "background_role": "surface",
+      "background": "#FFFFFF",
+      "contrast_ratio": 4.4709,
+      "minimum": 3
+    },
+    {
+      "mode": "light",
+      "role": "outline",
+      "foreground": "#6C788B",
+      "background_role": "surfaceHigh",
+      "background": "#F4EBDD",
+      "contrast_ratio": 3.7841,
+      "minimum": 3
+    },
+    {
+      "mode": "both",
+      "role": "onPrimary",
+      "foreground": "#152342",
+      "background_role": "primaryFill",
+      "background": "#F58F9C",
+      "contrast_ratio": 6.8777,
+      "minimum": 4.5
+    }
+  ]
+}
