@@ -14,7 +14,7 @@ Blisten 从 [fengqiao57/abts](https://github.com/fengqiao57/abts) 派生，保�
 
 迁移采用 `git clone --no-local --no-hardlinks --no-tags --single-branch`，新仓库不依赖旧仓库的 Git 对象或源码文件。默认分支为 `main`。原仓库配置为 `upstream`，本机已禁用对它的推送；没有配置 `origin`，也尚未创建 Blisten 的 GitHub 远程仓库。
 
-新目录是 `/Users/atom/chatgpt/vibeREA/Blisten`。现有 `.flutter-sdk` 与 `.android-toolchain` 位于其父目录并被复用，这是开发工具依赖，不是对旧 `abts/` 源码的依赖。更换电脑时按 [贡献指南](../CONTRIBUTING.md) 配置 Flutter 和 Android 环境。
+新目录是 `/path/to/workspace/Blisten`。现有 `.flutter-sdk` 与 `.android-toolchain` 位于其父目录并被复用，这是开发工具依赖，不是对旧 `abts/` 源码的依赖。更换电脑时按 [贡献指南](../CONTRIBUTING.md) 配置 Flutter 和 Android 环境。
 
 ## 当前应用身份
 
@@ -22,9 +22,9 @@ Blisten 从 [fengqiao57/abts](https://github.com/fengqiao57/abts) 派生，保�
 
 新包名使用独立数据空间，不自动迁移旧应用收藏、进度、缓存或登录。内部持久化键和原生通信通道仍可保留原命名，它们不代表继续共享旧应用数据。
 
-原作者统计 SDK 已移除，上游 Release 更新源已关闭；上游链接仅用于来源和许可致谢。正式签名、Blisten 远程仓库与自己的更新地址尚未配置，四种正式 APK 尚未生成。
+原作者统计 SDK 已移除，上游 Release 更新源已关闭；上游链接仅用于来源和许可致谢。B听专用长期签名证书已于 2026-10-24 创建并完成本机恢复签名验证；GitHub 目标和应用更新地址已配置为 `AtomHH86/Blisten`，远程仓库待最终验收后创建，APK 状态见[当前验收记录](testing/2026-10-24-apk-release.md)。
 
-视觉部分使用生图模型生成三个方向供用户选择；选定前保留原图形，不把概念稿当成已集成的图标资产。
+视觉部分已使用生图模型生成三个方向，用户选择 B「闭眼听友」。正式图标、深浅主题及本版交互已落地，后续遵循[视觉与交互规范 v1.1](design/bting-design-system-v1.md)。
 
 ## 历史材料
 
@@ -38,4 +38,4 @@ Blisten 从 [fengqiao57/abts](https://github.com/fengqiao57/abts) 派生，保�
 
 GitHub 的 README、贡献指南、问题模板和自动检查在本仓库内维护。实际远程仓库创建后再配置 origin、仓库地址、反馈入口、更新源和 GitHub 仓库设置，不能使用原作者的 Releases 作为 Blisten 更新源。
 
-原项目图标在新视觉选定前暂时沿用，保留来源；此次不发布四种正式 APK。
+正式 APK 只在本轮安装包检查与发布门槛通过后上传；实际发布状态以当前验收记录及 GitHub Release 回读结果为准。

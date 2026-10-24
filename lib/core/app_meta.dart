@@ -12,7 +12,7 @@ class AppMeta {
   static const String tagline = '闭上眼听 B 站';
 
   /// 开源仓库
-  static const String repoUrl = '';
+  static const String repoUrl = 'https://github.com/AtomHH86/Blisten';
 
   /// 官网
   static const String siteUrl = '';
@@ -22,5 +22,5 @@ class AppMeta {
   static const String licenseUrl = '$upstreamUrl/blob/main/LICENSE';
 
   /// 问题反馈
-  static const String issuesUrl = '';
+  static const String issuesUrl = '$repoUrl/issues';
 }

@@ -225,7 +225,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    url.isEmpty ? '尚未配置 B听的对应入口' : subtitle,
+                    url.isEmpty ? '暂未开放，可通过开源仓库获取版本与说明' : subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12, color: AppTheme.textSub),
@@ -289,7 +289,8 @@ class AboutPage extends StatelessWidget {
             '退出登录会清除本机登录凭据，收藏与收听进度保留。'
             '系统备份可恢复收藏与设置，不包含登录凭据及离线音频。\n\n'
             '5. B听未接入第三方行为统计，搜索与播放仍需向 B 站发起请求。'
-            '独立项目的更新与反馈入口尚未配置，原项目链接仅用于来源致谢。\n\n'
+            '手动检查更新会访问 B听的 GitHub Releases，反馈入口指向本项目；'
+            '原项目链接仅用于来源致谢。\n\n'
             '6. 喜欢某部作品时，请前往官方平台支持作者。',
             style: TextStyle(
               fontSize: 14,

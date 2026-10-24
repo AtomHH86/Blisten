@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- 唯一后续开发目录：`/Users/atom/chatgpt/vibeREA/Blisten`。
+- 唯一后续开发目录：`/path/to/workspace/Blisten`。
 - 保留原 `abts` 仓库，不在迁移过程中修改旧目录。
 - 保留听书、歌曲、演唱会功能及既有测试；不生成正式签名安装包。
 - 原始 MIT 版权不可删除；历史测试报告保留原身份与路径，不能改称新仓库的验收证据。

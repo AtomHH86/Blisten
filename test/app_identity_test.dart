@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:blisten/core/app_meta.dart';
 import 'package:blisten/pages/about_page.dart';
 import 'package:blisten/services/app_update.dart';
 
@@ -18,10 +19,26 @@ class _NetworkAttemptRecorder extends HttpOverrides {
 }
 
 void main() {
+  test('Blisten uses its own GitHub repository and preserves upstream credits', () {
+    expect(AppMeta.repoUrl, 'https://github.com/AtomHH86/Blisten');
+    expect(AppMeta.issuesUrl, '${AppMeta.repoUrl}/issues');
+    expect(AppMeta.siteUrl, isEmpty);
+    expect(AppUpdate.configured, isTrue);
+    expect(AppUpdate.githubOwner, 'AtomHH86');
+    expect(AppUpdate.githubRepo, 'Blisten');
+    expect(
+      'https://github.com/${AppUpdate.githubOwner}/${AppUpdate.githubRepo}',
+      AppMeta.repoUrl,
+    );
+    expect(AppMeta.upstreamUrl, 'https://github.com/fengqiao57/abts');
+    expect(AppMeta.repoUrl, isNot(AppMeta.upstreamUrl));
+    expect(AppMeta.licenseUrl, '${AppMeta.upstreamUrl}/blob/main/LICENSE');
+  });
+
   test('unconfigured Blisten updater never creates a network client', () async {
     final recorder = _NetworkAttemptRecorder();
     final result = await HttpOverrides.runZoned(
-      AppUpdate.check,
+      () => AppUpdate.check(owner: '', repo: ''),
       createHttpClient: recorder.createHttpClient,
     );
 
@@ -64,7 +81,7 @@ void main() {
     expect(find.text('MIT License · 保留原作者版权声明'), findsOneWidget);
   });
 
-  testWidgets('About leaves unpublished project links disabled', (
+  testWidgets('About enables GitHub links and leaves the independent website disabled', (
     tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: AboutPage()));
@@ -79,12 +96,16 @@ void main() {
       );
       expect(
         tile.onTap,
-        isNull,
-        reason: '$title has no Blisten destination yet',
+        title == '官方网站' ? isNull : isNotNull,
+        reason: title == '官方网站'
+            ? 'Blisten has no independent website'
+            : '$title has a Blisten GitHub destination',
       );
     }
     await tester.scrollUntilVisible(find.textContaining('离线缓存会将音频'), 250);
     expect(find.textContaining('离线缓存会将音频'), findsOneWidget);
     expect(find.textContaining('本应用不存储'), findsNothing);
+    expect(find.textContaining('手动检查更新会访问 B听的 GitHub Releases'), findsOneWidget);
+    expect(find.textContaining('更新与反馈入口尚未配置'), findsNothing);
   });
 }

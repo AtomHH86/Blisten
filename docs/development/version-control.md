@@ -1,7 +1,8 @@
 # Blisten 版本与回退指南
 
-建立日期：2026-10-24。项目目录：`/Users/atom/chatgpt/vibeREA/Blisten`。
+建立日期：2026-10-24。项目目录：`/path/to/workspace/Blisten`。
 
+文中的 `/path/to/workspace` 是示例工作区，请替换为自己的目录；公开文档不保留开发者本机用户名。
 ## 当前保护状态
 
 Blisten 原本已有独立 Git 历史，本次在此基础上补齐主分支、固定检查点和可恢复的离线备份，未重新初始化仓库或改写历史。保留同级 abts 不动。随后已按 A/B/C/D 分批实施质量修复；不创建 GitHub 远程仓库、不发布 APK。实际验收见[质量修复记录](../testing/2026-10-24-quality-repairs.md)。
@@ -44,7 +45,7 @@ Blisten 原本已有独立 Git 历史，本次在此基础上补齐主分支、�
 ```bash
 (
 set -e
-cd /Users/atom/chatgpt/vibeREA/Blisten
+cd /path/to/workspace/Blisten
 if [ -n "$(git status --porcelain)" ]; then
   printf '存在未保存改动，请先保存后再恢复。\n'
   exit 1
@@ -62,7 +63,7 @@ git switch -c codex/restore-pre-quality baseline/pre-quality-fixes-2026-10-24
 本机备份位置（不在项目 Git 目录内）：
 
 ```text
-/Users/atom/chatgpt/vibeREA/Blisten-backups/2026-10-24-pre-quality-fixes/
+/path/to/workspace/Blisten-backups/2026-10-24-pre-quality-fixes/
   Blisten-pre-quality-2026-10-24.bundle
   SHA256SUMS
   verification.json
@@ -76,10 +77,10 @@ bundle 包含创建时的所有分支、标签和可达提交历史。已执行 
 ```bash
 (
 set -e
-cd /Users/atom/chatgpt/vibeREA/Blisten-backups/2026-10-24-pre-quality-fixes
+cd /path/to/workspace/Blisten-backups/2026-10-24-pre-quality-fixes
 shasum -a 256 -c SHA256SUMS
-git clone --branch main ./Blisten-pre-quality-2026-10-24.bundle /Users/atom/chatgpt/vibeREA/Blisten-restored
-cd /Users/atom/chatgpt/vibeREA/Blisten-restored
+git clone --branch main ./Blisten-pre-quality-2026-10-24.bundle /path/to/workspace/Blisten-restored
+cd /path/to/workspace/Blisten-restored
 git switch -c codex/restored-baseline baseline/pre-quality-fixes-2026-10-24
 git fsck --full --no-dangling
 )

@@ -6,7 +6,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 
 感谢原项目作者及贡献者。本项目保留原始 MIT 许可证和版权声明，是独立维护的衍生版本。
 
-当前是独立的本地开发项目，尚未创建 Blisten GitHub 远程仓库或发布正式 APK。后续开发以本目录为准，迁移来源见 [项目来源](docs/project-origin.md)。
+本项目使用独立仓库 [AtomHH86/Blisten](https://github.com/AtomHH86/Blisten)。安装包与更新说明见 [GitHub Releases](https://github.com/AtomHH86/Blisten/releases)，问题反馈请提交 [Issue](https://github.com/AtomHH86/Blisten/issues)。后续开发以本目录为准，迁移来源见 [项目来源](docs/project-origin.md)。
 
 ## 功能
 
@@ -33,7 +33,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - Dart 包：`blisten`；独立版本：`1.0.0+1`。此版本号属于源码，尚未发布正式 APK。
 - 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移旧收藏、进度、缓存或登录状态。
 - 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场。
-- 原作者统计 SDK 已移除；Blisten 仓库、官网、反馈地址和更新源尚未配置，不再检查上游 Release。
+- 原作者统计 SDK 已移除；仓库、问题反馈和手动检查更新均指向 Blisten，独立官网暂未设置。上游链接仅用于来源致谢，不检查上游 Release。
 - 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.1](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
 
 本应用直接请求 B 站接口，音频、封面等请求也会访问对应资源服务。登录信息、收藏、播放进度和用户选择的离线音频保存在本机；卸载或清除应用数据会影响这些本地资料。移除统计不表示播放功能无需网络。
@@ -46,7 +46,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 
 工具版本：Flutter **3.38.10**、Dart **3.10.9**；Android 构建使用 JDK 17。最低系统为 **Android 7.0 / API 24**。保留 Windows 源码，当前验收以 Android 为主。
 
-这台电脑已配置共享工具链，进入 `Blisten/` 后执行：
+这台电脑已配置共享工具链。首次 Android 构建需要先[编译并准备原生音频库](CONTRIBUTING.md#android-原生音频与回归)，之后进入 `Blisten/` 执行：
 
 ```bash
 tool/test-android.sh unit          # 静态分析、单元/组件、打包元数据测试
@@ -65,14 +65,14 @@ tool/android-emulator.sh stop      # 测试结束后关闭模拟器
 flutter pub get
 flutter analyze --no-pub
 flutter test test --no-pub
-python3 -B -m unittest discover -s tool/tests -p 'test_apk_packaging.py' -v
+python3 -B -m unittest discover -s tool/tests -p 'test_*.py' -v
 ```
 
 GitHub Actions 使用固定 Flutter 版本执行同样的快速检查。工作流文件已提供，远程运行结果要在实际上传后确认。贡献和环境说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 四种安装包
 
-本次提供打包脚本，正式安装包稍后生成。体积和 SHA-256 以实际构建清单为准，不沿用旧版估算值。
+四包候选正在进行构建与验收，当前状态见[本轮 APK 验收记录](docs/testing/2026-10-24-apk-release.md)。体积和 SHA-256 以实际构建清单为准，不沿用旧版估算值。
 
 | 安装包 | 适用设备 |
 | --- | --- |
@@ -81,9 +81,11 @@ GitHub Actions 使用固定 Flutter 版本执行同样的快速检查。工作�
 | `Blisten-v1.0.0-x86_64.apk` | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
 | `Blisten-v1.0.0-universal.apk` | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
 
-配置 `android/key.properties` 和正式签名证书后运行：
+先构建并准备三个 ABI 的原生库，再配置自己的 `android/key.properties` 和签名证书后运行：
 
 ```bash
+python3 tool/native-audio/build.py all
+python3 tool/prepare-native-audio.py all
 tool/build-android-apks.sh --help
 tool/build-android-apks.sh
 ```

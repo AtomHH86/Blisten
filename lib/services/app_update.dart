@@ -4,11 +4,7 @@ import '../core/app_meta.dart';
 
 /// 检查更新：数据源走 GitHub Releases
 ///
-/// 发布后把下面两个常量改成你的仓库即可，例如：
-/// ```dart
-/// static const githubOwner = 'your-name';
-/// static const githubRepo = 'Blisten';
-/// ```
+/// 使用 B听独立项目的发布源；原项目链接保留用于来源致谢。
 class UpdateResult {
   const UpdateResult({
     required this.configured,
@@ -55,13 +51,10 @@ class AppUpdate {
   AppUpdate._();
 
   /// GitHub 仓库（检查更新数据源）
-  static const String githubOwner = '';
-  static const String githubRepo = '';
+  static const String githubOwner = 'AtomHH86';
+  static const String githubRepo = 'Blisten';
 
   static bool get configured => githubOwner.isNotEmpty && githubRepo.isNotEmpty;
-
-  static String get _apiUrl =>
-      'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
 
   static String get _downloadBase =>
       'https://github.com/$githubOwner/$githubRepo/releases/latest';
@@ -69,40 +62,52 @@ class AppUpdate {
   /// 检查最新版本。
   ///
   /// 未配置仓库时直接返回 [configured=false]，不发起网络请求。
-  static Future<UpdateResult> check() async {
-    if (!configured) {
+  static Future<UpdateResult> check({
+    String owner = githubOwner,
+    String repo = githubRepo,
+  }) async {
+    if (owner.isEmpty || repo.isEmpty) {
       return const UpdateResult(configured: false);
     }
     try {
       final resp = await Dio().get(
-        _apiUrl,
+        'https://api.github.com/repos/$owner/$repo/releases/latest',
         options: Options(
           headers: {'Accept': 'application/vnd.github+json'},
           responseType: ResponseType.json,
         ),
       );
-      final data = resp.data as Map? ?? {};
-      String? apkUrl;
-      final assets = data['assets'] as List? ?? const [];
-      for (final a in assets) {
-        final m = a as Map?;
-        final name = '${m?['name'] ?? ''}';
-        if (name.endsWith('.apk')) {
-          apkUrl = '${m?['browser_download_url'] ?? ''}';
-          break;
-        }
-      }
-      final tag = '${data['tag_name'] ?? ''}';
-      return UpdateResult(
-        configured: true,
-        latestVersion: tag.isEmpty ? null : tag.replaceFirst(RegExp(r'^v'), ''),
-        latestName: '${data['name'] ?? ''}',
-        changelog: '${data['body'] ?? ''}'.trim(),
-        htmlUrl: '${data['html_url'] ?? _downloadBase}',
-        apkUrl: apkUrl?.isEmpty == true ? null : apkUrl,
+      return parseRelease(
+        resp.data as Map? ?? {},
+        fallbackUrl: 'https://github.com/$owner/$repo/releases/latest',
       );
     } catch (e) {
       return UpdateResult(configured: true, error: '检查更新失败，请稍后重试');
     }
+  }
+
+  /// 解析 GitHub Release 响应与下载入口。
+  static UpdateResult parseRelease(Map data, {String? fallbackUrl}) {
+    String? apkUrl;
+    final assets = data['assets'] as List? ?? const [];
+    for (final a in assets) {
+      final m = a as Map?;
+      final name = '${m?['name'] ?? ''}';
+      final url = '${m?['browser_download_url'] ?? ''}'.trim();
+      // 通用包可用于所有支持的 ABI；其余情况由发布页提供选择。
+      if (name.endsWith('-universal.apk') && url.isNotEmpty) {
+        apkUrl = url;
+        break;
+      }
+    }
+    final tag = '${data['tag_name'] ?? ''}';
+    return UpdateResult(
+      configured: true,
+      latestVersion: tag.isEmpty ? null : tag.replaceFirst(RegExp(r'^v'), ''),
+      latestName: '${data['name'] ?? ''}',
+      changelog: '${data['body'] ?? ''}'.trim(),
+      htmlUrl: '${data['html_url'] ?? fallbackUrl ?? _downloadBase}',
+      apkUrl: apkUrl?.isEmpty == true ? null : apkUrl,
+    );
   }
 }
