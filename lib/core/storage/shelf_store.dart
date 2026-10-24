@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -202,16 +203,28 @@ class ShelfStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(_books.map((b) => b.toJson()).toList()),
-    );
-    await prefs.setString(
-      _recentKey,
-      jsonEncode(_recent.map((b) => b.toJson()).toList()),
-    );
+  Future<void>? _pendingSave;
+
+  Future<void> _save() {
+    // Capture both collections together and preserve invocation order even if
+    // a previous platform write is slow. Old snapshots cannot finish last.
+    final books = jsonEncode(_books.map((b) => b.toJson()).toList());
+    final recent = jsonEncode(_recent.map((b) => b.toJson()).toList());
+    final previous = _pendingSave;
+    final write = () async {
+      if (previous != null) {
+        try { await previous; } catch (_) { /* A failed save must not block later data. */ }
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_key, books);
+      await prefs.setString(_recentKey, recent);
+    }();
+    _pendingSave = write;
+    void finished() {
+      if (identical(_pendingSave, write)) _pendingSave = null;
+    }
+    unawaited(write.then((_) => finished(), onError: (Object _, StackTrace _) => finished()));
+    return write;
   }
 
   bool isOnShelf(String bvid) => _books.any((b) => b.book.bvid == bvid);

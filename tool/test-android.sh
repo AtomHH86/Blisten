@@ -77,6 +77,10 @@ if [ "$suite" != unit ]; then
     run_integration integration_test/credential_storage_test.dart
     run_integration integration_test/audio_modes_test.dart
     run_integration integration_test/retry_playback_test.dart
+    run_integration integration_test/playback_reliability_test.dart
+    run_integration integration_test/playback_lifecycle_race_test.dart
+    run_integration integration_test/continuous_restart_test.dart --dart-define=ABTS_RESTART_PHASE=seed
+    run_integration integration_test/continuous_restart_test.dart --dart-define=ABTS_RESTART_PHASE=verify
     run_integration integration_test/restart_test.dart --dart-define=ABTS_RESTART_PHASE=seed
     # run_integration force-stops without uninstalling between these processes.
     run_integration integration_test/restart_test.dart --dart-define=ABTS_RESTART_PHASE=verify

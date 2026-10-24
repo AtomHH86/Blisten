@@ -33,6 +33,7 @@ class LocalBiliFixture extends HttpOverrides {
   late final HttpServer _server;
   late final HttpServer _mediaServer;
   late final Directory _tlsDirectory;
+  final List<(Object, StackTrace)> _serverErrors = [];
   final _wav = _silenceWav();
   final unexpectedRequests = <String>[];
   bool mediaAvailable = true;
@@ -69,7 +70,7 @@ class LocalBiliFixture extends HttpOverrides {
 
   Future<void> start() async {
     _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    _server.listen(_serve);
+    _listen(_server);
     final serverContext = SecurityContext()
       ..useCertificateChainBytes(utf8.encode(localhostCertificate))
       ..usePrivateKeyBytes(utf8.encode(localhostPrivateKey));
@@ -78,7 +79,7 @@ class LocalBiliFixture extends HttpOverrides {
       0,
       serverContext,
     );
-    _mediaServer.listen(_serve);
+    _listen(_mediaServer);
     _tlsDirectory = await Directory.systemTemp.createTemp('abts-fixture-tls-');
     await File(
       '${_tlsDirectory.path}/ca.pem',
@@ -103,6 +104,28 @@ class LocalBiliFixture extends HttpOverrides {
     await _server.close(force: true);
     await _mediaServer.close(force: true);
     await _tlsDirectory.delete(recursive: true);
+    if (_serverErrors.isNotEmpty) {
+      final (error, stack) = _serverErrors.first;
+      Error.throwWithStackTrace(error, stack);
+    }
+  }
+
+  void _listen(HttpServer server) {
+    server.listen((request) {
+      unawaited(_serve(request).catchError(_serverError));
+    }, onError: _serverError);
+  }
+
+  void _serverError(Object error, StackTrace stack) {
+    // Rapid native seek/open can close a TLS connection before it becomes an
+    // HttpRequest. Catch those same peer-abort errors at the server boundary.
+    if (error is SocketException &&
+        [32, 54, 104].contains(error.osError?.errorCode)) {
+      return;
+    }
+    // Unexpected asynchronous errors must fail guarded tearDownAll, rather than
+    // appearing after a completed test without reaching the drive result.
+    _serverErrors.add((error, stack));
   }
 
   String audioUrl(int cid) =>

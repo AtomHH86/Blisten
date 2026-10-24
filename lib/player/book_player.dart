@@ -63,11 +63,13 @@ class BookPlayer extends ChangeNotifier {
   ({Book book, List<Chapter> chapters, int index, int positionMs,
     bool complete})? _failedTarget;
   int _loadGeneration = 0;
+  // 用户的最新播放意图独立于资源加载代次；晚到的请求不得逆转暂停。
+  bool _wantsPlayback = false;
+  bool _preserveCompletedProgress = false;
   int? _nativeLoadGeneration;
   Completer<void>? _nativeLoadError;
 
   final Map<int, ({String url, int ts})> _urlCache = {};
-  Timer? _positionTimer;
   Timer? _sleepTimer;
   Duration _sleepRemaining = Duration.zero;
 
@@ -157,7 +159,7 @@ class BookPlayer extends ChangeNotifier {
       _rate = rate;
       await _player.setRate(rate);
     } catch (e) {
-      debugPrint('[BookPlayer] load rate failed: $e');
+      debugPrint('[BookPlayer] load rate failed: ${e.runtimeType}');
     }
   }
 
@@ -204,7 +206,8 @@ class BookPlayer extends ChangeNotifier {
     if (_ready) return;
     _ready = true;
     unawaited(loadRate());
-    _player.stream.completed.listen((_) async {
+    _player.stream.completed.listen((completed) async {
+      if (!completed) return;
       // media_kit 在 open() 换源时可能抛出一次伪 completed，
       // 用「加载中」与「位置未到结尾」两道判断过滤，避免乱跳章节
       if (_loading || !_loaded) return;
@@ -213,13 +216,20 @@ class BookPlayer extends ChangeNotifier {
           currentPosition < dur - const Duration(seconds: 3)) {
         return;
       }
+      final completedGeneration = _loadGeneration;
+      final completedSession = _session;
+      bool stillCurrent() => completedGeneration == _loadGeneration &&
+          completedSession == _session;
       flushProgress();
+      _preserveCompletedProgress = true;
       _markCurrentDone();
       if (_stopAtChapterEnd) {
         // 播完本集自动暂停：不再连播下一章
         _error = null;
         await _rewindTail();
+        if (!stillCurrent()) return;
         await pause();
+        if (!stillCurrent()) return;
         // 回退片尾是为了「再按播放能重听结尾」，但进度要记到下一章，
         // 否则「继续收听」会把已经打完 ✓ 的这一章又翻出来重播
         _advanceSavedProgress();
@@ -227,17 +237,19 @@ class BookPlayer extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      if (hasNext) {
+      if (hasNext && _wantsPlayback) {
         await next();
       } else {
         _error = null;
         await _rewindTail();
+        if (!stillCurrent()) return;
         await pause();
+        if (!stillCurrent()) return;
         notifyListeners();
       }
     });
     _player.stream.error.listen((e) async {
-      debugPrint('[BookPlayer] player error: $e');
+      debugPrint('[BookPlayer] player error');
       // 只有本代已经开始打开音源时，原生错误才归属该加载链。
       // 目录仍在等待时的旧音源错误不能接管新请求的 loading。
       if (_loading) {
@@ -362,7 +374,10 @@ class BookPlayer extends ChangeNotifier {
     final rate = _rate;
     try {
       if (book == null || chapter == null) return false;
-      // 音源视为已失效：重建失败时 resume() 会据此重新载入
+      // 先保存旧会话，再关闭保存入口。重开失败产生的原生 0 位置
+      // 不属于成功会话，不能覆盖断点；resume 也应重新尝试载入。
+      flushProgress();
+      _mediaReady = false;
       _playbackUrl = null;
       _loading = true;
       notifyListeners();
@@ -395,7 +410,7 @@ class BookPlayer extends ChangeNotifier {
           return true;
         } catch (e) {
           if (!stillCurrent()) return false;
-          debugPrint('[BookPlayer] 本地重开失败: $e');
+          debugPrint('[BookPlayer] 本地重开失败: ${e.runtimeType}');
           await _cache.dropIfBroken(book.bvid, chapter.cid);
           if (!stillCurrent()) return false;
         }
@@ -428,7 +443,7 @@ class BookPlayer extends ChangeNotifier {
           break;
         } catch (e) {
           if (!stillCurrent()) return false;
-          debugPrint('[BookPlayer] 重连候选失败: $e');
+          debugPrint('[BookPlayer] 重连候选失败: ${e.runtimeType}');
           await _player.stop();
           if (!stillCurrent()) return false;
         }
@@ -447,7 +462,7 @@ class BookPlayer extends ChangeNotifier {
       debugPrint('[BookPlayer] 自动重连成功 @${resumeMs}ms');
       return true;
     } catch (e) {
-      debugPrint('[BookPlayer] 重连失败: $e');
+      debugPrint('[BookPlayer] 重连失败: ${e.runtimeType}');
       return false;
     } finally {
       if (stillCurrent()) {
@@ -488,7 +503,7 @@ class BookPlayer extends ChangeNotifier {
       // 不是用户真实的收听进度，落库会把它当成续播点。
       positionTick.value = currentPosition;
     } catch (e) {
-      debugPrint('[BookPlayer] 回退片尾失败: $e');
+      debugPrint('[BookPlayer] 回退片尾失败: ${e.runtimeType}');
     }
   }
 
@@ -548,6 +563,9 @@ class BookPlayer extends ChangeNotifier {
   }
 
   int _beginLoad() {
+    flushProgress();
+    _wantsPlayback = true;
+    _preserveCompletedProgress = false;
     _nativeLoadGeneration = null;
     _nativeLoadError = null;
     _failedTarget = null;
@@ -578,7 +596,7 @@ class BookPlayer extends ChangeNotifier {
       _failedTarget = (book: book, chapters: <Chapter>[],
         index: resume ? resumeIndex : 0, positionMs: resume ? resumeMs : 0,
         complete: true);
-      debugPrint('[BookPlayer] 加载目录失败: $e');
+      debugPrint('[BookPlayer] 加载目录失败: ${e.runtimeType}');
       notifyListeners();
       return false;
     }
@@ -797,7 +815,7 @@ class BookPlayer extends ChangeNotifier {
         } catch (e) {
           // open 在播放器忙（比如刚被通知栏/耳机事件打断）时会抛瞬时异常，
           // 重试一次再决定，否则白白回退在线、浪费流量还丢掉离线播放的意义
-          debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: $e');
+          debugPrint('[BookPlayer] 本地缓存打开失败，重试一次: ${e.runtimeType}');
           await Future<void>.delayed(const Duration(milliseconds: 350));
           if (!stillCurrent()) return false;
           try {
@@ -810,7 +828,7 @@ class BookPlayer extends ChangeNotifier {
             if (!stillCurrent()) return false;
             opened = true;
           } catch (e2) {
-            debugPrint('[BookPlayer] 本地缓存打开仍失败，回退在线: $e2');
+            debugPrint('[BookPlayer] 本地缓存打开仍失败，回退在线: ${e2.runtimeType}');
           }
         }
         if (opened) {
@@ -822,7 +840,7 @@ class BookPlayer extends ChangeNotifier {
             await _seekToResume(resumeMs,
                 stillCurrent: () => stillCurrent() && !error.isCompleted);
           } else {
-            await _player.play();
+            await _playIfIntended(stillCurrent);
           }
           if (!stillCurrent()) return false;
           if (error.isCompleted) throw StateError('原生音源加载失败');
@@ -866,7 +884,7 @@ class BookPlayer extends ChangeNotifier {
               await _seekToResume(resumeMs,
                   stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
             } else {
-              await _player.play();
+              await _playIfIntended(stillCurrent);
             }
             if (!stillCurrent()) return false;
             if (nativeError.isCompleted) throw StateError('原生音源加载失败');
@@ -878,7 +896,7 @@ class BookPlayer extends ChangeNotifier {
             _pausedByInterruption = false;
             break;
           } catch (e) {
-            debugPrint('[BookPlayer] 候选音轨 $i 打开失败: $e');
+            debugPrint('[BookPlayer] 候选音轨 $i 打开失败: ${e.runtimeType}');
             if (!stillCurrent()) return false;
             if (i < candidates.length - 1) {
               await _player.stop();
@@ -908,7 +926,7 @@ class BookPlayer extends ChangeNotifier {
             index: index, positionMs: resumeMs, complete: retryComplete);
         }
       }
-      debugPrint('[BookPlayer] 加载失败: $e');
+      debugPrint('[BookPlayer] 加载失败: ${e.runtimeType}');
     } finally {
       if (stillCurrent()) {
       if (!ok) {
@@ -957,7 +975,7 @@ class BookPlayer extends ChangeNotifier {
     if (stillCurrent != null && !stillCurrent()) return;
     await _player.seek(target);
     if (stillCurrent != null && !stillCurrent()) return;
-    await _player.play();
+    await _playIfIntended(stillCurrent);
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (stillCurrent != null && !stillCurrent()) return;
     final off = (_player.state.position - target).inMilliseconds.abs();
@@ -965,6 +983,14 @@ class BookPlayer extends ChangeNotifier {
       debugPrint('[BookPlayer] 续播落点偏差 ${off}ms，重新跳转');
       await _player.seek(target);
     }
+  }
+
+  Future<void> _playIfIntended(bool Function()? stillCurrent) async {
+    bool current() => stillCurrent == null || stillCurrent();
+    if (!_wantsPlayback || !current()) return;
+    await _player.play();
+    // pause may arrive while the native play command is in flight.
+    if (current() && !_wantsPlayback) await _player.pause();
   }
 
   /// 等待播放器拿到时长（最多 4 秒）
@@ -1117,6 +1143,8 @@ class BookPlayer extends ChangeNotifier {
   }
 
   Future<void> resume() async {
+    _wantsPlayback = true;
+    _preserveCompletedProgress = false;
     final generation = _loadGeneration;
     final session = _session;
     bool stillCurrent() => generation == _loadGeneration && session == _session;
@@ -1127,17 +1155,26 @@ class BookPlayer extends ChangeNotifier {
     // 注意用 _mediaReady 判断，不能用 _playbackUrl：离线播放时 URL 本来就是 null，
     // 否则每次恢复都会重新开一次本地文件（多一次 loading 与跳转延迟）。
     if (_loaded && !_mediaReady && !_reconnecting) {
-      final ok = await _reconnect();
+      final failed = _failedTarget;
+      final saved = _shelf.progressByBvid(_book?.bvid ?? '');
+      final keepMs = failed != null && failed.book.bvid == _book?.bvid &&
+              failed.index == _index
+          ? failed.positionMs
+          : saved != null && saved.lastCid == currentChapter?.cid
+              ? saved.positionMs
+              : currentPosition.inMilliseconds;
+      final ok = await _reconnect(keepMs: keepMs);
       if (ok || !stillCurrent()) return;
     }
     if (!stillCurrent()) return;
-    await _player.play();
+    await _playIfIntended(stillCurrent);
     if (!stillCurrent()) return;
     unawaited(AudioFocus.instance.request());
     _pushState(force: true);
   }
 
   Future<void> pause() async {
+    _wantsPlayback = false;
     _pausedByInterruption = false;
     await _player.pause();
     unawaited(AudioFocus.instance.abandon());
@@ -1156,6 +1193,7 @@ class BookPlayer extends ChangeNotifier {
   }
 
   Future<void> seek(Duration to) async {
+    _preserveCompletedProgress = false;
     await _player.seek(to);
     _pushState(force: true);
   }
@@ -1166,6 +1204,11 @@ class BookPlayer extends ChangeNotifier {
   }
 
   Future<void> stop() async {
+    _wantsPlayback = false;
+    flushProgress();
+    // 在原生 stop 发出位置归零事件前关闭保存，保留最后成功会话的断点。
+    _loaded = false;
+    _mediaReady = false;
     _pausedByInterruption = false;
     // 会话代号自增：让进行中的重连立即作废，避免「按了停止声音又出来」
     _session++;
@@ -1183,7 +1226,8 @@ class BookPlayer extends ChangeNotifier {
     _mediaReady = false;
     _reconnecting = false;
     positionTick.value = Duration.zero;
-    _positionTimer?.cancel();
+    _lastSaveTimer?.cancel();
+    _lastSaveTimer = null;
     // 注意：不要取消 _watchdog / _stateReconciler。
     // 它们在 setup() 里只创建一次，而 stop() 可以被通知栏的「停止」触发，
     // 一旦在这里取消，断流重连与系统状态校正就永久失效了。
@@ -1403,7 +1447,7 @@ class BookPlayer extends ChangeNotifier {
       }
       return uniq.first;
     } catch (e) {
-      debugPrint('[BookPlayer] 取下载地址失败: $e');
+      debugPrint('[BookPlayer] 取下载地址失败: ${e.runtimeType}');
       return null;
     }
   }
@@ -1420,13 +1464,15 @@ class BookPlayer extends ChangeNotifier {
   /// 进度落库（节流，每 ~2 秒持久化一次；取值在落库时刻读取，保证精确）
   Timer? _lastSaveTimer;
   void _tickSave() {
-    if (currentChapter == null || _book == null) return;
-    _lastSaveTimer?.cancel();
-    _lastSaveTimer = Timer(const Duration(seconds: 2), _saveNow);
+    if (!_loaded || !_mediaReady || _loading || _lastSaveTimer != null) return;
+    _lastSaveTimer = Timer(const Duration(seconds: 2), () {
+      _lastSaveTimer = null;
+      _saveNow();
+    });
   }
 
   void _saveNow() {
-    if (_loading) return; // 切章过程中不落库，避免记录错章节
+    if (!_loaded || !_mediaReady || _loading || _preserveCompletedProgress) return;
     final chapter = currentChapter;
     final book = _book;
     if (chapter == null || book == null) return;
@@ -1451,6 +1497,7 @@ class BookPlayer extends ChangeNotifier {
   /// 手动留存进度（章节切换/退后台/退出时调用）
   void flushProgress() {
     _lastSaveTimer?.cancel();
+    _lastSaveTimer = null;
     _saveNow();
   }
 
