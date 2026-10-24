@@ -108,6 +108,11 @@ if [ "$suite" != unit ] && [ "$suite" != lint ]; then
   if [ "$suite" = online ]; then
     run_integration integration_test/bili_live_test.dart
   else
+    BLISTEN_SCREENSHOT_DIR="$run_dir/update-screenshots" flutter drive \
+      --driver=test_driver/visual.dart --target=integration_test/app_update_prompt_test.dart \
+      -d "$device_id" --no-pub --keep-app-running --timeout=600 \
+      --dart-define=BLISTEN_CAPTURE_UPDATES=true
+    adb -s "$device_id" shell am force-stop com.bting.audio.debug
     run_integration integration_test/credential_storage_test.dart
     run_integration integration_test/native_tls_test.dart
     run_integration integration_test/audio_modes_test.dart

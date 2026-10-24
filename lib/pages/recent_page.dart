@@ -24,7 +24,7 @@ class RecentPage extends StatelessWidget {
           ? const EmptyShelfView(
               icon: Icons.headphones_outlined,
               title: '还没有收听记录',
-              subtitle: '听书、歌曲和演唱会的本机进度会显示在这里，无需先收藏；仅保留最近记录。',
+              subtitle: '听书、歌曲、演唱会和儿童内容的本机进度会显示在这里，无需先收藏；仅保留最近记录。',
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

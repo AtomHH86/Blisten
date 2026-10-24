@@ -129,6 +129,8 @@ void main() {
         ContentMode.audiobook,
       );
       final music = await _detail(LocalBiliFixture.music, ContentMode.music);
+      final children = await _detail(LocalBiliFixture.children,
+          ContentMode.children);
       final concert = await _detail(
         LocalBiliFixture.concert,
         ContentMode.concert,
@@ -136,6 +138,7 @@ void main() {
       for (final sample in [
         (book: audiobook, rate: 1.5),
         (book: music, rate: 0.75),
+        (book: children, rate: 1.75),
         (book: concert, rate: 1.25),
       ]) {
         expect(await player.playBook(sample.book, resume: false), isTrue);
@@ -151,6 +154,7 @@ void main() {
       for (final sample in [
         (book: audiobook, rate: 1.5),
         (book: music, rate: 0.75),
+        (book: children, rate: 1.75),
         (book: concert, rate: 1.25),
       ]) {
         expect(await player.playBook(sample.book, resume: false), isTrue);
@@ -205,12 +209,13 @@ void main() {
   );
 
   testWidgets(
-    'audiobook and concert restore the saved part and timestamp from native storage',
+    'long-form modes restore the saved part and timestamp from native storage',
     (tester) async {
       // Catches lost progress writes, wrong cid/index, or resetting long content.
       for (final sample in [
         (id: LocalBiliFixture.audiobook, mode: ContentMode.audiobook),
         (id: LocalBiliFixture.concert, mode: ContentMode.concert),
+        (id: LocalBiliFixture.children, mode: ContentMode.children),
       ]) {
         final book = await _detail(sample.id, sample.mode);
         expect(await player.playBook(book, resume: false), isTrue);
@@ -241,6 +246,13 @@ void main() {
           inInclusiveRange(23000, 28500),
         );
         await player.pause();
+        if (sample.mode == ContentMode.children) {
+          await player.playChapterIndex(2);
+          await _playing(tester, player);
+          expect(player.index, 2);
+          expect(player.currentPosition.inMilliseconds, lessThan(3000));
+          expect(shelf.isOnShelf(sample.id), isFalse);
+        }
       }
     },
   );
@@ -288,19 +300,21 @@ void main() {
     },
   );
 
+  for (final mode in [ContentMode.concert, ContentMode.children]) {
   testWidgets(
-    'queued concert cache survives index reload and plays offline with its mode',
+    'queued ${mode.name} cache survives index reload and plays offline with its mode',
     (tester) async {
       // Catches contentMode lost by queue -> download -> JSON -> cache playback,
       // or offline playback secretly requiring a reachable streaming server.
-      final book = await _detail(LocalBiliFixture.cached, ContentMode.concert);
+      final book = await _detail(mode.name == 'children'
+          ? LocalBiliFixture.children : LocalBiliFixture.cached, mode);
       final chapter = book.chapters![1];
-      await PlaybackPreferences().saveRate(ContentMode.concert, 1.25);
+      await PlaybackPreferences().saveRate(mode, 1.25);
       await cache.enqueue(
         bvid: book.bvid,
         bookTitle: book.cleanTitle,
         cover: '',
-        contentMode: ContentMode.concert,
+        contentMode: mode,
         items: [
           (
             cid: chapter.cid,
@@ -323,7 +337,7 @@ void main() {
       await prefs.reload();
       await cache.load();
       final entry = cache.entriesOf(book.bvid).single;
-      expect(entry.contentMode, ContentMode.concert);
+      expect(entry.contentMode, mode);
       expect(entry.page, 2);
       final path = await cache.cacheFilePath(book.bvid, chapter.cid);
       expect(path, isNotNull);
@@ -344,8 +358,8 @@ void main() {
         'cache page opens player',
       );
       await _playing(tester, player);
-      expect(player.book!.contentMode, ContentMode.concert);
-      expect(player.currentChapter!.cid, 502);
+      expect(player.book!.contentMode, mode);
+      expect(player.currentChapter!.cid, mode.name == 'children' ? 902 : 502);
       expect(player.isOffline, isTrue);
       expect(player.playbackUrl, isNull);
       expect(player.player.state.rate, closeTo(1.25, 0.01));
@@ -368,6 +382,8 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  }
 
   testWidgets(
     'discovery, search and Bili import preserve mode through real detail playback',

@@ -237,6 +237,23 @@ void main() {
     expect(player.isPlaying, isFalse);
   }, timeout: const Timeout(Duration(minutes: 2)));
 
+  testWidgets('children pauses on duck and respects a later user pause', (tester) async {
+    final book = await BiliApi.instance.detail(LocalBiliFixture.children,
+        mode: ContentMode.children);
+    expect(await player.playBook(book), isTrue);
+    await _until(tester, () => player.isPlaying, 'children playing');
+    await focusEvent('ducked');
+    await _until(tester, () => !player.isPlaying, 'children pauses on duck');
+    await focusEvent('gained');
+    await _until(tester, () => player.isPlaying, 'children resumes after duck');
+    await focusEvent('ducked');
+    await _until(tester, () => !player.isPlaying, 'children interrupted again');
+    await player.pause();
+    await focusEvent('gained');
+    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
+    expect(player.isPlaying, isFalse);
+  }, timeout: const Timeout(Duration(minutes: 2)));
+
   testWidgets('music ducks volume and restores without pausing', (tester) async {
     final book = await BiliApi.instance.detail(LocalBiliFixture.music,
         mode: ContentMode.music);

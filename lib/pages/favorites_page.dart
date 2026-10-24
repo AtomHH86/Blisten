@@ -36,7 +36,7 @@ class FavoritesPage extends StatelessWidget {
               showImport: true,
               showMascot: true,
               title: '收藏还是空的',
-              subtitle: '听书播放 1 分钟后自动加入；歌曲和演唱会请在详情页手动收藏',
+              subtitle: '听书播放 1 分钟后自动加入；歌曲、演唱会和儿童内容请在详情页手动收藏',
             )
           : GridView.builder(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),

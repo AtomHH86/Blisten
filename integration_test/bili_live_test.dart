@@ -54,10 +54,14 @@ void main() {
         );
 
         final results = <String, int>{};
+        String? childrenBvid;
         for (final query in [
           (ContentMode.audiobook, '三体 有声小说'),
           (ContentMode.music, '种子'),
           (ContentMode.concert, '演唱会 全场'),
+          (ContentMode.children, '儿歌 小星星'),
+          (ContentMode.children, '儿童动画片'),
+          (ContentMode.children, '儿童故事'),
         ]) {
           final books = await BiliApi.instance.search(query.$2, mode: query.$1);
           expect(
@@ -66,7 +70,8 @@ void main() {
             reason: '${query.$1.name} live search is empty',
           );
           expect(books.every((book) => book.contentMode == query.$1), isTrue);
-          results[query.$1.name] = books.length;
+          results['${query.$1.name}:${query.$2}'] = books.length;
+          if (query.$1 == ContentMode.children) childrenBvid ??= books.first.bvid;
         }
 
         const bvid = String.fromEnvironment(
@@ -95,6 +100,26 @@ void main() {
         debugPrint(
           'ABTS_LIVE_RESULT ${jsonEncode({'searchCounts': results, 'bvid': book.bvid, 'positionMs': player.currentPosition.inMilliseconds, 'online': !player.isOffline})}',
         );
+        await player.stop();
+        const childrenOverride = String.fromEnvironment('ABTS_CHILDREN_LIVE_BV');
+        final children = await BiliApi.instance.detail(
+          childrenOverride.isEmpty ? childrenBvid! : childrenOverride,
+          mode: ContentMode.children,
+        );
+        expect(children.chapters, isNotEmpty);
+        expect(await player.playBook(children, resume: false), isTrue);
+        final childrenDeadline = DateTime.now().add(const Duration(seconds: 30));
+        while (player.currentPosition < const Duration(seconds: 3) &&
+            DateTime.now().isBefore(childrenDeadline)) {
+          await tester.pump(const Duration(milliseconds: 250));
+        }
+        expect(player.isPlaying, isTrue);
+        expect(player.isOffline, isFalse);
+        expect(player.currentPosition, greaterThanOrEqualTo(const Duration(seconds: 3)));
+        debugPrint('ABTS_CHILDREN_LIVE_RESULT ${jsonEncode({
+          'bvid': children.bvid, 'positionMs': player.currentPosition.inMilliseconds,
+          'mode': player.book!.contentMode.name, 'online': !player.isOffline,
+        })}');
       } finally {
         // Keep cleanup inside runTest so the drive adapter observes failures.
         await player.stop();

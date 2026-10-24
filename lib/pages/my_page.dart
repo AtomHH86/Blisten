@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_meta.dart';
@@ -11,9 +10,8 @@ import '../core/theme/theme_controller.dart';
 import '../player/book_player.dart';
 import '../services/app_update.dart';
 import '../services/auth_store.dart';
-import '../services/browser.dart';
-import '../services/umeng_analytics.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/app_update_prompt.dart';
 import 'about_page.dart';
 import 'cache_page.dart';
 import 'favorites_page.dart';
@@ -132,7 +130,7 @@ class MyPage extends StatelessWidget {
             color: AppTheme.toneDeep,
             title: '检查更新',
             subtitle: _updateSubtitle(),
-            onTap: () => _checkUpdate(context),
+            onTap: () => AppUpdatePrompt.checkManually(context),
           ),
           _menuTile(
             context,
@@ -479,91 +477,4 @@ class MyPage extends StatelessWidget {
   String _updateSubtitle() =>
       AppUpdate.configured ? '当前 ${AppMeta.version}' : '暂未配置更新源';
 
-  Future<void> _checkUpdate(BuildContext context) async {
-    if (!AppUpdate.configured) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂未配置更新源，发布后再来'),
-            duration: Duration(seconds: 1)),
-      );
-      return;
-    }
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await AppUpdate.check();
-    if (!context.mounted) return;
-    if (result.error != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(result.error!), duration: const Duration(seconds: 2)),
-      );
-      return;
-    }
-    AppAnalytics.onEvent('update_check', {'has_newer': result.hasNewer ? 1 : 0});
-    if (!result.hasNewer) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('已是最新版本 ${AppMeta.version}'),
-            duration: const Duration(seconds: 1)),
-      );
-      return;
-    }
-    final apk = result.apkUrl ?? result.htmlUrl ?? '';
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: Text(
-          result.latestName?.isNotEmpty == true
-              ? result.latestName!
-              : '发现新版本 ${result.latestVersion}',
-          style: TextStyle(color: AppTheme.textMain, fontSize: 20),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '当前版本 ${AppMeta.version} · 最新 ${result.latestVersion}',
-                style: TextStyle(
-                    fontSize: 14, color: AppTheme.textSub),
-              ),
-              if ((result.changelog ?? '').isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(
-                  '更新内容：\n${result.changelog}',
-style: TextStyle(
-                    fontSize: 14, color: AppTheme.textSub, height: 1.6),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('稍后', style: TextStyle(color: AppTheme.textSub)),
-          ),
-          if (apk.isNotEmpty)
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                _openUrl(context, apk);
-              },
-              child: Text('下载更新', style: TextStyle(color: AppTheme.actionText)),
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// 打开下载链接；打不开时复制到剪贴板兜底
-  Future<void> _openUrl(BuildContext context, String url) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final ok = await Browser.open(url);
-    if (ok) return;
-    await Clipboard.setData(ClipboardData(text: url));
-    if (!context.mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text('下载链接已复制\n$url'),
-          duration: const Duration(seconds: 3)),
-    );
-  }
 }

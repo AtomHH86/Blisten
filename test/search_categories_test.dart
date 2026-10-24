@@ -87,6 +87,8 @@ Widget _host(
   _Api api, {
   String? keyword,
   ContentMode mode = ContentMode.audiobook,
+  Brightness brightness = Brightness.dark,
+  double textScale = 1,
 }) => MultiProvider(
   providers: [
     ChangeNotifierProvider.value(value: ShelfStore.instance),
@@ -94,7 +96,11 @@ Widget _host(
     ChangeNotifierProvider.value(value: SearchHistoryStore.instance),
   ],
   child: MaterialApp(
-    theme: AppTheme.dark(),
+    theme: brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light(),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+      child: child!,
+    ),
     home: SearchPage(api: api, initialKeyword: keyword, initialMode: mode),
   ),
 );
@@ -110,6 +116,88 @@ void main() {
     await ShelfStore.instance.load();
     await FollowStore.instance.load();
     await SearchHistoryStore.instance.clear();
+  });
+
+  for (final brightness in [Brightness.dark, Brightness.light]) {
+    testWidgets('children search accepts keyboard input at 320dp 200% ${brightness.name}',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      final api = _Api();
+      await tester.pumpWidget(_host(api, mode: ContentMode.children,
+          brightness: brightness, textScale: 2));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '小星星');
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TextField).hitTestable(), findsOneWidget);
+      for (final label in ['听书', '听歌', '听现场', '儿童', 'UP 主']) {
+        expect(_category(label).hitTestable(), findsOneWidget);
+      }
+      expect(tester.widget<ChoiceChip>(_category('儿童')).selected, isTrue);
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      tester.view.viewInsets = const FakeViewPadding();
+      await tester.pumpAndSettle();
+      expect(find.text('children内容'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('five categories stay usable at 320dp 200% ${brightness.name}',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final api = _Api();
+      await tester.pumpWidget(_host(api, brightness: brightness, textScale: 2));
+      await tester.pumpAndSettle();
+      for (final label in ['听书', '听歌', '听现场', '儿童', 'UP 主']) {
+        expect(_category(label).hitTestable(), findsOneWidget);
+        await tester.tap(_category(label));
+        await tester.pumpAndSettle();
+        expect(tester.widget<ChoiceChip>(_category(label)).selected, isTrue);
+        expect(tester.widgetList<ChoiceChip>(find.byType(ChoiceChip))
+            .where((chip) => chip.selected), hasLength(1));
+        expect(tester.takeException(), isNull);
+      }
+      await tester.tap(_category('儿童'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '小星星');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(find.text('children内容'), findsOneWidget);
+      await tester.ensureVisible(find.text('children内容'));
+      expect(find.text('children内容').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('children suggestions search and UP route retain the chosen context',
+      (tester) async {
+    final api = _Api();
+    await tester.pumpWidget(_host(api));
+    await tester.pumpAndSettle();
+    await tester.tap(_category('儿童'));
+    await tester.pumpAndSettle();
+    expect(find.text('儿歌、动画、故事 · 仅收听声音'), findsOneWidget);
+    for (final keyword in ['儿歌', '儿童动画片', '儿童故事']) {
+      expect(find.text(keyword), findsOneWidget);
+    }
+    await tester.tap(find.text('儿童故事'));
+    await tester.pumpAndSettle();
+    expect(find.text('children内容'), findsOneWidget);
+    expect(api.videos.single.keyword, '儿童故事');
+    expect(api.videos.single.mode.name, 'children');
+    await tester.tap(_category('UP 主'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('独立搜索的创作者'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<UpHomePage>(find.byType(UpHomePage)).contentMode.name,
+        'children');
   });
 
   testWidgets('UP can be selected before typing and searches users only', (

@@ -18,7 +18,7 @@ void main() {
     expect(up.toJson()['contentMode'], 'audiobook');
   });
 
-  for (final mode in ['music', 'concert']) {
+  for (final mode in ['music', 'concert', 'children']) {
     test('followed UP retains $mode after preferences reload', () async {
       final store = FollowStore.instance;
       await store.toggle(UpUser.fromJson({

@@ -8,6 +8,7 @@ class PlaybackPreferences {
     ContentMode.audiobook => 'abts_rate',
     ContentMode.music => 'abts_rate_music',
     ContentMode.concert => 'abts_rate_concert',
+    ContentMode.children => 'abts_rate_children',
   };
 
   Future<double> rateFor(ContentMode mode) async {

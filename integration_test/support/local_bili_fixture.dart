@@ -18,6 +18,7 @@ class LocalBiliFixture extends HttpOverrides {
   static const retryMusic = 'BV1xx411c7mF';
   static const retryBook = 'BV1xx411c7mG';
   static const retryUrl = 'BV1xx411c7mH';
+  static const children = 'BV1xx411c7mJ';
   static const ids = [
     audiobook,
     music,
@@ -27,6 +28,7 @@ class LocalBiliFixture extends HttpOverrides {
     retryMusic,
     retryBook,
     retryUrl,
+    children,
   ];
   static const seconds = 90;
 

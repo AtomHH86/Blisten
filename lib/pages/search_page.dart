@@ -340,6 +340,7 @@ class _SearchPageState extends State<SearchPage> {
                       ContentMode.audiobook => '搜索书名 / 作者 / 主播',
                       ContentMode.music => '搜索歌名 / 歌手',
                       ContentMode.concert => '搜索演唱会 / 歌手',
+                      ContentMode.children => '搜索儿歌 / 动画 / 故事',
                     },
                     hintStyle: TextStyle(
                         fontSize: 14, color: AppTheme.textHint),
@@ -386,6 +387,13 @@ class _SearchPageState extends State<SearchPage> {
               ],
             ),
           ),
+          if (!_searchUsers && _mode == ContentMode.children &&
+              MediaQuery.viewInsetsOf(context).bottom == 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text('儿歌、动画、故事 · 仅收听声音',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
+            ),
           Expanded(child: _buildBody()),
         ],
       ),

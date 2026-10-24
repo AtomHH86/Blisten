@@ -25,26 +25,30 @@ class UpdateResult {
   final String? htmlUrl;
   final String? apkUrl;
 
-  bool get hasNewer {
-    if (!configured) return false;
-    final v = latestVersion;
-    if (v == null) return false;
-    return _compareVersion(AppMeta.version, v) < 0;
+  bool get hasNewer => isNewerThan(AppMeta.version);
+
+  bool isNewerThan(String currentVersion) {
+    if (!configured || error != null) return false;
+    final current = _stableVersion(currentVersion);
+    final latest = _stableVersion(latestVersion ?? '');
+    if (current == null || latest == null) return false;
+    for (var i = 0; i < current.length; i++) {
+      if (latest[i] != current[i]) return latest[i] > current[i];
+    }
+    return false;
   }
 }
 
-/// GitHub 语义化版本比较：等价返回 0，a 大返回 1，a 小返回 -1
-int _compareVersion(String a, String b) {
-  int toInt(String s) => int.tryParse(s.replaceAll(RegExp(r'\D'), '')) ?? 0;
-  final pa = a.split('.');
-  final pb = b.split('.');
-  final n = pa.length > pb.length ? pa.length : pb.length;
-  for (var i = 0; i < n; i++) {
-    final x = i < pa.length ? toInt(pa[i]) : 0;
-    final y = i < pb.length ? toInt(pb[i]) : 0;
-    if (x != y) return x.compareTo(y);
+/// Only three-part stable release versions are offered by the updater.
+List<int>? _stableVersion(String value) {
+  if (!RegExp(
+    r'^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$',
+  ).hasMatch(value)) {
+    return null;
   }
-  return 0;
+  final parts = value.replaceFirst(RegExp(r'^v'), '').split('.');
+  final numbers = parts.map(int.tryParse).toList();
+  return numbers.contains(null) ? null : numbers.cast<int>();
 }
 
 class AppUpdate {
@@ -56,58 +60,113 @@ class AppUpdate {
 
   static bool get configured => githubOwner.isNotEmpty && githubRepo.isNotEmpty;
 
-  static String get _downloadBase =>
-      'https://github.com/$githubOwner/$githubRepo/releases/latest';
-
-  /// 检查最新版本。
-  ///
-  /// 未配置仓库时直接返回 [configured=false]，不发起网络请求。
+  /// 未配置仓库时不创建客户端；检查有整体时限并释放连接。
   static Future<UpdateResult> check({
     String owner = githubOwner,
     String repo = githubRepo,
+    Dio Function()? createClient,
   }) async {
     if (owner.isEmpty || repo.isEmpty) {
       return const UpdateResult(configured: false);
     }
+    Dio? client;
     try {
-      final resp = await Dio().get(
-        'https://api.github.com/repos/$owner/$repo/releases/latest',
-        options: Options(
-          headers: {'Accept': 'application/vnd.github+json'},
-          responseType: ResponseType.json,
-        ),
-      );
+      client = (createClient ?? Dio.new)();
+      client.options
+        ..connectTimeout = const Duration(seconds: 10)
+        ..sendTimeout = const Duration(seconds: 10)
+        ..receiveTimeout = const Duration(seconds: 10);
+      final resp = await client
+          .get(
+            'https://api.github.com/repos/$owner/$repo/releases/latest',
+            options: Options(
+              headers: {'Accept': 'application/vnd.github+json'},
+              responseType: ResponseType.json,
+            ),
+          )
+          .timeout(const Duration(seconds: 15));
       return parseRelease(
-        resp.data as Map? ?? {},
-        fallbackUrl: 'https://github.com/$owner/$repo/releases/latest',
+        resp.data is Map ? resp.data as Map : const {},
+        owner: owner,
+        repo: repo,
       );
-    } catch (e) {
-      return UpdateResult(configured: true, error: '检查更新失败，请稍后重试');
+    } catch (_) {
+      return const UpdateResult(configured: true, error: '检查更新失败，请稍后重试');
+    } finally {
+      client?.close(force: true);
     }
   }
 
-  /// 解析 GitHub Release 响应与下载入口。
-  static UpdateResult parseRelease(Map data, {String? fallbackUrl}) {
+  /// 解析正式版本，仅接受同仓库的 HTTPS 发布页和通用 APK。
+  static UpdateResult parseRelease(
+    Map data, {
+    String? fallbackUrl,
+    String owner = githubOwner,
+    String repo = githubRepo,
+  }) {
+    final tag = '${data['tag_name'] ?? ''}';
+    if (data['draft'] == true ||
+        data['prerelease'] == true ||
+        _stableVersion(tag) == null) {
+      return const UpdateResult(configured: true, error: '更新信息无效，请稍后重试');
+    }
+    Uri? trustedUri(Object? raw) {
+      final uri = Uri.tryParse('$raw'.trim());
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.host != 'github.com' ||
+          uri.userInfo.isNotEmpty ||
+          uri.port != 443 ||
+          uri.hasFragment) {
+        return null;
+      }
+      final parts = uri.pathSegments;
+      if (parts.length < 4 ||
+          parts[0] != owner ||
+          parts[1] != repo ||
+          parts[2] != 'releases' ||
+          parts.contains('..')) {
+        return null;
+      }
+      return uri;
+    }
+
+    String? releasePage(Object? raw) {
+      final uri = trustedUri(raw);
+      if (uri == null) return null;
+      final parts = uri.pathSegments;
+      return (parts.length == 4 && parts[3] == 'latest') ||
+              (parts.length == 5 && parts[3] == 'tag' && parts[4].isNotEmpty)
+          ? uri.toString()
+          : null;
+    }
+
     String? apkUrl;
-    final assets = data['assets'] as List? ?? const [];
-    for (final a in assets) {
-      final m = a as Map?;
-      final name = '${m?['name'] ?? ''}';
-      final url = '${m?['browser_download_url'] ?? ''}'.trim();
-      // 通用包可用于所有支持的 ABI；其余情况由发布页提供选择。
-      if (name.endsWith('-universal.apk') && url.isNotEmpty) {
-        apkUrl = url;
+    final assets = data['assets'];
+    for (final asset in assets is List ? assets : const []) {
+      if (asset is! Map) continue;
+      final name = '${asset['name'] ?? ''}';
+      final uri = trustedUri(asset['browser_download_url']);
+      if (!name.endsWith('-universal.apk') || uri == null) continue;
+      final parts = uri.pathSegments;
+      if (parts.length == 6 &&
+          parts[3] == 'download' &&
+          parts[4] == tag &&
+          parts[5] == name) {
+        apkUrl = uri.toString();
         break;
       }
     }
-    final tag = '${data['tag_name'] ?? ''}';
     return UpdateResult(
       configured: true,
-      latestVersion: tag.isEmpty ? null : tag.replaceFirst(RegExp(r'^v'), ''),
+      latestVersion: tag.replaceFirst(RegExp(r'^v'), ''),
       latestName: '${data['name'] ?? ''}',
       changelog: '${data['body'] ?? ''}'.trim(),
-      htmlUrl: '${data['html_url'] ?? fallbackUrl ?? _downloadBase}',
-      apkUrl: apkUrl?.isEmpty == true ? null : apkUrl,
+      htmlUrl:
+          releasePage(data['html_url']) ??
+          releasePage(fallbackUrl) ??
+          'https://github.com/$owner/$repo/releases/latest',
+      apkUrl: apkUrl,
     );
   }
 }

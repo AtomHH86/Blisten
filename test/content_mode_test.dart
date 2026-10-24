@@ -14,7 +14,7 @@ void main() {
     expect(book.duration, 3600);
   });
 
-  for (final mode in ['music', 'concert']) {
+  for (final mode in ['music', 'concert', 'children']) {
     test('$mode survives saving the existing Book model', () {
       final original = {
         'bvid': 'BV1xx411c7mD',

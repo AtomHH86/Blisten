@@ -44,6 +44,12 @@ void main() {
       rate: 1.25,
       seconds: 22,
     ),
+    (
+      id: LocalBiliFixture.children,
+      mode: ContentMode.children,
+      rate: 1.75,
+      seconds: 26,
+    ),
   ];
   final fixture = LocalBiliFixture();
   late BookPlayer player;

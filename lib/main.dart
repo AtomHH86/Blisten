@@ -20,6 +20,7 @@ import 'player/bili_audio_handler.dart';
 import 'player/book_player.dart';
 import 'services/auth_store.dart';
 import 'services/cache_notifier.dart';
+import 'widgets/app_update_prompt.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +67,7 @@ Future<void> _bootstrap() async {
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.bting.audio.channel.audio',
         androidNotificationChannelName: AppMeta.name,
-        androidNotificationChannelDescription: '听书、听歌与听现场',
+        androidNotificationChannelDescription: '听书、听歌、听现场与儿童内容',
         androidNotificationIcon: 'mipmap/ic_launcher',
         // 暂停（含来电打断）时保留前台服务与通知，避免打断后通知栏直接消失。
         // 注意：audio_service 要求此时 androidNotificationOngoing 必须为 false。
@@ -154,9 +155,11 @@ class _BlistenAppState extends State<BlistenApp>
             darkTheme: AppTheme.dark(),
             themeMode: tc.mode,
             home: _ready
-                ? KeyedSubtree(
-                    key: ValueKey('theme-${tc.mode.name}'),
-                    child: const HomeShell(),
+                ? AppUpdatePrompt(
+                    child: KeyedSubtree(
+                      key: ValueKey('theme-${tc.mode.name}'),
+                      child: const HomeShell(),
+                    ),
                   )
                 : const SplashScreen(),
           );

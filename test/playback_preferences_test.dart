@@ -8,6 +8,21 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues({'abts_rate': 1.75}));
 
+  test('children rate is independent and its selection restores progress', () async {
+    final children = ContentMode.fromJson('children');
+    final preferences = PlaybackPreferences();
+    expect(await preferences.rateFor(children), 1.0);
+    await preferences.saveRate(children, 1.25);
+    final reloaded = PlaybackPreferences();
+    expect(await reloaded.rateFor(children), 1.25);
+    expect(await reloaded.rateFor(ContentMode.audiobook), 1.75);
+    expect(await reloaded.rateFor(ContentMode.music), 1.0);
+    expect(await reloaded.rateFor(ContentMode.concert), 1.0);
+    expect(PlaybackPreferences.selectionStart(children,
+        index: 2, positionMs: 45000), (index: 2, positionMs: 45000));
+    expect(children.autoShelf, isFalse);
+  });
+
   test(
     'music and concert start at normal speed without inheriting audiobook rate',
     () async {

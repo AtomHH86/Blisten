@@ -212,6 +212,37 @@ void main() {
     await SearchHistoryStore.instance.clear();
   });
 
+  testWidgets('children import preserves explicit P and reclassifies without losing progress',
+      (tester) async {
+    await ShelfStore.instance.add(_book(ContentMode.audiobook, '原作品'),
+        withProgress: ShelfBook(book: _book(ContentMode.audiobook, '原作品'),
+            lastCid: 12, lastChapterIndex: 1, positionMs: 42000));
+    ({Book book, int? page})? imported;
+    final api = _Api();
+    await tester.pumpWidget(_host(Builder(builder: (context) => Scaffold(
+      body: TextButton(onPressed: () async {
+        imported = await showDialog<({Book book, int? page})>(
+          context: context,
+          builder: (_) => ResourceImportDialog(api: api),
+        );
+      }, child: const Text('打开儿童导入')),
+    ))));
+    await tester.tap(find.text('打开儿童导入'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, '儿童'));
+    await tester.enterText(find.byType(TextField),
+        'https://www.bilibili.com/video/BV1xx411c7mD?p=2');
+    await tester.tap(find.text('添加资源'));
+    await tester.pumpAndSettle();
+    expect(imported?.book.contentMode.name, 'children');
+    expect(imported?.page, 2);
+    await ShelfStore.instance.load();
+    final saved = ShelfStore.instance.byBvid('BV1xx411c7mD')!;
+    expect(saved.book.contentMode.name, 'children');
+    expect(saved.lastCid, 12);
+    expect(saved.positionMs, 42000);
+  });
+
   testWidgets(
     'legacy search defaults to audiobook; mode changes rerun keyword',
     (tester) async {
@@ -580,6 +611,7 @@ void main() {
           ContentMode.audiobook => '听书详情',
           ContentMode.music => '歌曲详情',
           ContentMode.concert => '演唱会详情',
+          ContentMode.children => '儿童内容详情',
         };
         expect(find.text(detailTitle), findsOneWidget);
         expect(

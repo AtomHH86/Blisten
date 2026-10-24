@@ -2,18 +2,21 @@
 enum ContentMode {
   audiobook,
   music,
-  concert;
+  concert,
+  children;
 
   String get label => switch (this) {
     audiobook => '听书',
     music => '听歌',
     concert => '听现场',
+    children => '儿童',
   };
 
   String get unitLabel => switch (this) {
     audiobook => '章',
     music => '曲',
     concert => '段',
+    children => '集',
   };
 
   bool get resumesPosition => this != music;
@@ -22,6 +25,7 @@ enum ContentMode {
   static ContentMode fromJson(Object? value) => switch (value) {
     'music' => music,
     'concert' => concert,
+    'children' => children,
     _ => audiobook,
   };
 }

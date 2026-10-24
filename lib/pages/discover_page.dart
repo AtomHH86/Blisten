@@ -168,6 +168,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                                 ContentMode.audiobook => '搜索书名 / 作者 / 主播',
                                 ContentMode.music => '搜索歌名 / 歌手 / UP 主',
                                 ContentMode.concert => '搜索演唱会 / 歌手 / UP 主',
+                                ContentMode.children => '搜索儿歌 / 动画 / 故事',
                               },
                               style: TextStyle(
                                 fontSize: 14,

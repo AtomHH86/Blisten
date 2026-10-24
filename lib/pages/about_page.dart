@@ -83,9 +83,10 @@ class AboutPage extends StatelessWidget {
   /// 一句话讲清它是干什么的
   Widget _buildIntro(BuildContext context) {
     const points = [
-      '搜索有声书、歌曲与演唱会，也可粘贴 B 站链接或 BV 号添加内容',
+      '搜索有声书、歌曲、演唱会与儿童内容，也可粘贴 B 站链接或 BV 号添加内容',
       '支持后台与熄屏播放、定时停止、分 P 连播和离线缓存',
-      '听书与现场可续播；歌曲再次选择从头播放，三种模式独立记忆倍速',
+      '儿童包含儿歌、动画与故事，仅收听声音；默认 1 倍速、断点续播，喜欢的内容可手动收藏',
+      '听书、现场与儿童可续播；歌曲再次选择从头播放，四种模式独立记忆倍速',
     ];
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -289,7 +290,8 @@ class AboutPage extends StatelessWidget {
             '退出登录会清除本机登录凭据，收藏与收听进度保留。'
             '系统备份可恢复收藏与设置，不包含登录凭据及离线音频。\n\n'
             '5. B听未接入第三方行为统计，搜索与播放仍需向 B 站发起请求。'
-            '手动检查更新会访问 B听的 GitHub Releases，反馈入口指向本项目；'
+            '启动后会自动检查更新，成功检查后 24 小时内不再自动请求；'
+            '手动检查更新可随时重试。自动与手动检查均访问 B听的 GitHub Releases，反馈入口指向本项目；'
             '原项目链接仅用于来源致谢。\n\n'
             '6. 喜欢某部作品时，请前往官方平台支持作者。',
             style: TextStyle(

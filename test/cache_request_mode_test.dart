@@ -4,6 +4,21 @@ import 'package:blisten/core/storage/cache_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('children cache, pending task and failed retry retain their mode', () {
+    final data = <String, dynamic>{
+      'bvid': 'BV1xx411c7mD', 'cid': 103, 'bookTitle': '儿童故事',
+      'chapterTitle': '第三集', 'page': 3, 'contentMode': 'children',
+    };
+    final entry = CacheEntry.fromJson(CacheEntry.fromJson(data).toJson());
+    final request = CacheRequest.fromJson(CacheRequest.fromJson(data).toJson());
+    final failure = CacheFailure.fromJson(CacheFailure.fromJson(data).toJson());
+    expect(entry.toJson()['contentMode'], 'children');
+    expect(request.toJson()['contentMode'], 'children');
+    expect(failure.toJson()['contentMode'], 'children');
+    expect([entry.cid, request.cid, failure.cid], [103, 103, 103]);
+    expect([entry.page, request.page, failure.page], [3, 3, 3]);
+  });
+
   test('pending music download retains its type and part across restart', () {
     final resumed = CacheRequest.fromJson(
       jsonDecode(

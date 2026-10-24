@@ -105,7 +105,7 @@ void main() {
     await tester.scrollUntilVisible(find.textContaining('离线缓存会将音频'), 250);
     expect(find.textContaining('离线缓存会将音频'), findsOneWidget);
     expect(find.textContaining('本应用不存储'), findsNothing);
-    expect(find.textContaining('手动检查更新会访问 B听的 GitHub Releases'), findsOneWidget);
+    expect(find.textContaining('自动与手动检查均访问 B听的 GitHub Releases'), findsOneWidget);
     expect(find.textContaining('更新与反馈入口尚未配置'), findsNothing);
   });
 }

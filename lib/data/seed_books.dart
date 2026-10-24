@@ -96,6 +96,13 @@ class DiscoverSeeds {
       anchors: [],
     ),
     DiscoverCategory(
+      label: '儿童',
+      keyword: '儿童故事',
+      icon: Icons.child_care_rounded,
+      mode: ContentMode.children,
+      anchors: [],
+    ),
+    DiscoverCategory(
       label: '广播剧',
       keyword: '广播剧 全集',
       icon: Icons.headset_rounded,
@@ -359,6 +366,7 @@ class DiscoverSeeds {
     ContentMode.audiobook => hotKeys,
     ContentMode.music => const ['歌曲', '音乐现场', '经典歌曲', '翻唱', '纯音乐', 'MV'],
     ContentMode.concert => const ['演唱会 完整版', '巡回演唱会', '音乐节 现场', 'Live 演唱会'],
+    ContentMode.children => const ['儿歌', '儿童动画片', '儿童故事', '睡前故事', '童谣', '寓言故事'],
   };
 
   static const List<String> hotKeys = [

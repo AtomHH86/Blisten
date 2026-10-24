@@ -86,6 +86,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
         ContentMode.audiobook => '听书详情',
         ContentMode.music => '歌曲详情',
         ContentMode.concert => '演唱会详情',
+        ContentMode.children => '儿童内容详情',
       })),
       body: _loading
           ?  Center(

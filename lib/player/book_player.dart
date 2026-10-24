@@ -1048,7 +1048,9 @@ class BookPlayer extends ChangeNotifier {
     bool current() => stillCurrent == null || stillCurrent();
     if (!_wantsPlayback || !current()) return;
     final focus = AudioFocus.instance;
-    final speech = (mode ?? _book?.contentMode) == ContentMode.audiobook;
+    final contentMode = mode ?? _book?.contentMode;
+    final speech = contentMode == ContentMode.audiobook ||
+        contentMode == ContentMode.children;
     // 新焦点或新的语音策略不能继承旧音源的闪避音量；仍持有的音乐闪避保留。
     if (!focus.hasFocus || focus.pausesOnDuck != speech) {
       await _restoreVolumeIfDucked();

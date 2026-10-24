@@ -80,6 +80,25 @@ class UpClient implements BiliClient {
 }
 
 void main() {
+  test('children search retains short songs and the submitted keyword', () async {
+    final client = SearchClient(
+      (_) => [video('BV1xx411c7mD', '小星星 儿歌', '0:45')],
+    );
+    final result = await BiliApi(client: client).search('小星星',
+        mode: ContentMode.fromJson('children'));
+    expect(result.map((book) => book.title), ['小星星 儿歌']);
+    expect(result.single.toJson()['contentMode'], 'children');
+    expect(client.calls.map((query) => query['keyword']), ['小星星']);
+  });
+
+  test('children UP page retains short animation episodes', () async {
+    final result = await BiliApi(client: UpClient()).upAudios(
+      const UpUser(mid: 42, name: '上传者', face: ''),
+      mode: ContentMode.fromJson('children'));
+    expect(result.books.map((book) => book.bvid), ['BV1xx411c7mD']);
+    expect(result.books.single.toJson()['contentMode'], 'children');
+  });
+
   test('music UP page retains songs shorter than the audiobook duration floor', () async {
     final result = await BiliApi(client: UpClient()).upAudios(
       UpUser(mid: 42, name: '上传者', face: ''), mode: ContentMode.music);
