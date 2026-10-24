@@ -5,7 +5,7 @@
 ## 输入与签名
 
 - 用户已授权首次创建 B听专用签名证书、本机备份、四包生成和安装包测试；通过发布检查后才发布 GitHub。
-- 源码起点：`ca0a169870752056e48b5b54ab3d869948e26e75`；工作分支 `codex/release-v1`。包名 `com.bting.audio`，当前版本 `1.0.0+1`。最终 APK 源码为干净提交 `ee246d76e892218581b8faea1bf09a73315973e1`，`v1.0.0` 标签对应此提交；之后的发布记录提交只改文档。
+- 源码起点：`ca0a169870752056e48b5b54ab3d869948e26e75`；工作分支 `codex/release-v1`。包名 `com.bting.audio`，当前版本 `1.0.0+1`。最终 APK 源码为干净提交 `ee246d76e892218581b8faea1bf09a73315973e1`，`v1.0.0` 标签对应此提交；之后的 main 提交补充验收记录及 CI 环境配置，不修改应用或原生构建输入。
 - 已创建 RSA-4096 / PKCS12 长期证书，别名 `blisten`；公开证书 SHA256：`da58f45d2a4309fb420b8508c97b6652f64a8417e4c2d876f5303d3e08bc2ee0`。
 - 已核对本机备份字节一致，并将备份复制到临时隔离目录，实际签名一个验证 JAR，使用 `jarsigner -verify -strict` 验证成功；恢复证书摘要一致。
 - 私钥、密码与 `key.properties` 不入版本库或发布资产。两份备份均在同一台 Mac，不能防止整机损坏；另存受控外部备份仍需完成。
@@ -104,3 +104,5 @@ universal 的缓存播放在重建应用进程后、虚拟网卡 eth0 完全断�
 公开附件 `apk-runtime-verification.json` 与 `apk-native-verification.json` 保存检查结果和证据哈希；原始截图、设备日志、拉回的安装包留在本机忽略目录。公开 `manifest.json` 仅移除了 Flutter SDK 的本机安装路径，其余构建信息和 APK 哈希保持不变。源码归档及原生核验 JSON 一同提供。
 
 尚未验证 ARM64/ARMv7 实机、API24/25/28/33/36、16KiB 页系统、厂商后台限制、真实电话/蓝牙中断、完整 TalkBack、人工听音和耗电/性能基线。静态兼容检查不能替代这些运行证据，也不承诺所有 B 站资源始终可用。
+
+远程 CI 首次运行在 `Install native audio build tools` 失败，原因是 runner 的 `sdkmanager` 不在 PATH（退出码 127），尚未进入原生编译。工作流改为通过 Android SDK 根目录显式调用 `cmdline-tools/latest/bin/sdkmanager`；此环境修复不修改已验收 APK、应用源码或固定原生构建配方。修复后的远程结果以 Actions 和 Release 附件 `ci-verification.json` 为准。

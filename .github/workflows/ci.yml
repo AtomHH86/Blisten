@@ -89,7 +89,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build nasm pkg-config
-          sdkmanager --install "ndk;28.2.13676358" "cmake;3.22.1"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;28.2.13676358" "cmake;3.22.1"
       - name: Build pinned Android audio libraries
         run: |
           export BLISTEN_WAF_PYTHON="$(command -v python3)"
