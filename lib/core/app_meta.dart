@@ -6,7 +6,7 @@ class AppMeta {
   AppMeta._();
 
   static const String name = 'B听';
-  static const String version = '1.2.0';
+  static const String version = '1.2.1';
 
   /// 副标题 / 一句话介绍
   static const String tagline = '闭上眼听 B 站';
