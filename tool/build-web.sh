@@ -18,4 +18,4 @@ flutter build web --release --no-pub --pwa-strategy=none --no-web-resources-cdn 
 if [[ "$mode" = probe ]]; then
   python3 tool/generate-web-probe-audio.py --output "$output/generated-probe.wav"
 fi
-printf 'Built %s. Preview locally: python3 -m http.server 8768 --bind 127.0.0.1 --directory %s\n' "$mode" "$output"
+printf 'Built %s. Preview locally: python3 tool/serve-web.py --directory %s --port 8768\n' "$mode" "$output"

@@ -12,7 +12,7 @@
 
 `.github/workflows/ios.yml` 使用 `macos-15`，显式选择 Xcode 26.2，校验 Flutter 固定 commit，再执行无签名模拟器 debug 与设备 release 编译。它不会签名、安装、提交 TestFlight 或发布 App Store。
 
-第一次 CI 会产生 `ios/Podfile.lock`，并随构建日志和工具链版本作为 artifact 保存。实际生成、审核后应将该锁文件提交，不能在没有 CocoaPods 解析证据时手工伪造。`pubspec.lock` 和 media-kit iOS 下载包版本/校验值已经固定。runner 的 macOS 补丁、CocoaPods 等预装版本会变化，实际版本保留在每次证据中。
+`ios/Podfile.lock` 来自首次成功的 [真实 CI 构建](https://github.com/AtomHH86/Blisten/actions/runs/40122819258)，与构建日志、工具链版本一起取回并提交；后续 CI 会检查构建没有改写锁文件。`pubspec.lock` 和 media-kit iOS 下载包版本/校验值已经固定。runner 的 macOS 补丁、CocoaPods 等预装版本会变化，实际版本保留在每次证据中。
 
 ```bash
 flutter pub get --enforce-lockfile

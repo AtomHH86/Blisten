@@ -259,10 +259,13 @@ class AboutPage extends StatelessWidget {
   Widget _buildDisclaimer(BuildContext context) {
     final storageNotice = kIsWeb
         ? '3. 收藏、搜索历史、收听进度与设置保存在当前浏览器。网页版暂不支持登录和音频离线缓存；清理网站数据会删除这些本地记录。\n\n'
-        : '3. 收藏、搜索历史、收听进度及设置保存在本机，音频缓存保存在应用目录，可在离线缓存中删除。\n\n'
-          '4. 登录凭据保存在本机隔离存储，退出登录会清除凭据，收藏与进度保留。应用不提供内容二次分发。\n\n';
+        : '3. 收藏、搜索历史、收听进度及设置保存在本机。离线缓存会将音频'
+          '保存到本机应用目录，可在离线缓存中删除；应用不提供内容二次分发。\n\n'
+          '4. 登录后凭据保存在本机，用于向 B 站请求账号及播放服务；'
+          '退出登录会清除本机登录凭据，收藏与收听进度保留。'
+          '${defaultTargetPlatform == TargetPlatform.android ? "系统备份可恢复收藏与设置，不包含登录凭据及离线音频。" : "iOS 凭据保存在 Keychain，卸载应用不保证清除凭据，请先退出登录。"}\n\n';
     final updateNotice = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-        ? '每次打开应用进入首页后会自动检查更新，同一次打开不重复提示；手动检查可随时重试。检查访问 B听的 GitHub Releases。'
+        ? '每次打开应用进入首页后会自动检查更新，同一次打开不重复提示；手动检查可随时重试。自动与手动检查均访问 B听的 GitHub Releases。'
         : kIsWeb ? '网页版通过重新打开网站获取已部署的新版本；当前预览不提供离线启动。'
         : 'iOS 预览版暂不提供应用内更新，后续将通过 TestFlight 或 App Store 分发。';
     return Container(

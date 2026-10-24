@@ -25,6 +25,6 @@ jobs:
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - run: flutter pub get --enforce-lockfile
       - name: Browser platform tests
-        run: flutter test --platform chrome test/platform_services_test.dart test/cache_web_capability_test.dart --no-pub --reporter expanded
+        run: flutter test --platform chrome test/platform_services_test.dart test/cache_web_capability_test.dart test/discover_font_change_test.dart --no-pub --reporter expanded
       - name: Compile shared Web application
         run: flutter build web --release --no-pub --pwa-strategy=none --no-web-resources-cdn

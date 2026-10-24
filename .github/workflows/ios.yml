@@ -65,6 +65,7 @@ jobs:
           test -d build/ios/iphoneos/Runner.app
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphoneos/Runner.app/Info.plist)" = "com.bting.audio"
           test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' build/ios/iphoneos/Runner.app/Info.plist)" = "15.0"
+          git diff --exit-code -- ios/Podfile.lock
 
       - name: Save compile evidence
         if: always()

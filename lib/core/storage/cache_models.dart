@@ -281,4 +281,3 @@ class CacheEvent {
         m['text'] as String? ?? '',
       );
 }
-

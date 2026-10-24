@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,12 +53,22 @@ class _DiscoverPageState extends State<DiscoverPage> {
   final Map<String, List<Book>> _browseCache = {};
   int _browseRequestId = 0;
   CancelToken? _cancelToken;
+  int _channelFontRevision = 0;
 
   @override
   void initState() {
     super.initState();
     HomeTabs.discoverMode.addListener(_externalChannel);
+    if (kIsWeb) {
+      PaintingBinding.instance.systemFonts.addListener(_refreshChannelFonts);
+    }
     _restoreSelection();
+  }
+
+  void _refreshChannelFonts() {
+    if (!mounted) return;
+    // Web fallback fonts can leave Chip's intrinsic label measurement stale.
+    setState(() => _channelFontRevision++);
   }
 
   Future<void> _restoreSelection() async {
@@ -143,6 +155,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
   void dispose() {
     _cancelToken?.cancel();
     HomeTabs.discoverMode.removeListener(_externalChannel);
+    if (kIsWeb) {
+      PaintingBinding.instance.systemFonts.removeListener(_refreshChannelFonts);
+    }
     _scroll.dispose();
     _controller.dispose();
     super.dispose();
@@ -248,7 +263,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
               children: ContentMode.values.map((mode) => Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(key: ValueKey('discover-channel-${mode.name}'),
-                  label: Text(mode.label), selected: _mode == mode,
+                  label: Text(mode.label, key: kIsWeb
+                      ? ValueKey('channel-font-${mode.name}-$_channelFontRevision')
+                      : null), selected: _mode == mode,
                   onSelected: (_) => _switchChannel(mode)),
               )).toList()),
           ),

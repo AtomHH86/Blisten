@@ -12,7 +12,7 @@
 
 ```bash
 tool/build-web.sh app
-python3 -m http.server 8768 --bind 127.0.0.1 --directory build/web
+python3 tool/serve-web.py --directory build/web --port 8768
 ```
 
 打开 `http://127.0.0.1:8768`。沿用 B听图标与配色，manifest 提供主屏幕入口基础。当前关闭 Service Worker，不宣称离线启动；这样预览代码不会被旧缓存固定住。浏览器本地存储保留收藏、设置和进度，清除网站数据会删除这些资料，不自动跨设备同步。
@@ -23,7 +23,7 @@ Web 只尝试匿名直连接口，不读取或持久化 B站账号 Cookie。浏�
 
 ```bash
 tool/build-web.sh probe
-python3 -m http.server 8769 --bind 127.0.0.1 --directory build/web-probe
+python3 tool/serve-web.py --directory build/web-probe --port 8769
 ```
 
 该入口使用 60 秒自行合成的低音量 WAV，真实调用 media_kit Web 引擎，测试点击播放、暂停、跳到30秒、1.5倍速和保存进度。只使用独立 `blisten_web_probe_position_ms` 键；刷新后展示保存值，不自动打开音源。探针成功仅证明本机引擎与浏览器存储，不证明 B站搜索/媒体、iPhone Safari 或熄屏收听可用。探针不包含在正式 App 入口或正式 APK 中。
