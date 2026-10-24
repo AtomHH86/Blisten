@@ -195,6 +195,11 @@ void main() {
       expect(find.text('下载更新'), findsOneWidget);
       expect(prefs.getInt('blisten_update_last_success_ms'), isNotNull);
       if (const bool.fromEnvironment('BLISTEN_CAPTURE_UPDATES')) {
+        // The live Android surface can still contain the previous frame after
+        // the widget tree settles. Draw two frames before capturing pixels.
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.textContaining('最新 9.0.0'), findsOneWidget);
         await binding.takeScreenshot('update-automatic-local-fixture');
       }
       await tester.tap(find.text('稍后'));
