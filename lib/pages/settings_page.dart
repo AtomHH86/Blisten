@@ -14,19 +14,35 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver {
   bool _loading = true;
   bool _ignoring = false;
+  bool _requesting = false;
+  int _refreshId = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refresh();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
   Future<void> _refresh() async {
+    final requestId = ++_refreshId;
+    setState(() => _loading = true);
     final v = await DeviceService.instance.isIgnoringBatteryOptimizations();
-    if (!mounted) return;
+    if (!mounted || requestId != _refreshId) return;
     setState(() {
       _ignoring = v;
       _loading = false;
@@ -34,18 +50,25 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _toggle(bool value) async {
+    if (_requesting) return;
     if (value) {
-      await DeviceService.instance.requestIgnoreBatteryOptimization();
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
-      await _refresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_ignoring
-              ? '已开启后台留存保护'
-              : '请在系统弹窗中允许「不受限制」'),
-        ),
-      );
+      final route = ModalRoute.of(context);
+      setState(() => _requesting = true);
+      try {
+        await DeviceService.instance.requestIgnoreBatteryOptimization();
+        if (!mounted) return;
+        await _refresh();
+        if (!mounted || _loading || route?.isCurrent != true) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_ignoring
+                ? '已开启后台留存保护'
+                : '请在系统弹窗中允许「不受限制」'),
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _requesting = false);
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('如需关闭，请在系统电池设置中恢复限制')),
@@ -97,7 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _sectionTitle('播放与后台'),
           SwitchListTile(
             value: _ignoring,
-            onChanged: _loading ? null : _toggle,
+            onChanged: _loading || _requesting ? null : _toggle,
             activeThumbColor: AppTheme.onPrimary,
             secondary:
                 Icon(Icons.battery_saver_rounded, color: AppTheme.actionText),

@@ -140,8 +140,8 @@ class CachePage extends StatelessWidget {
     );
   }
 
-  /// 失败清单：以前失败只写日志（release 包里日志是空实现），
-  /// 用户只看到「少了一集」，这里把原因亮出来并支持一键重试。
+  /// 失败清单：早期失败缺少界面反馈，用户只看到「少了一集」，
+  /// 这里把原因亮出来并支持一键重试。
   Widget _buildFailureCard(
       BuildContext context, CacheStore cache, List<CacheFailure> failures) {
     final player = context.read<BookPlayer>();
@@ -396,7 +396,7 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
 }
 
 /// 单本书的已缓存章节弹窗
-class _BookChaptersSheet extends StatelessWidget {
+class _BookChaptersSheet extends StatefulWidget {
   final String bvid;
   final String title;
   final String unitLabel;
@@ -405,6 +405,17 @@ class _BookChaptersSheet extends StatelessWidget {
     required this.title,
     required this.unitLabel,
   });
+
+  @override
+  State<_BookChaptersSheet> createState() => _BookChaptersSheetState();
+}
+
+class _BookChaptersSheetState extends State<_BookChaptersSheet> {
+  bool _opening = false;
+  String? _playError;
+  String get bvid => widget.bvid;
+  String get title => widget.title;
+  String get unitLabel => widget.unitLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +465,15 @@ class _BookChaptersSheet extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
+          if (_opening) const LinearProgressIndicator(),
+          if (_playError != null)
+            Semantics(
+              liveRegion: true,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(_playError!, style: TextStyle(color: AppTheme.error)),
+              ),
+            ),
           Expanded(
             child: list.isEmpty
                 ? Center(
@@ -540,7 +560,7 @@ class _BookChaptersSheet extends StatelessWidget {
                               ),
                           ],
                         ),
-                        onTap: () => _playEntry(context, cache, e),
+                        onTap: _opening ? null : () => _playEntry(context, cache, e),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -621,7 +641,7 @@ class _BookChaptersSheet extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    final player = BookPlayer.instance;
+    final player = context.read<BookPlayer>();
     try {
       await cache.recache(entry, resolveUrl: player.resolveUrlFor, headers: player.downloadHeaders);
     } catch (_) {
@@ -670,9 +690,11 @@ class _BookChaptersSheet extends StatelessWidget {
   /// 直接播放这一集（离线）
   Future<void> _playEntry(
       BuildContext context, CacheStore cache, CacheEntry e) async {
+    final route = ModalRoute.of(context);
+    if (_opening || route?.isCurrent != true) return;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final player = BookPlayer.instance;
+    final player = context.read<BookPlayer>();
     final book = Book(
       bvid: e.bvid,
       aid: 0,
@@ -680,32 +702,33 @@ class _BookChaptersSheet extends StatelessWidget {
       pic: e.cover,
       contentMode: e.contentMode,
     );
-    final r = await player.playCachedEntry(e.bvid, e.cid, book);
-    navigator.pop();
-    switch (r) {
-      case CachePlayOutcome.okOffline:
-        navigator.push(MaterialPageRoute(builder: (_) => const PlayerPage()));
+    setState(() {
+      _opening = true;
+      _playError = null;
+    });
+    try {
+      final result = await player.playCachedEntry(e.bvid, e.cid, book);
+      if (!mounted || route?.isCurrent != true) return;
+      if (result == CachePlayOutcome.fileMissing || result == CachePlayOutcome.failed) {
+        setState(() => _playError = result == CachePlayOutcome.fileMissing
+            ? '缓存文件已丢失，请重新缓存'
+            : '播放失败，请检查网络后点选章节重试');
         return;
-      case CachePlayOutcome.okOnline:
-        // 缓存文件是好的，只是这次没打开：说清楚，别让用户误以为缓存没了
+      }
+      // 此时只有请求所属的当前弹层可以关闭，不能 pop 后来打开的页面。
+      navigator.pop();
+      navigator.push(MaterialPageRoute(builder: (_) => const PlayerPage()));
+      if (result == CachePlayOutcome.okOnline) {
         messenger.showSnackBar(const SnackBar(
           content: Text('离线播放失败，已改为在线播放（缓存仍保留）'),
           duration: Duration(seconds: 3),
         ));
-        navigator.push(MaterialPageRoute(builder: (_) => const PlayerPage()));
-        return;
-      case CachePlayOutcome.fileMissing:
-        messenger.showSnackBar(const SnackBar(
-          content: Text('缓存文件已丢失，请重新缓存'),
-          duration: Duration(seconds: 3),
-        ));
-        return;
-      case CachePlayOutcome.failed:
-        messenger.showSnackBar(const SnackBar(
-          content: Text('播放失败，请检查网络后重试'),
-          duration: Duration(seconds: 3),
-        ));
-        return;
+      }
+    } catch (_) {
+      if (!mounted || route?.isCurrent != true) return;
+      setState(() => _playError = '播放失败，请检查网络后点选章节重试');
+    } finally {
+      if (mounted) setState(() => _opening = false);
     }
   }
 

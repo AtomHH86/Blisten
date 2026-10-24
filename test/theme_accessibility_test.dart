@@ -64,6 +64,13 @@ class _Player extends ChangeNotifier implements BookPlayer {
   @override
   Duration get sleepRemaining => timer;
   @override
+  Duration get sleepTimerDuration => timer;
+  @override
+  DateTime? get sleepTimerDeadline => timer > Duration.zero
+      ? DateTime.utc(2026, 10, 24, 12).add(timer) : null;
+  @override
+  bool get loading => false;
+  @override
   bool get stopAtChapterEnd => stopAtEnd;
   @override
   void setSleepTimer(Duration duration) {

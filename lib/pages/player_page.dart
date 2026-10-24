@@ -14,6 +14,7 @@ import '../models/chapter.dart';
 import '../player/book_player.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/sleep_timer_controls.dart';
 import 'book_detail_page.dart';
 import 'cache_sheet.dart';
 
@@ -27,6 +28,9 @@ class PlayerPage extends StatefulWidget {
 
 class _PlayerPageState extends State<PlayerPage> {
   double _dragValue = -1;
+  final _speedFocus = FocusNode(debugLabel: '倍速');
+  final _chapterFocus = FocusNode(debugLabel: '目录');
+  final _timerFocus = FocusNode(debugLabel: '睡眠定时');
 
   /// 提前抓住播放器引用：在 dispose() 里再 context.read 会触发
   /// provider 的「查找已失活 widget 的祖先」断言。
@@ -41,6 +45,9 @@ class _PlayerPageState extends State<PlayerPage> {
   @override
   void dispose() {
     _playerRef?.flushProgress();
+    _speedFocus.dispose();
+    _chapterFocus.dispose();
+    _timerFocus.dispose();
     super.dispose();
   }
 
@@ -61,7 +68,7 @@ class _PlayerPageState extends State<PlayerPage> {
         ),
         body: Center(
           child: player.loading
-              ?  CircularProgressIndicator(color: AppTheme.actionText)
+              ?  CircularProgressIndicator(color: AppTheme.actionText, semanticsLabel: '正在加载音频')
               : player.error != null
                   ? SingleChildScrollView(child: _buildPlaybackError(player))
                   : Text('尚未播放任何内容',
@@ -127,7 +134,9 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Widget _buildPlaybackError(BookPlayer player) {
-    return Padding(
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -148,6 +157,7 @@ class _PlayerPageState extends State<PlayerPage> {
             label: const Text('重试'),
           ),
         ],
+      ),
       ),
     );
   }
@@ -207,16 +217,12 @@ class _PlayerPageState extends State<PlayerPage> {
     }
   }
 
-  void _showChapterSheet(BookPlayer player) {
+  Future<void> _showChapterSheet(BookPlayer player) async {
     final chapters = player.chapters;
     if (chapters.isEmpty) return;
     final shelf = context.read<ShelfStore>();
     final bvid = player.book?.bvid ?? '';
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      scrollControlDisabledMaxHeightRatio: 0.8,
-      builder: (ctx) {
+    await _showPanel(_chapterFocus, (ctx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -257,6 +263,7 @@ class _PlayerPageState extends State<PlayerPage> {
                     final active = i == player.index;
                     final done = bvid.isNotEmpty && shelf.isChapterDone(bvid, c.cid);
                     return ListTile(
+                      selected: active,
                       dense: true,
                       leading: active
                           ?  Icon(Icons.graphic_eq_rounded,
@@ -532,11 +539,8 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   /// 倍速弹窗：0.5x ~ 3.0x 档位，点一下即选中
-  void _showSpeedSheet(BookPlayer player) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) {
+  Future<void> _showSpeedSheet(BookPlayer player) async {
+    await _showPanel(_speedFocus, (ctx) {
         return StatefulBuilder(
           builder: (ctx, setSheet) {
             return SafeArea(
@@ -587,6 +591,7 @@ class _PlayerPageState extends State<PlayerPage> {
       BuildContext ctx, BookPlayer player, StateSetter setSheet, double r) {
     final active = (r - player.rate).abs() < 0.001;
     return ListTile(
+      selected: active,
       title: Text(
         _speedLabel(r),
         style: TextStyle(
@@ -617,6 +622,7 @@ class _PlayerPageState extends State<PlayerPage> {
         runSpacing: 8,
         children: [
           ActionChip(
+            focusNode: _speedFocus,
             materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.speed_rounded,
                 size: 16,
@@ -632,6 +638,7 @@ class _PlayerPageState extends State<PlayerPage> {
             onPressed: () => _showSpeedSheet(player),
           ),
           ActionChip(
+            focusNode: _chapterFocus,
             materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.format_list_bulleted,
                 size: 16, color: AppTheme.actionText),
@@ -642,6 +649,7 @@ class _PlayerPageState extends State<PlayerPage> {
             onPressed: () => _showChapterSheet(player),
           ),
           ActionChip(
+            focusNode: _timerFocus,
             materialTapTargetSize: MaterialTapTargetSize.padded,
             avatar:  Icon(Icons.bedtime_outlined,
                 size: 16, color: AppTheme.actionText),
@@ -680,74 +688,30 @@ class _PlayerPageState extends State<PlayerPage> {
     );
   }
 
-  void _showSleepSheet(BookPlayer player) {
-    showModalBottomSheet<void>(
+  Future<void> _showPanel(FocusNode trigger, WidgetBuilder builder) async {
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) {
-        final options = const [
-          (Duration.zero, '关闭'),
-          (Duration(minutes: 10), '10 分钟'),
-          (Duration(minutes: 20), '20 分钟'),
-          (Duration(minutes: 30), '30 分钟'),
-          (Duration(hours: 1), '1 小时'),
-          (Duration(hours: 2), '2 小时'),
-        ];
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-               Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  '睡眠定时',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textMain),
-                ),
-              ),
-              SwitchListTile(
-                value: ctx.watch<BookPlayer>().stopAtChapterEnd,
-                onChanged: (v) => player.setStopAtChapterEnd(v),
-                title: Text(
-                  '播完当前${player.book?.contentMode.unitLabel ?? '项'}自动暂停',
-                  style: const TextStyle(fontSize: 15),
-                ),
-                subtitle: Text(
-                  '播完即停，不自动播放下一${player.book?.contentMode.unitLabel ?? '项'}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                activeThumbColor: AppTheme.actionText,
-              ),
-              const Divider(height: 1),
-              ...options.map((o) {
-                final active = (player.sleepRemaining > Duration.zero &&
-                    (o.$1 > Duration.zero && player.sleepRemaining <= o.$1 + const Duration(minutes: 1))) ||
-                    (o.$1 == Duration.zero && player.sleepRemaining <= Duration.zero);
-                return ListTile(
-                  title: Text(o.$2,
-                      style: TextStyle(
-                          color: active ? AppTheme.actionText : AppTheme.textMain)),
-                  trailing: active
-                      ?  Icon(Icons.check, color: AppTheme.actionText)
-                      : null,
-                  onTap: () {
-                    if (o.$1 > Duration.zero) {
-                      player.setSleepTimer(o.$1);
-                    } else {
-                      player.cancelSleepTimer();
-                    }
-                    Navigator.of(ctx).pop();
-                  },
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (ctx) => ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.85),
+        child: builder(ctx),
+      ),
     );
+    if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+      trigger.requestFocus();
+    }
   }
+
+  Future<void> _showSleepSheet(BookPlayer player) => _showPanel(
+    _timerFocus,
+    (ctx) => SafeArea(
+      top: false,
+      child: SleepTimerControls(showTitle: true,
+        onSelected: () => Navigator.of(ctx).pop()),
+    ),
+  );
 }
 
 /// 快进/快退 15 秒图标：圆形箭头叠加数字

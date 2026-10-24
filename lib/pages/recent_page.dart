@@ -24,7 +24,7 @@ class RecentPage extends StatelessWidget {
           ? const EmptyShelfView(
               icon: Icons.headphones_outlined,
               title: '还没有收听记录',
-              subtitle: '开始收听后，这里会显示最近进度',
+              subtitle: '听书、歌曲和演唱会的本机进度会显示在这里，无需先收藏；仅保留最近记录。',
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -34,15 +34,25 @@ class RecentPage extends StatelessWidget {
                 thickness: 0.5,
                 color: AppTheme.divider,
               ),
-              itemBuilder: (context, i) => _RecentTile(sb: items[i]),
+              itemBuilder: (context, i) => _RecentTile(
+                  key: ValueKey(items[i].book.bvid), sb: items[i]),
             ),
     );
   }
 }
 
-class _RecentTile extends StatelessWidget {
+class _RecentTile extends StatefulWidget {
   final ShelfBook sb;
-  const _RecentTile({required this.sb});
+  const _RecentTile({super.key, required this.sb});
+
+  @override
+  State<_RecentTile> createState() => _RecentTileState();
+}
+
+class _RecentTileState extends State<_RecentTile> {
+  bool _opening = false;
+  int _operationId = 0;
+  ShelfBook get sb => widget.sb;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +63,7 @@ class _RecentTile extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(10),
-      onTap: () {
+      onTap: _opening ? null : () {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => BookDetailPage(bvid: sb.book.bvid, contentMode: sb.book.contentMode),
@@ -113,9 +123,9 @@ class _RecentTile extends StatelessWidget {
               tooltip: !sb.book.contentMode.resumesPosition
                   ? '从头播放'
                   : isCurrent ? '打开播放页' : '继续收听',
-              onPressed: () => _resume(context, player),
+              onPressed: _opening ? null : () => _resume(player),
               icon: Icon(
-                isCurrent && player.isPlaying
+                _opening ? Icons.hourglass_top_rounded : isCurrent && player.isPlaying
                     ? Icons.equalizer_rounded
                     : Icons.play_circle_fill_rounded,
                 size: 36,
@@ -142,30 +152,53 @@ class _RecentTile extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
+    final operationId = ++_operationId;
+    final route = ModalRoute.of(context);
+    setState(() => _opening = true);
     try {
       await player.clearListeningRecord(sb.book.bvid);
-      if (!context.mounted) return;
+      if (!context.mounted || route?.isCurrent != true) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清除收听记录')));
     } catch (_) {
-      if (!context.mounted) return;
+      if (!context.mounted || route?.isCurrent != true) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('清除失败，请重试')));
+    } finally {
+      if (mounted && operationId == _operationId) setState(() => _opening = false);
     }
   }
 
-  Future<void> _resume(BuildContext context, BookPlayer player) async {
-    if (player.book?.bvid == sb.book.bvid &&
-        player.book?.contentMode == sb.book.contentMode &&
-        player.loaded && sb.book.contentMode.resumesPosition) {
+  Future<void> _resume(BookPlayer player) async {
+    final route = ModalRoute.of(context);
+    if (_opening || route?.isCurrent != true) return;
+    final operationId = ++_operationId;
+    final target = sb;
+    setState(() => _opening = true);
+    try {
+      final alreadyLoaded = player.book?.bvid == target.book.bvid &&
+          player.book?.contentMode == target.book.contentMode &&
+          player.loaded && target.book.contentMode.resumesPosition;
+      if (!alreadyLoaded) {
+        player.flushProgress();
+        final ok = await player.resumeShelf(target);
+        if (!mounted || operationId != _operationId || route?.isCurrent != true) return;
+        if (!ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('播放失败，请检查网络后重试')),
+          );
+          return;
+        }
+      }
+      if (!mounted || operationId != _operationId || route?.isCurrent != true) return;
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const PlayerPage()),
       );
-      return;
+    } catch (_) {
+      if (!mounted || operationId != _operationId || route?.isCurrent != true) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('播放失败，请检查网络后重试')),
+      );
+    } finally {
+      if (mounted && operationId == _operationId) setState(() => _opening = false);
     }
-    player.flushProgress();
-    await player.resumeShelf(sb);
-    if (!context.mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const PlayerPage()),
-    );
   }
 }

@@ -18,6 +18,7 @@ import '../services/audio_focus.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 import 'playback_preferences.dart';
+import 'sleep_timer_schedule.dart';
 
 /// 从缓存页播放一集的结果
 ///
@@ -74,7 +75,7 @@ class BookPlayer extends ChangeNotifier {
 
   final Map<int, ({String url, int ts})> _urlCache = {};
   Timer? _sleepTimer;
-  Duration _sleepRemaining = Duration.zero;
+  SleepTimerSchedule? _sleepSchedule;
 
   // ---------- 倍速播放 ----------
   /// 倍速档位：0.5x ~ 3.0x；另外支持自定义任意值（0.5~3.0，步进 0.05）
@@ -122,7 +123,10 @@ class BookPlayer extends ChangeNotifier {
   String? get error => _error;
   String? get playbackUrl => _playbackUrl;
   BookAudio? get lastAudio => _lastAudio;
-  Duration get sleepRemaining => _sleepRemaining;
+  Duration get sleepRemaining =>
+      _sleepSchedule?.remainingAt(DateTime.now()) ?? Duration.zero;
+  Duration get sleepTimerDuration => _sleepSchedule?.duration ?? Duration.zero;
+  DateTime? get sleepTimerDeadline => _sleepSchedule?.deadline;
   double get rate => _rate;
   bool get stopAtChapterEnd => _stopAtChapterEnd;
 
@@ -600,7 +604,9 @@ class BookPlayer extends ChangeNotifier {
     List<Chapter> chapters;
     var complete = true;
     try {
-      if (_book?.bvid == book.bvid && _chapters.isNotEmpty && _chaptersComplete) {
+      if (_book?.bvid == book.bvid && _chapters.isNotEmpty && _chaptersComplete &&
+          (!resume || resumeCid == null || resumeCid == 0 ||
+              _chapters.any((chapter) => chapter.cid == resumeCid))) {
         chapters = _chapters; // 同本书复用列表
       } else if (book.chapters?.isNotEmpty == true &&
           _shelf.progressByBvid(book.bvid)?.chaptersComplete != false) {
@@ -1609,15 +1615,20 @@ class BookPlayer extends ChangeNotifier {
 
   // ---------- 睡眠定时 ----------
   void setSleepTimer(Duration d) {
+    if (d <= Duration.zero) {
+      cancelSleepTimer();
+      return;
+    }
     _sleepTimer?.cancel();
-    _sleepRemaining = d;
+    _sleepSchedule = SleepTimerSchedule(duration: d, startedAt: DateTime.now());
     AppAnalytics.onEvent('sleep_timer_use', {'minutes': d.inMinutes});
-    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      _sleepRemaining -= const Duration(seconds: 1);
-      if (_sleepRemaining <= Duration.zero) {
-        t.cancel();
-        _sleepRemaining = Duration.zero;
-        pause();
+    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (sleepRemaining == Duration.zero) {
+        timer.cancel();
+        _sleepTimer = null;
+        _sleepSchedule = null;
+        // Clear state first so this expiry cannot pause an explicit later resume.
+        unawaited(pause());
       }
       notifyListeners();
     });
@@ -1626,7 +1637,8 @@ class BookPlayer extends ChangeNotifier {
 
   void cancelSleepTimer() {
     _sleepTimer?.cancel();
-    _sleepRemaining = Duration.zero;
+    _sleepTimer = null;
+    _sleepSchedule = null;
     notifyListeners();
   }
 }

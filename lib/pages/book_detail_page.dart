@@ -40,6 +40,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
   Book? _book;
   bool _loading = true;
+  bool _playPending = false;
   String? _error;
 
   /// 目录排序：默认正序
@@ -123,18 +124,19 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final isCurrentBook = player.book?.bvid == book.bvid &&
         player.book?.contentMode == book.contentMode;
     final currentIdx = isCurrentBook ? player.index : -1;
-    final resumeIndex = shelfBook?.lastChapterIndex ?? 0;
+    final cidIndex = chapters.indexWhere((c) => c.cid == shelfBook?.lastCid);
+    final resumeIndex = cidIndex >= 0 ? cidIndex : (shelfBook?.lastChapterIndex ?? 0);
     final resumeMs = shelfBook?.positionMs ?? 0;
     final hasProgress = book.contentMode.resumesPosition &&
         widget.initialPage == null &&
         ((shelfBook?.positionMs ?? 0) > 0 ||
-            (shelfBook?.lastChapterIndex ?? 0) > 0);
+            resumeIndex > 0);
     // 已听章节：优先用逐章记录（听满 95% 或播完即打标），
     // 旧版本没有逐章数据时回退到「上次听到的章节序号」
     final hasDoneRecords = (shelfBook?.doneCids.isNotEmpty ?? false);
     final lastListened = isCurrentBook
         ? player.index
-        : (hasProgress ? (shelfBook?.lastChapterIndex ?? -1) : -1);
+        : (hasProgress ? resumeIndex : -1);
     final doneCount = shelf.doneCount(book.bvid);
 
     return Column(
@@ -210,7 +212,7 @@ Text(
                             color: AppTheme.textSub),
                       ),
                       IconButton(
-                        onPressed: chapters.isEmpty ? null : () => _playFrom(0),
+                        onPressed: chapters.isEmpty || _playPending ? null : () => _playFrom(0),
                         tooltip: '从头播放',
                         icon:  Icon(Icons.replay,
                             color: AppTheme.textSub),
@@ -231,7 +233,7 @@ Text(
                     isPlaying:
                         i == currentIdx && isCurrentBook && player.isPlaying,
                     bvid: book.bvid,
-                    onTap: () => _playFrom(i),
+                    onTap: _playPending ? null : () => _playFrom(i),
                     onCache: () => _cacheOne(chapters[i]),
                   );
                 }),
@@ -364,7 +366,7 @@ Text(
               child: nowPlaying
                   ? _buildNowPlaying(player, book)
                   : FilledButton(
-                      onPressed: () =>
+                      onPressed: _playPending ? null : () =>
                           _startPlay(hasProgress, resumeIndex, resumeMs),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
@@ -383,7 +385,7 @@ Text(
                               ),
                               const SizedBox(width: 6),
                               Flexible(child: Text(
-                                requestedPage != null
+                                _playPending ? '加载中…' : requestedPage != null
                                     ? '播放第 $requestedPage ${book.contentMode.unitLabel}'
                                     : (hasProgress ? '继续收听' : '开始收听'),
                                 style: const TextStyle(
@@ -415,11 +417,7 @@ Text(
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PlayerPage()),
-          );
-        },
+        onTap: _playPending ? null : _openPlayer,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           child: Row(
@@ -479,6 +477,13 @@ Text(
           ),
         ),
       ),
+    );
+  }
+
+  void _openPlayer() {
+    if (_playPending || ModalRoute.of(context)?.isCurrent != true) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PlayerPage()),
     );
   }
 
@@ -545,23 +550,21 @@ Text(
   }
 
   Future<void> _startPlay(bool hasProgress, int resumeIndex, int resumeMs) async {
-    final player = context.read<BookPlayer>();
-    player.flushProgress();
-    final requestedIndex = (_book!.chapters ?? <Chapter>[])
+    final book = _book!;
+    final requestedIndex = (book.chapters ?? <Chapter>[])
         .indexWhere((chapter) => chapter.page == widget.initialPage);
-    if (requestedIndex >= 0) {
-      await player.playBook(_book!, resumeIndex: requestedIndex);
-    } else if (!_book!.contentMode.resumesPosition) {
-      await player.playBook(_book!, resume: false);
-    } else if (hasProgress) {
-      await player.playBook(_book!, resumeIndex: resumeIndex, resumeMs: resumeMs);
-    } else {
-      await player.playBook(_book!);
-    }
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const PlayerPage()),
-    );
+    await _submitPlay((player) {
+      if (requestedIndex >= 0) {
+        return player.playBook(book, resumeIndex: requestedIndex,
+            resumeCid: book.chapters![requestedIndex].cid);
+      } else if (!book.contentMode.resumesPosition) {
+        return player.playBook(book, resume: false);
+      } else if (hasProgress) {
+        return player.playBook(book, resumeIndex: resumeIndex, resumeMs: resumeMs,
+            resumeCid: context.read<ShelfStore>().progressByBvid(book.bvid)?.lastCid);
+      }
+      return player.playBook(book);
+    });
   }
 
   /// 缓存单集到本地（供离线收听）
@@ -619,15 +622,46 @@ Text(
   }
 
   Future<void> _playFrom(int index) async {
+    final book = _book!;
+    await _submitPlay((player) => player.playBook(book, resumeIndex: index,
+        resumeCid: book.chapters![index].cid), chapterIndex: index);
+  }
+
+  Future<void> _submitPlay(Future<bool> Function(BookPlayer) submit,
+      {int? chapterIndex}) async {
+    final route = ModalRoute.of(context);
+    if (_playPending || route?.isCurrent != true) return;
     final player = context.read<BookPlayer>();
-    player.flushProgress();
-    await player.playBook(_book!, resumeIndex: index);
-    if (!mounted) return;
+    final book = _book!;
+    setState(() => _playPending = true);
+    try {
+      player.flushProgress();
+      final ok = await submit(player);
+      if (!mounted || route?.isCurrent != true) return;
+      if (!ok) {
+        _showPlayFailure();
+      } else if (chapterIndex == null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PlayerPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(player.isPlaying
+              ? '正在播放第 ${chapterIndex + 1} ${book.contentMode.unitLabel}…'
+              : '已加载第 ${chapterIndex + 1} ${book.contentMode.unitLabel}，当前已暂停'),
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    } catch (_) {
+      if (mounted && route?.isCurrent == true) _showPlayFailure();
+    } finally {
+      if (mounted) setState(() => _playPending = false);
+    }
+  }
+
+  void _showPlayFailure() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('正在播放第 ${index + 1} ${_book!.contentMode.unitLabel}…'),
-        duration: const Duration(milliseconds: 800),
-      ),
+      const SnackBar(content: Text('播放失败，请检查网络后重试')),
     );
   }
 }
@@ -639,7 +673,7 @@ class _ChapterTile extends StatelessWidget {
   final bool isCurrent;
   final bool isPlaying;
   final String bvid;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback onCache;
 
   const _ChapterTile({
