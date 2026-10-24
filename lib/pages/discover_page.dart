@@ -44,6 +44,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   List<DiscoverCategory> get _currentCategories => DiscoverSeeds.categoriesFor(_mode);
   String get _browseKey => '${_mode.name}:$_cat';
   bool _selectionChanged = false;
+  final _touchedChannels = <ContentMode>{};
   bool _browseLoading = true;
   String? _browseError;
   List<Book> _browseBooks = [];
@@ -59,18 +60,31 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   Future<void> _restoreSelection() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted || _selectionChanged) return;
-    for (final mode in ContentMode.values) {
-      final saved = prefs.getInt('abts_discover_category_${mode.name}') ?? 0;
-      _categories[mode] = saved >= 0 && saved < DiscoverSeeds.categoriesFor(mode).length ? saved : 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      for (final mode in ContentMode.values) {
+        if (_touchedChannels.contains(mode)) continue;
+        final saved = prefs.getInt('abts_discover_category_${mode.name}') ?? 0;
+        _categories[mode] = saved >= 0 &&
+                saved < DiscoverSeeds.categoriesFor(mode).length
+            ? saved : 0;
+      }
+      if (_selectionChanged) return;
+      setState(() {
+        _mode = HomeTabs.discoverMode.value ?? ContentMode.values.firstWhere(
+          (m) => m.name == prefs.getString('abts_discover_channel'),
+          orElse: () => ContentMode.audiobook);
+        _cat = _categories[_mode] ?? 0;
+      });
+    } catch (_) {
+      // Local preferences are optional; a failed read must not block browsing.
+      if (!mounted || _selectionChanged) return;
+      setState(() {
+        _mode = HomeTabs.discoverMode.value ?? ContentMode.audiobook;
+        _cat = 0;
+      });
     }
-    setState(() {
-      _mode = HomeTabs.discoverMode.value ?? ContentMode.values.firstWhere(
-        (m) => m.name == prefs.getString('abts_discover_channel'),
-        orElse: () => ContentMode.audiobook);
-      _cat = _categories[_mode] ?? 0;
-    });
     _loadBrowse();
   }
 
@@ -82,9 +96,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Future<void> _saveSelection() async {
     final mode = _mode;
     final cat = _cat;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('abts_discover_channel', mode.name);
-    await prefs.setInt('abts_discover_category_${mode.name}', cat);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('abts_discover_channel', mode.name);
+      await prefs.setInt('abts_discover_category_${mode.name}', cat);
+    } catch (_) {
+      // Keep the current in-memory selection when persistence is unavailable.
+    }
   }
 
   void _rememberScroll() {
@@ -100,9 +118,17 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   void _switchChannel(ContentMode mode) {
-    if (_mode == mode) return;
+    if (_mode == mode) {
+      if (_browseRequestId == 0) {
+        _selectionChanged = true;
+        _touchedChannels.add(mode);
+        _loadBrowse();
+      }
+      return;
+    }
     _rememberScroll();
     _selectionChanged = true;
+    _touchedChannels.add(mode);
     setState(() {
       _mode = mode;
       _cat = _categories[mode] ?? 0;
@@ -126,6 +152,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
     if (i == _cat) return;
     _rememberScroll();
     _selectionChanged = true;
+    _touchedChannels.add(_mode);
     setState(() {
       _categories[_mode] = i;
       _cat = i;

@@ -259,7 +259,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.textContaining('暂时取不到'), findsOneWidget);
-        for (final label in ['听书', '听歌', '听现场', '儿童']) {
+        for (final label in ['听书', '听歌', '听现场', '听故事']) {
           expect(_modeChip(label).hitTestable(), findsOneWidget);
         }
 

@@ -27,6 +27,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// Platform boundary controlled to exercise delayed and failed preference reads.
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+
+class _DelayedPreferences extends InMemorySharedPreferencesStore {
+  _DelayedPreferences() : super.empty();
+  final read = Completer<Map<String, Object>>();
+
+  @override
+  Future<Map<String, Object>> getAll() => read.future;
+}
 
 class _Api implements BiliApi {
   final requests = <({String keyword, int page, ContentMode mode})>[];
@@ -275,6 +286,64 @@ void main() {
       expect(api.requests.last.mode, ContentMode.concert);
     },
   );
+
+  testWidgets('late preferences preserve touched channel and restore unvisited category', (tester) async {
+    final original = SharedPreferencesStorePlatform.instance;
+    final prefs = _DelayedPreferences();
+    SharedPreferences.resetStatic();
+    SharedPreferencesStorePlatform.instance = prefs;
+    addTearDown(() {
+      SharedPreferencesStorePlatform.instance = original;
+      SharedPreferences.resetStatic();
+    });
+    final api = _Api();
+    await tester.pumpWidget(_host(DiscoverPage(api: api)));
+    HomeTabs.openDiscover(ContentMode.children);
+    await tester.pump();
+    await tester.tap(find.text('儿歌'));
+    await tester.pump();
+    prefs.read.complete({
+      'flutter.abts_discover_channel': 'concert',
+      'flutter.abts_discover_category_children': 3,
+      'flutter.abts_discover_category_music': 2,
+    });
+    await tester.pumpAndSettle();
+    expect(api.requests.last.mode, ContentMode.children);
+    expect(api.requests.last.keyword, '儿歌');
+    await tester.tap(find.text('听歌'));
+    await tester.pumpAndSettle();
+    expect(api.requests.last.keyword, '经典老歌');
+    expect(api.requests.last.mode, ContentMode.music);
+    await tester.tap(find.text('听故事'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Semantics>(find.byKey(const ValueKey('discover-category-children-1'))).properties.selected, isTrue);
+  });
+
+  for (final selectedExternally in [false, true]) {
+    testWidgets('failed preference read still loads ${selectedExternally ? 'selected channel' : 'default hot'}', (tester) async {
+      final original = SharedPreferencesStorePlatform.instance;
+      final prefs = _DelayedPreferences();
+      SharedPreferences.resetStatic();
+      SharedPreferencesStorePlatform.instance = prefs;
+      addTearDown(() {
+        SharedPreferencesStorePlatform.instance = original;
+        SharedPreferences.resetStatic();
+      });
+      final api = _Api();
+      await tester.pumpWidget(_host(DiscoverPage(api: api)));
+      if (selectedExternally) {
+        HomeTabs.openDiscover(ContentMode.children);
+        await tester.pump();
+      }
+      prefs.read.completeError(StateError('storage unavailable'));
+      await tester.pumpAndSettle();
+      expect(api.requests.single.keyword, selectedExternally ? '儿童 儿歌 动画 故事' : '有声小说');
+      expect(api.requests.single.mode, selectedExternally ? ContentMode.children : ContentMode.audiobook);
+      expect(api.orders.single, 'click');
+      expect(find.text(selectedExternally ? 'children 第 1 页' : 'audiobook 第 1 页'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('discover ignores delayed old channel and caches only current response', (tester) async {
     final api = _Api()..defer = true;

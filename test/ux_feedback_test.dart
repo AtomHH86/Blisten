@@ -31,7 +31,13 @@ class _Api implements BiliApi {
   final pages = <int>[];
 
   @override
-  Future<List<Book>> rankHotNovel({int limit = 30, void Function(Object error)? onPartialFailure,
+  Future<List<Book>> search(String keyword, {
+    ContentMode mode = ContentMode.audiobook,
+    int page = 1,
+    int pageSize = 20,
+    String? order,
+    Function(int total)? onFirstPage,
+    Function(int rawCount)? onRawCount,
     CancelToken? cancelToken,
   }) async {
     browseCalls++;
@@ -213,8 +219,8 @@ void main() {
         ),
       );
       await tester.enterText(find.byType(TextField), '保留这段分享文本');
-      await tester.ensureVisible(find.text('添加资源'));
-      await tester.tap(find.text('添加资源'));
+      await tester.ensureVisible(find.text('添加到收藏'));
+      await tester.tap(find.text('添加到收藏'));
       await tester.pumpAndSettle();
       expect(find.text('保留这段分享文本'), findsOneWidget);
       expect(

@@ -171,24 +171,29 @@ void main() {
     expect(find.text('部分内容加载失败，请重试'), findsNothing);
   });
 
-  testWidgets('real discovery facade keeps partial results and visibly retries', (tester) async {
-    var failed = true;
-    final client = _Client((_, query) {
-      if (query['page'] == 1) return _search([_book('BV1TEST000001', '有声小说 已收到')]);
-      return failed ? _offline() : _search([]);
-    });
+  testWidgets('real discovery refresh failure keeps results and visibly retries current query', (tester) async {
+    var failed = false;
+    final client = _Client((_, query) => failed
+        ? _offline() : _search([_book('BV1TEST000001', '有声小说 已收到')]));
     await tester.pumpWidget(_host(DiscoverPage(api: BiliApi(client: client))));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    expect(find.text('部分内容加载失败，可重试'), findsOneWidget);
+    expect(find.text('有声小说 已收到'), findsOneWidget);
+
+    failed = true;
+    await tester.tap(find.byTooltip('刷新'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(find.text('加载失败，请重试'), findsOneWidget);
     expect(find.text('有声小说 已收到'), findsOneWidget);
 
     failed = false;
     await tester.tap(find.text('重试'));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    expect(client.calls.map((c) => c.query['page']), [1, 2, 1, 2]);
-    expect(find.text('部分内容加载失败，可重试'), findsNothing);
+    expect(client.calls.map((c) => c.query['page']), [1, 1, 1]);
+    expect(client.calls.every((c) => c.query['keyword'] == '有声小说' && c.query['order'] == 'click'), isTrue);
+    expect(find.text('加载失败，请重试'), findsNothing);
     expect(find.text('有声小说 已收到'), findsOneWidget);
   });
 
