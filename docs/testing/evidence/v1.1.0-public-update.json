@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "release_url": "https://github.com/AtomHH86/Blisten/releases/tag/v1.1.0",
+  "source_commit": "e9f0a06f43d7e0df21e50ed14a9e7407b7874ab8",
+  "scope": "Actual production APKs on API35 x86_64 emulator",
+  "old_version": "1.0.0+1",
+  "new_version": "1.1.0+2",
+  "old_manual_found_real_public_release": true,
+  "new_manual_reported_latest": true,
+  "new_automatic_check_to_real_api_succeeded": true,
+  "future_auto_prompt": "Separately passed using explicitly labeled local HTTP fixture 9.0.0; no synthetic public release",
+  "initial_failure": "Anonymous GitHub API quota exhausted on test-network egress (HTTP403). Retried only after reset; no credentials or TLS bypass supplied to app.",
+  "new_latest_feedback_visually_verified": true,
+  "new_automatic_check_timestamp_ms": 1792842246630,
+  "new_manual_check_timestamp_ms": 1792842275559,
+  "installed_public_universal_sha256": "7052903bc5484decf653be474a9f6f094e5514393d67be6412fba15426484862",
+  "download_button_android_intent": "https://github.com/AtomHH86/Blisten/releases/download/v1.1.0/Blisten-v1.1.0-universal.apk",
+  "old_favorite_progress_and_dark_theme_preserved": true,
+  "android_installer_ui_tested": false,
+  "installation_method": "adb install -r of anonymously downloaded public artifact",
+  "evidence_sha256": {
+    "old-public-v110-confirmed.xml": "9a3b8e40fd556ec0a45307db557876ece8733684290eaa8719507a8713806273",
+    "old-public-v110-confirmed.png": "71dfa4d6a6c97dcd6e791e66cebc453ade6f00be98a20d5f1b39e0ff16c490d0",
+    "new-public-latest.png": "b5220b651b31c9e807c0d867be225c5506a4a0f7ff50c643a1706d5fb646e84f"
+  }
+}
