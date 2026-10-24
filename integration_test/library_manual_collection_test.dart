@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:blisten/widgets/mini_player.dart';
 
 import 'package:blisten/core/network/bili_client.dart';
 import 'package:blisten/core/storage/cache_store.dart';
@@ -87,6 +90,79 @@ void main() {
     }),
   );
 
+  testWidgets(
+    'native stop and matching clear restore local preview without resurrecting book',
+    (tester) async {
+      final previous = await BiliApi.instance.detail(
+        LocalBiliFixture.music,
+        mode: ContentMode.music,
+      );
+      expect(await player.playBook(previous, resume: false), isTrue);
+      await _until(
+        tester,
+        () => player.currentPosition.inSeconds >= 2,
+        'previous genuinely heard',
+      );
+      final book = await BiliApi.instance.detail(LocalBiliFixture.audiobook);
+      expect(await player.playBook(book, resume: false), isTrue);
+      await _until(
+        tester,
+        () => player.currentPosition.inSeconds >= 2,
+        'current genuinely heard',
+      );
+      await player.stop();
+      expect(
+        player.book?.bvid,
+        book.bvid,
+        reason: 'stop retains metadata in actual BookPlayer',
+      );
+      expect(player.loaded, isFalse);
+      final checkpoint = shelf.recentBooks.first.positionText;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: shelf),
+            ChangeNotifierProvider<BookPlayer>.value(value: player),
+          ],
+          child: const MaterialApp(home: Scaffold(body: MiniPlayer())),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(checkpoint), findsOneWidget);
+      final requests = fixture.playUrlRequests.length;
+      final mediaRequests = fixture.mediaRequests.length;
+      await tester.tap(find.byType(MiniPlayer));
+      await tester.pumpAndSettle();
+      expect(find.text('上次收听'), findsOneWidget);
+      expect(player.loaded, isFalse);
+      expect(fixture.playUrlRequests.length, requests);
+      expect(fixture.mediaRequests.length, mediaRequests);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('播放'));
+      await _until(
+        tester,
+        () => player.loaded && player.isPlaying,
+        'explicit preview selection',
+      );
+      await player.clearListeningRecord(book.bvid);
+      await tester.pumpAndSettle();
+      expect(find.text(previous.cleanTitle), findsOneWidget);
+      expect(find.text(book.cleanTitle), findsNothing);
+      expect(player.loaded, isFalse);
+      final afterClearRequests = fixture.playUrlRequests.length;
+      await tester.tap(find.byType(MiniPlayer));
+      await tester.pumpAndSettle();
+      expect(find.text('上次收听'), findsOneWidget);
+      expect(find.text(previous.cleanTitle), findsOneWidget);
+      expect(fixture.playUrlRequests.length, afterClearRequests);
+      expect(
+        shelf.recentBooks.any((row) => row.book.bvid == book.bvid),
+        isFalse,
+      );
+    },
+  );
+
   for (final sample in [
     (LocalBiliFixture.audiobook, ContentMode.audiobook),
     (LocalBiliFixture.music, ContentMode.music),
@@ -166,7 +242,11 @@ void main() {
             shelf.isChapterDone(book.bvid, LocalBiliFixture.cid(book.bvid, 3)),
         'completion marker',
       );
-      await _until(tester, () => !player.isPlaying, 'native final part completes');
+      await _until(
+        tester,
+        () => !player.isPlaying,
+        'native final part completes',
+      );
       expect(shelf.recentBooks.single.book.bvid, book.bvid);
       expect(shelf.books, isEmpty);
       await player.clearListeningRecord(book.bvid);

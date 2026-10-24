@@ -16,12 +16,14 @@ class PreviewPlayer extends ChangeNotifier implements BookPlayer {
   bool playing = false;
   bool waiting = false;
   bool failed = false;
+  bool stopped = false;
+  bool pending = false;
   @override
   Book? get book => active;
   @override
-  bool get loaded => active != null;
+  bool get loaded => active != null && !stopped;
   @override
-  bool get loading => false;
+  bool get loading => pending;
   @override
   bool get buffering => waiting;
   @override
@@ -36,6 +38,21 @@ class PreviewPlayer extends ChangeNotifier implements BookPlayer {
   Future<bool> resumeShelf(ShelfBook row) async {
     selected = row;
     return true;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopped = true;
+    playing = false;
+    pending = false;
+    failed = false;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> clearListeningRecord(String bvid) async {
+    if (active?.bvid == bvid) await stop();
+    await ShelfStore.instance.clearListeningRecord(bvid);
   }
 
   @override
@@ -181,6 +198,60 @@ void main() {
               as AnimationController;
       expect(reducedTurns.isAnimating, isFalse);
       expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+    },
+  );
+  testWidgets(
+    'real stop semantics retain book but show checkpoint preview and explicit resume',
+    (tester) async {
+      final player = PreviewPlayer()..active = book;
+      await mount(tester, player);
+      await player.stop();
+      await tester.pumpAndSettle();
+      expect(player.book, isNotNull);
+      expect(find.textContaining('00:24'), findsOneWidget);
+      await tester.tap(find.text(book.title));
+      await tester.pumpAndSettle();
+      expect(find.text('上次收听'), findsOneWidget);
+      expect(player.selected, isNull);
+      await tester.tap(find.byTooltip('播放'));
+      await tester.pump();
+      expect(player.selected?.positionMs, 24000);
+      expect(player.toggles, 0);
+    },
+  );
+  testWidgets(
+    'clearing active history cannot resurrect retained stopped book',
+    (tester) async {
+      final player = PreviewPlayer()..active = book;
+      await mount(tester, player);
+      await player.clearListeningRecord(book.bvid);
+      await tester.pumpAndSettle();
+      expect(player.book, isNotNull);
+      expect(find.text('还没有收听内容'), findsOneWidget);
+      expect(find.text(book.title), findsNothing);
+      expect(find.byTooltip('播放'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'unloaded loading and failed targets remain valid current sessions',
+    (tester) async {
+      final player = PreviewPlayer()
+        ..active = Book(bvid: 'BVtarget', aid: 2, title: '正在选择的内容', pic: '')
+        ..stopped = true;
+      await mount(tester, player);
+      player.pending = true;
+      player.notifyListeners();
+      await tester.pump();
+      expect(find.text('正在选择的内容'), findsOneWidget);
+      expect(find.text(book.title), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      player.pending = false;
+      player.failed = true;
+      player.notifyListeners();
+      await tester.pump();
+      expect(find.text('正在选择的内容'), findsOneWidget);
+      expect(find.byTooltip('重试播放'), findsOneWidget);
     },
   );
 }

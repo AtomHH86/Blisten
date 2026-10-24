@@ -58,7 +58,9 @@ class _PlayerPageState extends State<PlayerPage> {
     final player = context.watch<BookPlayer>();
 
     final recent = context.watch<ShelfStore>().recentBooks;
-    final preview = player.book == null && widget.preview != null
+    final hasSession = player.book != null &&
+        (player.loaded || player.loading || player.error != null);
+    final preview = !hasSession && widget.preview != null
         ? recent.where((row) => row.book.bvid == widget.preview!.book.bvid).firstOrNull
         : null;
     if (preview != null) {

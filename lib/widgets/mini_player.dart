@@ -43,11 +43,13 @@ class _MiniPlayerState extends State<MiniPlayer>
   Widget build(BuildContext context) {
     final player = context.watch<BookPlayer>();
     final recent = context.watch<ShelfStore>().recentBooks;
-    final preview = player.book == null && recent.isNotEmpty
-        ? recent.first
-        : null;
-    final book = player.book ?? preview?.book;
-    final chapter = player.currentChapter;
+    // stop() retains book metadata, but no longer represents a playable session.
+    final hasSession =
+        player.book != null &&
+        (player.loaded || player.loading || player.error != null);
+    final preview = !hasSession && recent.isNotEmpty ? recent.first : null;
+    final book = hasSession ? player.book : preview?.book;
+    final chapter = hasSession ? player.currentChapter : null;
     final playing = player.loaded && player.isPlaying;
     _syncSpin(
       playing &&

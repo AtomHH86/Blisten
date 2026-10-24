@@ -269,6 +269,8 @@ void main() {
         await tester.tap(find.byType(MiniPlayer));
         await tester.pump(const Duration(milliseconds: 450));
         await capture(tester, '$tone-silent-preview-page');
+        expect(find.text('上次收听'), findsOneWidget);
+        expect(find.textContaining(shelf.recentBooks.first.positionText), findsOneWidget);
         expect(player.loaded, isFalse);
         expect(fixture.playUrlRequests.length, requests);
         expect(fixture.mediaRequests.length, mediaRequests);
