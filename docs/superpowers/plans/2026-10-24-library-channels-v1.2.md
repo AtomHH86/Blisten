@@ -81,7 +81,7 @@
 
 ### Task 5: 完整验收、发布与跨平台评估
 
-**Files:** version `pubspec.yaml`, README/CHANGELOG/design spec/current docs, integration fixtures if needed, `docs/testing/2026-10-24-v1.2-release.md`, `docs/planning/2026-10-24-cross-platform-feasibility.md`.
+**Files:** versions `pubspec.yaml` and `lib/core/app_meta.dart`, README/CHANGELOG/design spec/current docs, integration fixtures if needed, `docs/testing/2026-10-24-v1.2-release.md`, `docs/planning/2026-10-24-cross-platform-feasibility.md`.
 
 - [ ] Update version to1.2.0+3 and current behavior docs; old release evidence unchanged. Run `tool/test-android.sh`, `tool/test-android.sh online`, necessary script/native tests, diffcheck. Actual emulator screenshots for light/dark, narrow/large font and new flows. Fix failures with reproducer; no attaching phones.
 - [ ] Independent review all source changes against unified spec, including async playback/history races and navigation; fix then targeted re-review.
