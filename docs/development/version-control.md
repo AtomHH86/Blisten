@@ -4,15 +4,19 @@
 
 ## 当前保护状态
 
-Blisten 原本已有独立 Git 历史，本次在此基础上补齐主分支、固定检查点和可恢复的离线备份，未重新初始化仓库或改写历史。保留同级 abts 不动。本次不开始质量修复、不创建 GitHub 远程仓库、不发布 APK。
+Blisten 原本已有独立 Git 历史，本次在此基础上补齐主分支、固定检查点和可恢复的离线备份，未重新初始化仓库或改写历史。保留同级 abts 不动。随后已按 A/B/C/D 分批实施质量修复；不创建 GitHub 远程仓库、不发布 APK。实际验收见[质量修复记录](../testing/2026-10-24-quality-repairs.md)。
 
 | 名称 | 指向/用途 |
 | --- | --- |
 | `checkpoint/review-2026-10-24` | `c68d2d6`，全面审查与改进方案；尚不含后来的 UP 主一级搜索 |
 | `checkpoint/search-categories-2026-10-24` | `a16cf5b`，已验证的四分类搜索和 UP 主页模式选择 |
 | `baseline/pre-quality-fixes-2026-10-24` | 本次 Git 保护完成时的提交：源代码与 a16cf5b 相同，增加版本规则和本指南；正式修复前的推荐回退点 |
-| `main` | 汇总当前已验收的本地版本；此前落后的 3 个提交已快进合入 |
-| `codex/quality-phase-a` | 从修复前基线创建的工作分支，本次只准备，不写修复代码 |
+| `checkpoint/quality-phase-a-2026-10-24` | `8e9f549`，账号/备份、播放进度与意图、最低版本通知分支 |
+| `checkpoint/quality-phase-b-2026-10-24` | `61019a1`，网络预算、缓存清理、收藏规则和原生音频焦点 |
+| `checkpoint/quality-phase-c-2026-10-24` | `a34af3c`，共享定时、异步导航、CID选章与系统状态刷新 |
+| `checkpoint/quality-phase-d-2026-10-24` | 本轮质量交付检查点：打包门槛、可重复测试和验收/依赖记录；最终提交可用下方命令查询 |
+| `main` | 汇总当前已验收的本地版本；批次均采用快进合入 |
+| `codex/quality-phase-a` 至 `codex/quality-phase-d` | 保留各批次修复分支，不改写既有历史 |
 | `codex/bting-design-v1` | 保留原视觉与搜索开发分支，不删除 |
 
 标签是固定书签，不随后续提交自动移动；分支会随提交推进。标签不使用正式 v1.0.0 发布名，不改变 pubspec 或 APK 版本。后续不能强制覆盖修复前基线。
@@ -22,12 +26,12 @@ Blisten 原本已有独立 Git 历史，本次在此基础上补齐主分支、�
 ## 日常开发怎样保留退路
 
 1. 开始前执行 `git status --short --branch`，确认分支和待保存改动。
-2. 在 `codex/quality-phase-a` 修阶段 A；一次只处理一个可验收问题，保留失败复现，修复后运行必要回归。
+2. 从最新 `main` 新建描述清楚的 `codex/` 分支；一次只处理一个可验收问题，保留失败复现，修复后运行必要回归。
 3. 用具体文件路径暂存，检查 `git diff --cached --stat` 和 `git diff --cached`，确认不含无关文件、凭据或构建产物后提交。
 4. 每项修复提交说明问题、最终行为和验证。批次回归通过后，将对应分支以 `git merge --ff-only` 合入 `main`，再建一个新的带说明检查点，记录测试结果。
 5. 下一阶段从最新 `main` 创建新 `codex/` 分支；如果快进失败，先查分叉，不用强制覆盖解决。
 
-检查点命名示例：`checkpoint/quality-phase-a-2026-10-25`。它只是后续命名示例，当前没有创建，也不能因本指南存在就认定阶段 A 已完成。
+查询最新交付的完整提交号：`git rev-parse checkpoint/quality-phase-d-2026-10-24^{commit}`。查看所有检查点：`git tag -n --list 'checkpoint/*'`。验收结论以对应记录为准，标签不代表正式发布签名。
 
 `.gitignore` 排除构建/SDK缓存、APK/AAB、Git bundle、本地 .env、签名私钥等；不排除公开的本机 HTTPS 测试证书夹具。忽略规则只减少误操作，不能识别写进 Dart/文档中的秘密，因此仍需检查暂存差异。
 
@@ -83,11 +87,11 @@ git fsck --full --no-dangling
 
 克隆后 `origin` 会指向本地 bundle 文件，不是 GitHub；原仓库的本地用户配置等也不在 bundle 内，需按实际环境重新配置。恢复演练在临时目录完成，不把另一个副本作为新的日常开发项目；日常修改仍只在 Blisten 中进行。
 
-此备份在同一台电脑上，主要防误操作；重要里程碑可再复制到外置盘。后续新增提交不会自动写入旧 bundle，应另建日期明确的新备份并再次校验，不覆盖此初始备份。
+此备份在同一台电脑上，主要防误操作；重要里程碑可再复制到外置盘。后续新增提交不会自动写入旧 bundle。本轮另建 `Blisten-backups/2026-10-24-quality-repairs/`，保留修复后全部分支/标签；内含 `Blisten-quality-repairs-2026-10-24.bundle`、`SHA256SUMS` 与 `verification.json`。同样经过 bundle verify、临时 clone、检查点检出和文件哈希/完整性核对，不覆盖初始备份。
 
 ## 保护的范围
 
 - 包含：已提交源码、测试、设计资产、文档和 Git 提交历史。
 - 不包含：未提交/被忽略文件、SDK、Flutter、依赖缓存、原始运行日志、签名私钥、真实账号信息、手机/模拟器里的收藏和播放数据。
 - 回退源码不等于回退已安装 APK 或应用数据。后续若改数据格式，必须保持向后兼容或另设数据迁移与备份方案。
-- 本次只改 Git 元数据、忽略规则与文档，没有改应用行为；验收使用真实备份恢复检查，不重复运行 Android 功能测试。当前质量问题仍以[审查报告](../reviews/2026-10-24/README.md)和[改进方案](../superpowers/plans/2026-10-24-quality-improvement.md)为准。
+- 原[审查报告](../reviews/2026-10-24/README.md)和[改进方案](../superpowers/plans/2026-10-24-quality-improvement.md)作为历史依据保留。已修复行为、测试结果和仍待实机/签名/原生依赖升级的项目以[质量修复记录](../testing/2026-10-24-quality-repairs.md)为准，不将历史问题逐条改写成“从未发生”。

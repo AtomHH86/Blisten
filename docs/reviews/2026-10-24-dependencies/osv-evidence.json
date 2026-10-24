@@ -1,0 +1,2653 @@
+{
+  "checked_at_utc": "2026-10-24T05:17:07.925435+00:00",
+  "endpoint": "https://api.osv.dev/v1/querybatch",
+  "queries": [
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "archive"
+      },
+      "version": "4.3.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "args"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "async"
+      },
+      "version": "2.13.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "audio_service"
+      },
+      "version": "0.18.19"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "audio_service_platform_interface"
+      },
+      "version": "0.1.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "audio_service_web"
+      },
+      "version": "0.1.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "audio_session"
+      },
+      "version": "0.2.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "boolean_selector"
+      },
+      "version": "2.1.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "cached_network_image"
+      },
+      "version": "3.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "cached_network_image_platform_interface"
+      },
+      "version": "4.1.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "cached_network_image_web"
+      },
+      "version": "1.3.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "characters"
+      },
+      "version": "1.4.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "clock"
+      },
+      "version": "1.1.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "code_assets"
+      },
+      "version": "1.2.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "collection"
+      },
+      "version": "1.19.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "cross_file"
+      },
+      "version": "0.3.5+5"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "crypto"
+      },
+      "version": "3.0.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "cupertino_icons"
+      },
+      "version": "1.0.9"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "dio"
+      },
+      "version": "5.11.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "dio_web_adapter"
+      },
+      "version": "2.2.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "fake_async"
+      },
+      "version": "1.3.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "ffi"
+      },
+      "version": "2.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "file"
+      },
+      "version": "7.0.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "fixnum"
+      },
+      "version": "1.1.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "flutter_cache_manager"
+      },
+      "version": "3.4.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "flutter_lints"
+      },
+      "version": "6.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "hooks"
+      },
+      "version": "2.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "http"
+      },
+      "version": "1.6.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "http_parser"
+      },
+      "version": "4.1.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "image"
+      },
+      "version": "4.10.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "jni"
+      },
+      "version": "1.0.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "jni_flutter"
+      },
+      "version": "1.0.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "jni_util"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "js"
+      },
+      "version": "0.7.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "leak_tracker"
+      },
+      "version": "11.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "leak_tracker_flutter_testing"
+      },
+      "version": "3.0.10"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "leak_tracker_testing"
+      },
+      "version": "3.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "lints"
+      },
+      "version": "6.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "logging"
+      },
+      "version": "1.3.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "matcher"
+      },
+      "version": "0.12.17"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "material_color_utilities"
+      },
+      "version": "0.11.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit"
+      },
+      "version": "1.2.6"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit_libs_android_audio"
+      },
+      "version": "1.3.8"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit_libs_audio"
+      },
+      "version": "1.0.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit_libs_ios_audio"
+      },
+      "version": "1.1.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit_libs_linux"
+      },
+      "version": "1.2.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit_libs_macos_audio"
+      },
+      "version": "1.1.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "media_kit_libs_windows_audio"
+      },
+      "version": "1.0.9"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "meta"
+      },
+      "version": "1.17.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "mime"
+      },
+      "version": "2.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "nested"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "objective_c"
+      },
+      "version": "9.5.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "octo_image"
+      },
+      "version": "2.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "package_config"
+      },
+      "version": "2.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path"
+      },
+      "version": "1.9.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path_provider"
+      },
+      "version": "2.1.6"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path_provider_android"
+      },
+      "version": "2.3.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path_provider_foundation"
+      },
+      "version": "2.6.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path_provider_linux"
+      },
+      "version": "2.2.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path_provider_platform_interface"
+      },
+      "version": "2.1.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "path_provider_windows"
+      },
+      "version": "2.3.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "permission_handler"
+      },
+      "version": "11.3.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "permission_handler_android"
+      },
+      "version": "12.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "permission_handler_apple"
+      },
+      "version": "9.6.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "permission_handler_html"
+      },
+      "version": "0.1.4+1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "permission_handler_platform_interface"
+      },
+      "version": "4.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "permission_handler_windows"
+      },
+      "version": "0.2.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "platform"
+      },
+      "version": "3.1.6"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "plugin_platform_interface"
+      },
+      "version": "2.1.8"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "posix"
+      },
+      "version": "6.5.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "process"
+      },
+      "version": "5.0.6"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "provider"
+      },
+      "version": "6.1.5+1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "pub_semver"
+      },
+      "version": "2.2.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "qr"
+      },
+      "version": "3.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "qr_flutter"
+      },
+      "version": "4.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "record_use"
+      },
+      "version": "0.6.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "rxdart"
+      },
+      "version": "0.28.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "safe_local_storage"
+      },
+      "version": "2.0.6"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "share_plus"
+      },
+      "version": "12.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "share_plus_platform_interface"
+      },
+      "version": "6.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences"
+      },
+      "version": "2.5.5"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences_android"
+      },
+      "version": "2.4.23"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences_foundation"
+      },
+      "version": "2.5.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences_linux"
+      },
+      "version": "2.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences_platform_interface"
+      },
+      "version": "2.4.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences_web"
+      },
+      "version": "2.4.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "shared_preferences_windows"
+      },
+      "version": "2.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "source_span"
+      },
+      "version": "1.10.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "sqflite"
+      },
+      "version": "2.4.2+1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "sqflite_android"
+      },
+      "version": "2.4.2+3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "sqflite_common"
+      },
+      "version": "2.5.8"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "sqflite_darwin"
+      },
+      "version": "2.4.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "sqflite_platform_interface"
+      },
+      "version": "2.4.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "stack_trace"
+      },
+      "version": "1.12.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "stream_channel"
+      },
+      "version": "2.1.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "string_scanner"
+      },
+      "version": "1.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "sync_http"
+      },
+      "version": "0.3.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "synchronized"
+      },
+      "version": "3.4.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "term_glyph"
+      },
+      "version": "1.2.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "test_api"
+      },
+      "version": "0.7.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "typed_data"
+      },
+      "version": "1.4.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "universal_platform"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "uri_parser"
+      },
+      "version": "3.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "url_launcher_linux"
+      },
+      "version": "3.2.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "url_launcher_platform_interface"
+      },
+      "version": "2.3.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "url_launcher_web"
+      },
+      "version": "2.4.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "url_launcher_windows"
+      },
+      "version": "3.1.6"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "uuid"
+      },
+      "version": "4.6.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "vector_math"
+      },
+      "version": "2.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "vm_service"
+      },
+      "version": "15.3.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "web"
+      },
+      "version": "1.1.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "webdriver"
+      },
+      "version": "3.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "win32"
+      },
+      "version": "5.15.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "xdg_directories"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Pub",
+        "name": "yaml"
+      },
+      "version": "3.1.4"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "io.flutter:flutter_embedding_debug"
+      },
+      "version": "1.0.0-cafcda5721a78a7884db92f13c5e89f7643d52dd"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.fragment:fragment"
+      },
+      "version": "1.7.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.activity:activity"
+      },
+      "version": "1.8.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.loader:loader"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-livedata-core-ktx"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-livedata"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-viewmodel"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-livedata-core"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-viewmodel-savedstate"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.core:core-ktx"
+      },
+      "version": "1.16.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.viewpager:viewpager"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.customview:customview"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.core:core"
+      },
+      "version": "1.16.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-runtime"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-process"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-common-java8"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-common"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.window:window"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.window:window-java"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.annotation:annotation-experimental"
+      },
+      "version": "1.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.savedstate:savedstate"
+      },
+      "version": "1.2.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.test:rules"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.test.espresso:espresso-core"
+      },
+      "version": "3.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.test:runner"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.test:monitor"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.arch.core:core-runtime"
+      },
+      "version": "2.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.arch.core:core-common"
+      },
+      "version": "2.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.versionedparcelable:versionedparcelable"
+      },
+      "version": "1.1.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.collection:collection-jvm"
+      },
+      "version": "1.4.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.annotation:annotation-jvm"
+      },
+      "version": "1.9.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.core:core-viewtree"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlinx:kotlinx-coroutines-android"
+      },
+      "version": "1.7.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm"
+      },
+      "version": "1.7.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+      },
+      "version": "1.8.20"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlin:kotlin-stdlib-jdk7"
+      },
+      "version": "1.8.20"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlin:kotlin-stdlib"
+      },
+      "version": "2.2.20"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "io.flutter:x86_64_debug"
+      },
+      "version": "1.0.0-cafcda5721a78a7884db92f13c5e89f7643d52dd"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains:annotations"
+      },
+      "version": "23.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.startup:startup-runtime"
+      },
+      "version": "1.1.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.tracing:tracing"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jspecify:jspecify"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.getkeepsafe.relinker:relinker"
+      },
+      "version": "1.4.5"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "junit:junit"
+      },
+      "version": "4.12"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.hamcrest:hamcrest-integration"
+      },
+      "version": "1.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.hamcrest:hamcrest-library"
+      },
+      "version": "1.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.hamcrest:hamcrest-core"
+      },
+      "version": "1.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "net.sf.kxml:kxml2"
+      },
+      "version": "2.3.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.test.espresso:espresso-idling-resource"
+      },
+      "version": "3.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.squareup:javawriter"
+      },
+      "version": "2.1.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "javax.inject:javax.inject"
+      },
+      "version": "1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.google.code.findbugs:jsr305"
+      },
+      "version": "3.0.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.preference:preference"
+      },
+      "version": "1.2.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.appcompat:appcompat"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.fragment:fragment-ktx"
+      },
+      "version": "1.7.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.media:media"
+      },
+      "version": "1.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.recyclerview:recyclerview"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.legacy:legacy-support-core-ui"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.slidingpanelayout:slidingpanelayout"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.activity:activity-ktx"
+      },
+      "version": "1.8.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.legacy:legacy-support-core-utils"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.appcompat:appcompat-resources"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.drawerlayout:drawerlayout"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.coordinatorlayout:coordinatorlayout"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.transition:transition"
+      },
+      "version": "1.4.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.vectordrawable:vectordrawable-animated"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.vectordrawable:vectordrawable"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.swiperefreshlayout:swiperefreshlayout"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.asynclayoutinflater:asynclayoutinflater"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-runtime-ktx"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.lifecycle:lifecycle-viewmodel-ktx"
+      },
+      "version": "2.7.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.savedstate:savedstate-ktx"
+      },
+      "version": "1.2.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.profileinstaller:profileinstaller"
+      },
+      "version": "1.3.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-preferences-external-protobuf"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-preferences-proto"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-preferences-core-android"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-core-okio-jvm"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-core-android"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-preferences-android"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.datastore:datastore-android"
+      },
+      "version": "1.1.7"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.interpolator:interpolator"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.cursoradapter:cursoradapter"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.concurrent:concurrent-futures"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.window.extensions.core:core"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.collection:collection-ktx"
+      },
+      "version": "1.4.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.documentfile:documentfile"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.localbroadcastmanager:localbroadcastmanager"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "androidx.print:print"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlin:kotlin-parcelize-runtime"
+      },
+      "version": "1.9.22"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.jetbrains.kotlin:kotlin-android-extensions-runtime"
+      },
+      "version": "1.9.22"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.squareup.okio:okio-jvm"
+      },
+      "version": "3.4.0"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.google.guava:guava"
+      },
+      "version": "28.1-android"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.google.guava:failureaccess"
+      },
+      "version": "1.0.1"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.google.guava:listenablefuture"
+      },
+      "version": "9999.0-empty-to-avoid-conflict-with-guava"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.checkerframework:checker-compat-qual"
+      },
+      "version": "2.5.5"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.google.errorprone:error_prone_annotations"
+      },
+      "version": "2.3.2"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "com.google.j2objc:j2objc-annotations"
+      },
+      "version": "1.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Maven",
+        "name": "org.codehaus.mojo:animal-sniffer-annotations"
+      },
+      "version": "1.18"
+    }
+  ],
+  "warning": "No OSV match is not proof of no vulnerabilities. Native bundled subcomponents and SDK commits are not covered by Pub wrapper names.",
+  "results": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {
+      "vulns": [
+        {
+          "id": "GHSA-269g-pwp5-87pp",
+          "modified": "2026-09-10T03:48:59.628680Z"
+        }
+      ]
+    },
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {
+      "vulns": [
+        {
+          "id": "GHSA-5mg8-w23w-74h3",
+          "modified": "2026-09-10T03:49:26.651391Z"
+        },
+        {
+          "id": "GHSA-7g45-4rm6-3mm3",
+          "modified": "2026-09-10T03:49:53.859811Z"
+        }
+      ]
+    },
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+  ],
+  "pagination_incomplete": false,
+  "advisories": {
+    "GHSA-269g-pwp5-87pp": {
+      "id": "GHSA-269g-pwp5-87pp",
+      "summary": "TemporaryFolder on unix-like systems does not limit access to created files",
+      "details": "### Vulnerability\n\nThe JUnit4 test rule [TemporaryFolder](https://junit.org/junit4/javadoc/4.13/org/junit/rules/TemporaryFolder.html) contains a local information disclosure vulnerability.\n\nExample of vulnerable code:\n```java\npublic static class HasTempFolder {\n    @Rule\n    public TemporaryFolder folder = new TemporaryFolder();\n\n    @Test\n    public void testUsingTempFolder() throws IOException {\n        folder.getRoot(); // Previous file permissions: `drwxr-xr-x`; After fix:`drwx------`\n        File createdFile= folder.newFile(\"myfile.txt\"); // unchanged/irrelevant file permissions\n        File createdFolder= folder.newFolder(\"subfolder\"); // unchanged/irrelevant file permissions\n        // ...\n    }\n}\n```\n\n### Impact\n\nOn Unix like systems, the system's temporary directory is shared between all users on that system. Because of this, when files and directories are written into this directory they are, by default, readable by other users on that same system.\n\nThis vulnerability **does not** allow other users to overwrite the contents of these directories or files. This is purely an information disclosure vulnerability.\n\nWhen analyzing the impact of this vulnerability, here are the important questions to ask:\n\n1. Do the JUnit tests write sensitive information, like API keys or passwords, into the temporary folder?\n    - If yes, this vulnerability impacts you, but only if you also answer 'yes' to question 2.\n    - If no, this vulnerability does not impact you.\n2. Do the JUnit tests ever execute in an environment where the OS has other untrusted users. \n    _This may apply in CI/CD environments but normally won't be 'yes' for personal developer machines._\n    - If yes, and you answered 'yes' to question 1, this vulnerability impacts you.\n    - If no, this vulnerability does not impact you.\n\n### Patches\n\nBecause certain JDK file system APIs were only added in JDK 1.7, this this fix is dependent upon the version of the JDK you are using.\n - Java 1.7 and higher users: this vulnerability is fixed in 4.13.1.\n - Java 1.6 and lower users: **no patch is available, you must use the workaround below.**\n\n### Workarounds\n\nIf you are unable to patch, or are stuck running on Java 1.6, specifying the `java.io.tmpdir` system environment variable to a directory that is exclusively owned by the executing user will fix this vulnerability.\n\n### References\n- [CWE-200: Exposure of Sensitive Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/200.html)\n- Fix commit https://github.com/junit-team/junit4/commit/610155b8c22138329f0723eec22521627dbc52ae\n\n#### Similar Vulnerabilities\n - Google Guava - https://github.com/google/guava/issues/4011\n - Apache Ant - https://nvd.nist.gov/vuln/detail/CVE-2020-1945\n - JetBrains Kotlin Compiler - https://nvd.nist.gov/vuln/detail/CVE-2020-15824\n\n### For more information\nIf you have any questions or comments about this advisory, please pen an issue in [junit-team/junit4](https://github.com/junit-team/junit4/issues).",
+      "aliases": [
+        "CVE-2020-15250"
+      ],
+      "modified": "2026-09-10T03:48:59.628680062Z",
+      "published": "2020-10-12T17:33:00Z",
+      "database_specific": {
+        "github_reviewed_at": "2020-10-12T17:32:34Z",
+        "nvd_published_at": "2020-10-12T18:15:00Z",
+        "cwe_ids": [
+          "CWE-200",
+          "CWE-732"
+        ],
+        "severity": "MODERATE",
+        "github_reviewed": true
+      },
+      "references": [
+        {
+          "type": "WEB",
+          "url": "https://github.com/junit-team/junit4/security/advisories/GHSA-269g-pwp5-87pp"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-15250"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/junit-team/junit4/issues/1676"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/junit-team/junit4/commit/610155b8c22138329f0723eec22521627dbc52ae"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/ra1bdb9efae84794e8ffa2f8474be8290ba57830eefe9714b95da714b@%3Cdev.pdfbox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/raebf13f53cd5d23d990712e3d11c80da9a7bae94a6284050f148ed99@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb2771949c676ca984e58a5cd5ca79c2634dee1945e0406e48e0f8457@%3Cdev.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb2ffe2993f4dccc48d832e1a0f1c419477781b6ea16e725ca2276dbb@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb33212dab7beccaf1ffef9b88610047c644f644c7a0ebdc44d77e381@%3Ccommits.turbine.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rbaec90e699bc7c7bd9a053f76707a36fda48b6d558f31dc79147dbf9@%3Cdev.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rc49cf1547ef6cac1be4b3c92339b2cae0acacf5acaba13cfa429a872@%3Cdev.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rdbdd30510a7c4d0908fd22075c02b75bbc2e0d977ec22249ef3133cb@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rde385b8b53ed046600ef68dd6b4528dea7566aaddb02c3e702cc28bc@%3Ccommits.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rde8e70b95c992378e8570e4df400c6008a9839eabdfb8f800a3e5af6@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rdef7d1380c86e7c0edf8a0f89a2a8db86fce5e363457d56b722691b4@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rea812d8612fdc46842a2a57248cad4b01ddfdb1e9b037c49e68fdbfb@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/reb700e60b9642eafa4b7922bfee80796394135aa09c7a239ef9f7486@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf2ec93f4ca9a97d1958eb4a31b1830f723419ce9bf2018a6e5741d5b@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf6e5d894d4b03bef537c9d6641272e0197c047c0d1982b4e176d0353@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf797d119cc3f51a8d7c3c5cbe50cb4524c8487282b986edde83a9467@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.debian.org/debian-lts-announce/2020/11/msg00003.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.oracle.com/security-alerts/cpuapr2022.html"
+        },
+        {
+          "type": "PACKAGE",
+          "url": "https://github.com/junit-team/junit4"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/junit-team/junit4/blob/7852b90cfe1cea1e0cdaa19d490c83f0d8684b50/doc/ReleaseNotes4.13.1.md"
+        },
+        {
+          "type": "WEB",
+          "url": "https://junit.org/junit4/javadoc/4.13/org/junit/rules/TemporaryFolder.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r01110833b63616ddbef59ae4e10c0fbd0060f0a51206defd4cb4d917@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r09cfbb5aedd76023691bbce9ca4ce2e16bb07dd37554a17efc19935d@%3Cpluto-dev.portals.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r1209986f79359b518d09513ff05a88e5b3c398540e775edea76a4774@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r29d703d1986d9b871466ff24082a1828ac8ad27bb0965a93a383872e@%3Cpluto-scm.portals.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r2b78f23bc2711a76a7fc73ad67b7fcd6817c5cfccefd6f30a4f54943@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r30f502d2f79e8d635361adb8108dcbb73095163fcbd776ee7984a094@%3Ccommits.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r500517c23200fb2fdb0b82770a62dd6c88b3521cfb01cfd0c76e3f8b@%3Cdev.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r5f8841507576f595bb783ccec6a7cb285ea90d4e6f5043eae0e61a41@%3Cdev.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r687f489b10b0d14e46f626aa88476545e1a2600b24c4ebd3c0d2a10b@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r717877028482c55acf604d7a0106af4ca05da4208c708fb157b53672@%3Ccommits.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r742b44fd75215fc75963b8ecc22b2e4372e68d67d3d859d2b5e8743f@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r8b02dc6f18df11ff39eedb3038f1e31e6f90a779b1959bae65107279@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r925eaae7dd8f77dd61eefc49c1fcf54bd9ecfe605486870d7b1e9390@%3Cpluto-dev.portals.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r934208a520b38f5cf0cae199b6b076bfe7d081809528b0eff2459e40@%3Cdev.knox.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r95f8ef60c4b3a5284b647bb3132cda08e6fadad888a66b84f49da0b0@%3Ccommits.creadur.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r9710067c7096b83cb6ae8f53a2f6f94e9c042d1bf1d6929f8f2a2b7a@%3Ccommits.knox.apache.org%3E"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "junit:junit",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/junit/junit"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "4.7"
+                },
+                {
+                  "fixed": "4.13.1"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "4.10",
+            "4.11",
+            "4.11-beta-1",
+            "4.12",
+            "4.12-beta-1",
+            "4.12-beta-2",
+            "4.12-beta-3",
+            "4.13",
+            "4.13-beta-1",
+            "4.13-beta-2",
+            "4.13-beta-3",
+            "4.13-rc-1",
+            "4.13-rc-2",
+            "4.7",
+            "4.8",
+            "4.8.1",
+            "4.8.2",
+            "4.9"
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2020/10/GHSA-269g-pwp5-87pp/GHSA-269g-pwp5-87pp.json"
+          }
+        }
+      ],
+      "schema_version": "1.9.0",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:H/I:N/A:N"
+        }
+      ]
+    },
+    "GHSA-5mg8-w23w-74h3": {
+      "id": "GHSA-5mg8-w23w-74h3",
+      "summary": "Information Disclosure in Guava",
+      "details": "A temp directory creation vulnerability exists in Guava prior to version 32.0.0 allowing an attacker with access to the machine to potentially access data in a temporary directory created by the Guava `com.google.common.io.Files.createTempDir()`. The permissions granted to the directory created default to the standard unix-like /tmp ones, leaving the files open. Maintainers recommend explicitly changing the permissions after the creation of the directory, or removing uses of the vulnerable method.",
+      "aliases": [
+        "CVE-2020-8908",
+        "SNYK-JAVA-COMGOOGLEGUAVA-1015415"
+      ],
+      "modified": "2026-09-10T03:49:26.651391253Z",
+      "published": "2021-03-25T17:04:19Z",
+      "database_specific": {
+        "nvd_published_at": "2020-12-10T23:15:00Z",
+        "cwe_ids": [
+          "CWE-173",
+          "CWE-200",
+          "CWE-378",
+          "CWE-732"
+        ],
+        "severity": "LOW",
+        "github_reviewed": true,
+        "github_reviewed_at": "2021-03-25T17:01:09Z"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-8908"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/issues/4011"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/issues/4011#issuecomment-1578991974"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/commit/feb83a1c8fd2e7670b244d5afd23cba5aca43284"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/commit/fec0dbc4634006a6162cfd4d0d09c962073ddf40"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd5d58088812cf8e677d99b07f73c654014c524c94e7fedbdee047604@%3Ctorque-dev.db.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd5d58088812cf8e677d99b07f73c654014c524c94e7fedbdee047604%40%3Ctorque-dev.db.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd2704306ec729ccac726e50339b8a8f079515cc29ccb77713b16e7c5@%3Cissues.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd2704306ec729ccac726e50339b8a8f079515cc29ccb77713b16e7c5%40%3Cissues.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd01f5ff0164c468ec7abc96ff7646cea3cce6378da2e4aa29c6bcb95@%3Cgithub.arrow.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd01f5ff0164c468ec7abc96ff7646cea3cce6378da2e4aa29c6bcb95%40%3Cgithub.arrow.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rcafc3a637d82bdc9a24036b2ddcad1e519dd0e6f848fcc3d606fd78f@%3Cdev.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rcafc3a637d82bdc9a24036b2ddcad1e519dd0e6f848fcc3d606fd78f%40%3Cdev.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rc607bc52f3507b8b9c28c6a747c3122f51ac24afe80af2a670785b97@%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rc607bc52f3507b8b9c28c6a747c3122f51ac24afe80af2a670785b97%40%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rc2dbc4633a6eea1fcbce6831876cfa17b73759a98c65326d1896cb1a@%3Ctorque-dev.db.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rc2dbc4633a6eea1fcbce6831876cfa17b73759a98c65326d1896cb1a%40%3Ctorque-dev.db.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rbc7642b9800249553f13457e46b813bea1aec99d2bc9106510e00ff3@%3Ctorque-dev.db.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rbc7642b9800249553f13457e46b813bea1aec99d2bc9106510e00ff3%40%3Ctorque-dev.db.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb8c0f1b7589864396690fe42a91a71dea9412e86eec66dc85bbacaaf@%3Ccommits.cxf.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb8c0f1b7589864396690fe42a91a71dea9412e86eec66dc85bbacaaf%40%3Ccommits.cxf.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb2364f4cf4d274eab5a7ecfaf64bf575cedf8b0173551997c749d322@%3Cgitbox.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rb2364f4cf4d274eab5a7ecfaf64bf575cedf8b0173551997c749d322%40%3Cgitbox.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/ra7ab308481ee729f998691e8e3e02e93b1dedfc98f6b1cd3d86923b3@%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.oracle.com/security-alerts/cpuoct2021.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.oracle.com/security-alerts/cpujan2022.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.oracle.com/security-alerts/cpuapr2022.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.oracle.com/security-alerts/cpuApr2021.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.oracle.com//security-alerts/cpujul2021.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-1015415"
+        },
+        {
+          "type": "WEB",
+          "url": "https://security.netapp.com/advisory/ntap-20220210-0003"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rfc27e2727a20a574f39273e0432aa97486a332f9b3068f6ac1346594@%3Cdev.myfaces.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rfc27e2727a20a574f39273e0432aa97486a332f9b3068f6ac1346594%40%3Cdev.myfaces.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf9f0fa84b8ae1a285f0210bafec6de2a9eba083007d04640b82aa625@%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf9f0fa84b8ae1a285f0210bafec6de2a9eba083007d04640b82aa625%40%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf00b688ffa620c990597f829ff85fdbba8bf73ee7bfb34783e1f0d4e@%3Cyarn-dev.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rf00b688ffa620c990597f829ff85fdbba8bf73ee7bfb34783e1f0d4e%40%3Cyarn-dev.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/reebbd63c25bc1a946caa419cec2be78079f8449d1af48e52d47c9e85@%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/reebbd63c25bc1a946caa419cec2be78079f8449d1af48e52d47c9e85%40%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/re120f6b3d2f8222121080342c5801fdafca2f5188ceeb3b49c8a1d27@%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/re120f6b3d2f8222121080342c5801fdafca2f5188ceeb3b49c8a1d27%40%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd7e12d56d49d73e2b8549694974b07561b79b05455f7f781954231bf@%3Cdev.pig.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/rd7e12d56d49d73e2b8549694974b07561b79b05455f7f781954231bf%40%3Cdev.pig.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/ra7ab308481ee729f998691e8e3e02e93b1dedfc98f6b1cd3d86923b3%40%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r4776f62dfae4a0006658542f43034a7fc199350e35a66d4e18164ee6%40%3Ccommits.cxf.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r3dd8881de891598d622227e9840dd7c2ef1d08abbb49e9690c7ae1bc@%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r3dd8881de891598d622227e9840dd7c2ef1d08abbb49e9690c7ae1bc%40%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r3c3b33ee5bef0c67391d27a97cbfd89d44f328cf072b601b58d4e748@%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r3c3b33ee5bef0c67391d27a97cbfd89d44f328cf072b601b58d4e748%40%3Ccommits.pulsar.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r2fe45d96eea8434b91592ca08109118f6308d60f6d0e21d52438cfb4@%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r2fe45d96eea8434b91592ca08109118f6308d60f6d0e21d52438cfb4%40%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r294be9d31c0312d2c0837087204b5d4bf49d0552890e6eec716fa6a6@%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r294be9d31c0312d2c0837087204b5d4bf49d0552890e6eec716fa6a6%40%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r215b3d50f56faeb2f9383505f3e62faa9f549bb23e8a9848b78a968e@%3Ccommits.ws.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r215b3d50f56faeb2f9383505f3e62faa9f549bb23e8a9848b78a968e%40%3Ccommits.ws.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r161b87f8037bbaff400194a63cd2016c9a69f5949f06dcc79beeab54@%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r161b87f8037bbaff400194a63cd2016c9a69f5949f06dcc79beeab54%40%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r07ed3e4417ad043a27bee7bb33322e9bfc7d7e6d1719b8e3dfd95c14@%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r07ed3e4417ad043a27bee7bb33322e9bfc7d7e6d1719b8e3dfd95c14%40%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r037fed1d0ebde50c9caf8d99815db3093c344c3f651c5a49a09824ce@%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r007add131977f4f576c232b25e024249a3d16f66aad14a4b52819d21@%3Ccommon-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r007add131977f4f576c232b25e024249a3d16f66aad14a4b52819d21%40%3Ccommon-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "PACKAGE",
+          "url": "https://github.com/google/guava"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r841c5e14e1b55281523ebcde661ece00b38a0569e00ef5e12bd5f6ba@%3Cissues.maven.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r841c5e14e1b55281523ebcde661ece00b38a0569e00ef5e12bd5f6ba%40%3Cissues.maven.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r7b0e81d8367264d6cad98766a469d64d11248eb654417809bfdacf09@%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r7b0e81d8367264d6cad98766a469d64d11248eb654417809bfdacf09%40%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r79e47ed555bdb1180e528420a7a2bb898541367a29a3bc6bbf0baf2c@%3Cissues.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r79e47ed555bdb1180e528420a7a2bb898541367a29a3bc6bbf0baf2c%40%3Cissues.hive.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r68d86f4b06c808204f62bcb254fcb5b0432528ee8d37a07ef4bc8222@%3Ccommits.ws.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r68d86f4b06c808204f62bcb254fcb5b0432528ee8d37a07ef4bc8222%40%3Ccommits.ws.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r6874dfe26eefc41b7c9a5e4a0487846fc4accf8c78ff948b24a1104a@%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r6874dfe26eefc41b7c9a5e4a0487846fc4accf8c78ff948b24a1104a%40%3Cdev.drill.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r5d61b98ceb7bba939a651de5900dbd67be3817db6bfcc41c6e04e199@%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r5d61b98ceb7bba939a651de5900dbd67be3817db6bfcc41c6e04e199%40%3Cyarn-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r5b3d93dfdfb7708e796e8762ab40edbde8ff8add48aba53e5ea26f44@%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r5b3d93dfdfb7708e796e8762ab40edbde8ff8add48aba53e5ea26f44%40%3Cissues.geode.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r58a8775205ab1839dba43054b09a9ab3b25b423a4170b2413c4067ac@%3Ccommon-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r58a8775205ab1839dba43054b09a9ab3b25b423a4170b2413c4067ac%40%3Ccommon-issues.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r49549a8322f62cd3acfa4490d25bfba0be04f3f9ff4d14fe36199d27@%3Cyarn-dev.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r49549a8322f62cd3acfa4490d25bfba0be04f3f9ff4d14fe36199d27%40%3Cyarn-dev.hadoop.apache.org%3E"
+        },
+        {
+          "type": "WEB",
+          "url": "https://lists.apache.org/thread.html/r4776f62dfae4a0006658542f43034a7fc199350e35a66d4e18164ee6@%3Ccommits.cxf.apache.org%3E"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "com.google.guava:guava",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.guava/guava"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "32.0.0-android"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "10.0",
+            "10.0-rc1",
+            "10.0-rc2",
+            "10.0-rc3",
+            "10.0.1",
+            "11.0",
+            "11.0-rc1",
+            "11.0.1",
+            "11.0.2",
+            "12.0",
+            "12.0-rc1",
+            "12.0-rc2",
+            "12.0.1",
+            "13.0",
+            "13.0-rc1",
+            "13.0-rc2",
+            "13.0.1",
+            "14.0",
+            "14.0-rc1",
+            "14.0-rc2",
+            "14.0-rc3",
+            "14.0.1",
+            "15.0",
+            "15.0-rc1",
+            "16.0",
+            "16.0-rc1",
+            "16.0.1",
+            "17.0",
+            "17.0-rc1",
+            "17.0-rc2",
+            "18.0",
+            "18.0-rc1",
+            "18.0-rc2",
+            "19.0",
+            "19.0-rc1",
+            "19.0-rc2",
+            "19.0-rc3",
+            "20.0",
+            "20.0-rc1",
+            "21.0",
+            "21.0-rc1",
+            "21.0-rc2",
+            "22.0",
+            "22.0-android",
+            "22.0-rc1",
+            "22.0-rc1-android",
+            "23.0",
+            "23.0-android",
+            "23.0-rc1",
+            "23.0-rc1-android",
+            "23.1-android",
+            "23.1-jre",
+            "23.2-android",
+            "23.2-jre",
+            "23.3-android",
+            "23.3-jre",
+            "23.4-android",
+            "23.4-jre",
+            "23.5-android",
+            "23.5-jre",
+            "23.6-android",
+            "23.6-jre",
+            "23.6.1-android",
+            "23.6.1-jre",
+            "24.0-android",
+            "24.0-jre",
+            "24.1-android",
+            "24.1-jre",
+            "24.1.1-android",
+            "24.1.1-jre",
+            "25.0-android",
+            "25.0-jre",
+            "25.1-android",
+            "25.1-jre",
+            "26.0-android",
+            "26.0-jre",
+            "27.0-android",
+            "27.0-jre",
+            "27.0.1-android",
+            "27.0.1-jre",
+            "27.1-android",
+            "27.1-jre",
+            "28.0-android",
+            "28.0-jre",
+            "28.1-android",
+            "28.1-jre",
+            "28.2-android",
+            "28.2-jre",
+            "29.0-android",
+            "29.0-jre",
+            "30.0-android",
+            "30.0-jre",
+            "30.1-android",
+            "30.1-jre",
+            "30.1.1-android",
+            "30.1.1-jre",
+            "31.0-android",
+            "31.0-jre",
+            "31.0.1-android",
+            "31.0.1-jre",
+            "31.1-android",
+            "31.1-jre",
+            "r03",
+            "r05",
+            "r06",
+            "r07",
+            "r08",
+            "r09"
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2021/03/GHSA-5mg8-w23w-74h3/GHSA-5mg8-w23w-74h3.json"
+          }
+        }
+      ],
+      "schema_version": "1.9.0",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N"
+        }
+      ]
+    },
+    "GHSA-7g45-4rm6-3mm3": {
+      "id": "GHSA-7g45-4rm6-3mm3",
+      "summary": "Guava vulnerable to insecure use of temporary directory",
+      "details": "Use of Java's default temporary directory for file creation in `FileBackedOutputStream` in Google Guava versions 1.0 to 31.1 on Unix systems and Android Ice Cream Sandwich allows other users and apps on the machine with access to the default Java temporary directory to be able to access the files created by the class.\n\nEven though the security vulnerability is fixed in version 32.0.0, maintainers recommend using version 32.0.1 as version 32.0.0 breaks some functionality under Windows.",
+      "aliases": [
+        "CVE-2023-2976"
+      ],
+      "modified": "2026-09-10T03:49:53.859811124Z",
+      "published": "2023-06-14T18:30:38Z",
+      "database_specific": {
+        "severity": "MODERATE",
+        "github_reviewed": true,
+        "github_reviewed_at": "2023-06-14T21:01:07Z",
+        "nvd_published_at": "2023-06-14T18:15:09Z",
+        "cwe_ids": [
+          "CWE-379",
+          "CWE-552"
+        ]
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-2976"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/issues/2575"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/issues/6532"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/commit/feb83a1c8fd2e7670b244d5afd23cba5aca43284"
+        },
+        {
+          "type": "PACKAGE",
+          "url": "https://github.com/google/guava"
+        },
+        {
+          "type": "WEB",
+          "url": "https://github.com/google/guava/releases/tag/v32.0.0"
+        },
+        {
+          "type": "WEB",
+          "url": "https://security.netapp.com/advisory/ntap-20230818-0008"
+        },
+        {
+          "type": "WEB",
+          "url": "https://security.netapp.com/advisory/ntap-20241108-0002"
+        },
+        {
+          "type": "WEB",
+          "url": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-01006.html"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "com.google.guava:guava",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.guava/guava"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.0"
+                },
+                {
+                  "fixed": "32.0.0-android"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "10.0",
+            "10.0-rc1",
+            "10.0-rc2",
+            "10.0-rc3",
+            "10.0.1",
+            "11.0",
+            "11.0-rc1",
+            "11.0.1",
+            "11.0.2",
+            "12.0",
+            "12.0-rc1",
+            "12.0-rc2",
+            "12.0.1",
+            "13.0",
+            "13.0-rc1",
+            "13.0-rc2",
+            "13.0.1",
+            "14.0",
+            "14.0-rc1",
+            "14.0-rc2",
+            "14.0-rc3",
+            "14.0.1",
+            "15.0",
+            "15.0-rc1",
+            "16.0",
+            "16.0-rc1",
+            "16.0.1",
+            "17.0",
+            "17.0-rc1",
+            "17.0-rc2",
+            "18.0",
+            "18.0-rc1",
+            "18.0-rc2",
+            "19.0",
+            "19.0-rc1",
+            "19.0-rc2",
+            "19.0-rc3",
+            "20.0",
+            "20.0-rc1",
+            "21.0",
+            "21.0-rc1",
+            "21.0-rc2",
+            "22.0",
+            "22.0-android",
+            "22.0-rc1",
+            "22.0-rc1-android",
+            "23.0",
+            "23.0-android",
+            "23.0-rc1",
+            "23.0-rc1-android",
+            "23.1-android",
+            "23.1-jre",
+            "23.2-android",
+            "23.2-jre",
+            "23.3-android",
+            "23.3-jre",
+            "23.4-android",
+            "23.4-jre",
+            "23.5-android",
+            "23.5-jre",
+            "23.6-android",
+            "23.6-jre",
+            "23.6.1-android",
+            "23.6.1-jre",
+            "24.0-android",
+            "24.0-jre",
+            "24.1-android",
+            "24.1-jre",
+            "24.1.1-android",
+            "24.1.1-jre",
+            "25.0-android",
+            "25.0-jre",
+            "25.1-android",
+            "25.1-jre",
+            "26.0-android",
+            "26.0-jre",
+            "27.0-android",
+            "27.0-jre",
+            "27.0.1-android",
+            "27.0.1-jre",
+            "27.1-android",
+            "27.1-jre",
+            "28.0-android",
+            "28.0-jre",
+            "28.1-android",
+            "28.1-jre",
+            "28.2-android",
+            "28.2-jre",
+            "29.0-android",
+            "29.0-jre",
+            "30.0-android",
+            "30.0-jre",
+            "30.1-android",
+            "30.1-jre",
+            "30.1.1-android",
+            "30.1.1-jre",
+            "31.0-android",
+            "31.0-jre",
+            "31.0.1-android",
+            "31.0.1-jre",
+            "31.1-android",
+            "31.1-jre"
+          ],
+          "database_specific": {
+            "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2023/06/GHSA-7g45-4rm6-3mm3/GHSA-7g45-4rm6-3mm3.json"
+          }
+        }
+      ],
+      "schema_version": "1.9.0",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ]
+    }
+  }
+}

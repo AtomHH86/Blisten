@@ -1,0 +1,128 @@
+{
+  "refs": [
+    {
+      "ref": "refs/tags/v0.35.1",
+      "reference_url": "https://api.github.com/repos/mpv-player/mpv/git/refs/tags/v0.35.1",
+      "steps": [
+        {
+          "node_id": "TA_kwDOAF6fBNoAKDVhZTAyY2NhZDEwNTQyYTc0YjM5N2UzOTgwMGVjMDFkZWYwZGI0ZTE",
+          "sha": "5ae02ccad10542a74b397e39800ec01def0db4e1",
+          "url": "https://api.github.com/repos/mpv-player/mpv/git/tags/5ae02ccad10542a74b397e39800ec01def0db4e1",
+          "tagger": {
+            "name": "sfan5",
+            "email": "sfan5@live.de",
+            "date": "2023-01-28T16:49:55Z"
+          },
+          "object": {
+            "sha": "140ec21c89d671d392877a7f3b91d67e7d7b9239",
+            "type": "commit",
+            "url": "https://api.github.com/repos/mpv-player/mpv/git/commits/140ec21c89d671d392877a7f3b91d67e7d7b9239"
+          },
+          "tag": "v0.35.1",
+          "message": "Release 0.35.1\n-----BEGIN PGP SIGNATURE-----\n\niQJCBAABCAAsFiEEFFB32CUBqiAVLKzOjXaSCNXjFBkFAmPVUjMOHHNmYW41QGxp\ndmUuZGUACgkQjXaSCNXjFBlTFg//fvRtN6h2SJoTJRzUFITOZAnBn7QKjGeGdNCR\na6JvNAiEKwRilxGdN9enI7KO/A84iBpMMHwgfWLmPMz8IYLutT0f4Ir6QStriaHL\nnWgdDnatoWJ+stH26m6EHtmtWx15sXGVj+6GQnDwzhbJf4h0msxEE+Z5cbkL3Mcl\nrPdRVXLnmJ8Bv9ncmgqWrkv+1MU6sF/TJdrzhDze03vV4fyyyfxMRbC83ACDyjY9\nUemO8JJLPqnOoPYA3mkHIUuXfnPwM86NHc/jT443U6HGwVNeJFh4ZX+R73UnXFi+\nVtc7c2iqZEbFL3Ra17pU9GpKb4oFqo6OAc1vYsEI7JvLUPVj+81g5F1zgvflKmNp\n6ijFnXyiBbLZHrwiuBOC5bbYg0RNm+gYBmm3/lQstXo6gOCAxXlR45R2YI+PsDw2\nqmfwoFkw+kjR2VwoHdgh0EzgSIHuP2Xf2+CBhBxCjIUHDlatqt4vEOrwept51V45\nnp2BSqtwBEist2auUPoJPmUmD5KfXv4clw+gbhigcDyzV7jNVOhB5PqQ8FPYZQIJ\nh7070Hny+5bWN0hue/W2ylf5+gB5rPSFfj0r9RMme6wf1WbHF4CtEnhtnwaeuOrD\nvbFr0coU/YyWCOdnZRovt3qZyYMHDPk1a8nj0ICQQE4aZnbTfn4BNhVrnH+ecI+l\nhcnjWq0=\n=fxPL\n-----END PGP SIGNATURE-----\n",
+          "verification": {
+            "verified": true,
+            "reason": "valid",
+            "signature": "-----BEGIN PGP SIGNATURE-----\n\niQJCBAABCAAsFiEEFFB32CUBqiAVLKzOjXaSCNXjFBkFAmPVUjMOHHNmYW41QGxp\ndmUuZGUACgkQjXaSCNXjFBlTFg//fvRtN6h2SJoTJRzUFITOZAnBn7QKjGeGdNCR\na6JvNAiEKwRilxGdN9enI7KO/A84iBpMMHwgfWLmPMz8IYLutT0f4Ir6QStriaHL\nnWgdDnatoWJ+stH26m6EHtmtWx15sXGVj+6GQnDwzhbJf4h0msxEE+Z5cbkL3Mcl\nrPdRVXLnmJ8Bv9ncmgqWrkv+1MU6sF/TJdrzhDze03vV4fyyyfxMRbC83ACDyjY9\nUemO8JJLPqnOoPYA3mkHIUuXfnPwM86NHc/jT443U6HGwVNeJFh4ZX+R73UnXFi+\nVtc7c2iqZEbFL3Ra17pU9GpKb4oFqo6OAc1vYsEI7JvLUPVj+81g5F1zgvflKmNp\n6ijFnXyiBbLZHrwiuBOC5bbYg0RNm+gYBmm3/lQstXo6gOCAxXlR45R2YI+PsDw2\nqmfwoFkw+kjR2VwoHdgh0EzgSIHuP2Xf2+CBhBxCjIUHDlatqt4vEOrwept51V45\nnp2BSqtwBEist2auUPoJPmUmD5KfXv4clw+gbhigcDyzV7jNVOhB5PqQ8FPYZQIJ\nh7070Hny+5bWN0hue/W2ylf5+gB5rPSFfj0r9RMme6wf1WbHF4CtEnhtnwaeuOrD\nvbFr0coU/YyWCOdnZRovt3qZyYMHDPk1a8nj0ICQQE4aZnbTfn4BNhVrnH+ecI+l\nhcnjWq0=\n=fxPL\n-----END PGP SIGNATURE-----\n",
+            "payload": "object 140ec21c89d671d392877a7f3b91d67e7d7b9239\ntype commit\ntag v0.35.1\ntagger sfan5 <sfan5@live.de> 1674924595 +0100\n\nRelease 0.35.1\n",
+            "verified_at": "2024-11-04T21:35:22Z"
+          }
+        }
+      ],
+      "commit": "140ec21c89d671d392877a7f3b91d67e7d7b9239"
+    },
+    {
+      "ref": "refs/tags/n6.0",
+      "reference_url": "https://api.github.com/repos/FFmpeg/FFmpeg/git/refs/tags/n6.0",
+      "steps": [
+        {
+          "node_id": "TA_kwDOABiiStoAKDM5NDlkYjRkMjYxNzQ4YTlmMzQzNThhMzg4ZWUyNTVhZDFhN2YwYzA",
+          "sha": "3949db4d261748a9f34358a388ee255ad1a7f0c0",
+          "url": "https://api.github.com/repos/FFmpeg/FFmpeg/git/tags/3949db4d261748a9f34358a388ee255ad1a7f0c0",
+          "tagger": {
+            "name": "Michael Niedermayer",
+            "email": "michael@niedermayer.cc",
+            "date": "2023-02-27T20:32:19Z"
+          },
+          "object": {
+            "sha": "ea3d24bbe3c58b171e55fe2151fc7ffaca3ab3d2",
+            "type": "commit",
+            "url": "https://api.github.com/repos/FFmpeg/FFmpeg/git/commits/ea3d24bbe3c58b171e55fe2151fc7ffaca3ab3d2"
+          },
+          "tag": "n6.0",
+          "message": "FFmpeg 6.0 release\n-----BEGIN PGP SIGNATURE-----\n\niHUEABYIAB0WIQTdHsno3ghcYps+GEaxjokos5SNZAUCY/0TYAAKCRCxjokos5SN\nZIfhAQD4jduS2xsqdDhAes7MWG0Wo3le4CC/xTmbOYGkqzQOBQEA7R3CNk19P5eZ\nLlGWtjozIJUHEN/vXBwOf2U3gbQBZAI=\n=pusH\n-----END PGP SIGNATURE-----\n",
+          "verification": {
+            "verified": true,
+            "reason": "valid",
+            "signature": "-----BEGIN PGP SIGNATURE-----\n\niHUEABYIAB0WIQTdHsno3ghcYps+GEaxjokos5SNZAUCY/0TYAAKCRCxjokos5SN\nZIfhAQD4jduS2xsqdDhAes7MWG0Wo3le4CC/xTmbOYGkqzQOBQEA7R3CNk19P5eZ\nLlGWtjozIJUHEN/vXBwOf2U3gbQBZAI=\n=pusH\n-----END PGP SIGNATURE-----\n",
+            "payload": "object ea3d24bbe3c58b171e55fe2151fc7ffaca3ab3d2\ntype commit\ntag n6.0\ntagger Michael Niedermayer <michael@niedermayer.cc> 1677529939 +0100\n\nFFmpeg 6.0 release\n",
+            "verified_at": "2024-11-04T21:41:43Z"
+          }
+        }
+      ],
+      "commit": "ea3d24bbe3c58b171e55fe2151fc7ffaca3ab3d2"
+    },
+    {
+      "ref": "refs/tags/v3.6.1",
+      "reference_url": "https://api.github.com/repos/Mbed-TLS/mbedtls/git/refs/tags/v3.6.1",
+      "steps": [
+        {
+          "node_id": "TA_kwDOAGYMwNoAKGI3MjdhNjk4MmM4ZjRkOTdkYzhhOTc5ZDdhZjQxN2EwOGE1NTFlNWU",
+          "sha": "b727a6982c8f4d97dc8a979d7af417a08a551e5e",
+          "url": "https://api.github.com/repos/Mbed-TLS/mbedtls/git/tags/b727a6982c8f4d97dc8a979d7af417a08a551e5e",
+          "tagger": {
+            "name": "David Horstmann",
+            "email": "david.horstmann@arm.com",
+            "date": "2024-08-30T09:19:00Z"
+          },
+          "object": {
+            "sha": "71c569d44bf3a8bd53d874c81ee8ac644dd6e9e3",
+            "type": "commit",
+            "url": "https://api.github.com/repos/Mbed-TLS/mbedtls/git/commits/71c569d44bf3a8bd53d874c81ee8ac644dd6e9e3"
+          },
+          "tag": "v3.6.1",
+          "message": "Mbed TLS 3.6.1\n",
+          "verification": {
+            "verified": false,
+            "reason": "unsigned",
+            "signature": null,
+            "payload": null,
+            "verified_at": null
+          }
+        }
+      ],
+      "commit": "71c569d44bf3a8bd53d874c81ee8ac644dd6e9e3"
+    },
+    {
+      "ref": "refs/tags/v2.10.3",
+      "reference_url": "https://api.github.com/repos/GNOME/libxml2/git/refs/tags/v2.10.3",
+      "steps": [
+        {
+          "node_id": "TA_kwDOAEU7HtoAKDA5NmFlNDM4MjE2NDc4ZjY3NmRmN2VhN2E4NTMyZDU2NTEzMmQyMmQ",
+          "sha": "096ae438216478f676df7ea7a8532d565132d22d",
+          "url": "https://api.github.com/repos/GNOME/libxml2/git/tags/096ae438216478f676df7ea7a8532d565132d22d",
+          "tagger": {
+            "name": "Nick Wellnhofer",
+            "email": "wellnhofer@aevum.de",
+            "date": "2022-10-14T12:47:06Z"
+          },
+          "object": {
+            "sha": "f507d167f1755b7eaea09fb1a44d29aab828b6d1",
+            "type": "commit",
+            "url": "https://api.github.com/repos/GNOME/libxml2/git/commits/f507d167f1755b7eaea09fb1a44d29aab828b6d1"
+          },
+          "tag": "v2.10.3",
+          "message": "Release v2.10.3\n",
+          "verification": {
+            "verified": false,
+            "reason": "unsigned",
+            "signature": null,
+            "payload": null,
+            "verified_at": null
+          }
+        }
+      ],
+      "commit": "f507d167f1755b7eaea09fb1a44d29aab828b6d1"
+    }
+  ]
+}

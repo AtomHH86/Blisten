@@ -1,0 +1,16 @@
+{
+  "warning": "Source default macro declarations after stripping comments; no configured binary macro attestation. Upstream make recipe provides no source config overrides.",
+  "mbedtls_3_6_1_default_macros": {
+    "MBEDTLS_USE_PSA_CRYPTO": false,
+    "MBEDTLS_PSA_CRYPTO_C": true,
+    "MBEDTLS_LMS_C": true,
+    "MBEDTLS_PKCS7_C": true,
+    "MBEDTLS_PEM_PARSE_C": true,
+    "MBEDTLS_SSL_EARLY_DATA": false,
+    "MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED": false,
+    "MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED": true,
+    "MBEDTLS_SSL_PROTO_TLS1_3": true,
+    "MBEDTLS_ECP_C": true,
+    "MBEDTLS_AESNI_C": true
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "method": "No asset redownload: compare local bytes against locked Pub MD5 and GitHub release metadata SHA256/size, retrieved live. This establishes published asset byte identity, not reproducible source build.",
+  "assets": [
+    {
+      "jar": "build/media_kit_libs_android_audio/v1.1.8/default-arm64-v8a.jar",
+      "size": 2983585,
+      "sha256": "0481a64b5e246774da22573d7a4e67f9fb3d89a68630864d8819d3ff3a08bb09",
+      "md5": "6f4af754ae94da8cbb24655fd66c07ed",
+      "pub_pin_md5": "6f4af754ae94da8cbb24655fd66c07ed",
+      "pub_pin_match": true,
+      "github_asset_id": 278733630,
+      "github_asset_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-arm64-v8a.jar",
+      "github_digest": "sha256:0481a64b5e246774da22573d7a4e67f9fb3d89a68630864d8819d3ff3a08bb09",
+      "github_digest_match": true,
+      "github_size_match": true
+    },
+    {
+      "jar": "build/media_kit_libs_android_audio/v1.1.8/default-armeabi-v7a.jar",
+      "size": 2865617,
+      "sha256": "1bba852f5b7f0098c54ab8c3a945866d2b730b9e146b472a6ffaa80fc0dceae9",
+      "md5": "d8d1ba181d3d6ecb341e1e8d87506e17",
+      "pub_pin_md5": "d8d1ba181d3d6ecb341e1e8d87506e17",
+      "pub_pin_match": true,
+      "github_asset_id": 278733629,
+      "github_asset_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-armeabi-v7a.jar",
+      "github_digest": "sha256:1bba852f5b7f0098c54ab8c3a945866d2b730b9e146b472a6ffaa80fc0dceae9",
+      "github_digest_match": true,
+      "github_size_match": true
+    },
+    {
+      "jar": "build/media_kit_libs_android_audio/v1.1.8/default-x86.jar",
+      "size": 3040597,
+      "sha256": "824deeee316dfa3085832c6308e2953425bd428ba7eeeefd59bb51101b7ce8b7",
+      "md5": "a2acb148c02d02f0892047f5c6c4f964",
+      "pub_pin_md5": "a2acb148c02d02f0892047f5c6c4f964",
+      "pub_pin_match": true,
+      "github_asset_id": 278733628,
+      "github_asset_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-x86.jar",
+      "github_digest": "sha256:824deeee316dfa3085832c6308e2953425bd428ba7eeeefd59bb51101b7ce8b7",
+      "github_digest_match": true,
+      "github_size_match": true
+    },
+    {
+      "jar": "build/media_kit_libs_android_audio/v1.1.8/default-x86_64.jar",
+      "size": 3114935,
+      "sha256": "ddffa0465e2dbb42d52937dae08516dbe07c534d489e9ea995f36a02d31a7106",
+      "md5": "43ed7b0e6bdaa1a6ed2c1eee01f5e44a",
+      "pub_pin_md5": "43ed7b0e6bdaa1a6ed2c1eee01f5e44a",
+      "pub_pin_match": true,
+      "github_asset_id": 278733626,
+      "github_asset_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-x86_64.jar",
+      "github_digest": "sha256:ddffa0465e2dbb42d52937dae08516dbe07c534d489e9ea995f36a02d31a7106",
+      "github_digest_match": true,
+      "github_size_match": true
+    }
+  ]
+}

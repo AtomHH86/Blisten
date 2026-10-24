@@ -1,0 +1,1178 @@
+{
+  "checked_at_utc": "2026-10-24T05:48:08.167652+00:00",
+  "endpoint": "https://api.osv.dev/v1/querybatch",
+  "components": [
+    {
+      "repo": "mpv-player/mpv",
+      "tag": "v0.35.1",
+      "commit": "140ec21c89d671d392877a7f3b91d67e7d7b9239",
+      "osv_pages": [
+        {}
+      ]
+    },
+    {
+      "repo": "FFmpeg/FFmpeg",
+      "tag": "n6.0",
+      "commit": "ea3d24bbe3c58b171e55fe2151fc7ffaca3ab3d2",
+      "osv_pages": [
+        {}
+      ]
+    },
+    {
+      "repo": "Mbed-TLS/mbedtls",
+      "tag": "v3.6.1",
+      "commit": "71c569d44bf3a8bd53d874c81ee8ac644dd6e9e3",
+      "osv_pages": [
+        {}
+      ]
+    },
+    {
+      "repo": "GNOME/libxml2",
+      "tag": "v2.10.3",
+      "commit": "f507d167f1755b7eaea09fb1a44d29aab828b6d1",
+      "osv_pages": [
+        {
+          "vulns": [
+            {
+              "id": "CVE-2023-28484",
+              "modified": "2026-10-24T02:47:26.122512Z"
+            },
+            {
+              "id": "CVE-2023-29469",
+              "modified": "2026-10-24T02:47:34.818904Z"
+            },
+            {
+              "id": "CVE-2023-54354",
+              "modified": "2026-09-03T08:07:07.101120Z"
+            },
+            {
+              "id": "OSV-2021-777",
+              "modified": "2026-10-19T14:29:28.053903Z"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "warning": "Source-commit matches do not prove binary exploitability or complete vulnerability coverage. Recipe patches/build features must be assessed.",
+  "pagination_incomplete": false,
+  "advisories": {
+    "CVE-2023-28484": {
+      "id": "CVE-2023-28484",
+      "details": "In libxml2 before 2.10.4, parsing of certain invalid XSD schemas can lead to a NULL pointer dereference and subsequently a segfault. This occurs in xmlSchemaFixupComplexType in xmlschemas.c.",
+      "modified": "2026-10-24T02:47:26.122512416Z",
+      "published": "2023-04-24T00:00:00Z",
+      "related": [
+        "ALSA-2023:4349",
+        "ALSA-2023:4529",
+        "SUSE-SU-2023:2048-1",
+        "SUSE-SU-2023:2053-1",
+        "SUSE-SU-2023:2054-1",
+        "SUSE-SU-2023:3665-1",
+        "openSUSE-SU-2024:12877-1"
+      ],
+      "database_specific": {
+        "cna_assigner": "mitre",
+        "osv_generated_from": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/28xxx/CVE-2023-28484.json"
+      },
+      "references": [
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-341067.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-398330.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-556635.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-625862.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-769027.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://gitlab.gnome.org/GNOME/libxml2/-/releases/v2.10.4"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/28xxx/CVE-2023-28484.json"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-28484"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://security.netapp.com/advisory/ntap-20230601-0006/"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://security.netapp.com/advisory/ntap-20240201-0005/"
+        },
+        {
+          "type": "REPORT",
+          "url": "https://gitlab.gnome.org/GNOME/libxml2/-/issues/491"
+        },
+        {
+          "type": "ARTICLE",
+          "url": "https://lists.debian.org/debian-lts-announce/2023/04/msg00031.html"
+        }
+      ],
+      "affected": [
+        {
+          "ranges": [
+            {
+              "type": "GIT",
+              "repo": "https://gitlab.gnome.org/gnome/libxml2",
+              "events": [
+                {
+                  "introduced": "4b637079f26d8f5879ed45eb18cd249cad261951"
+                },
+                {
+                  "fixed": "223cb03a5d27b1b2393b266a8657443d046139d6"
+                }
+              ],
+              "database_specific": {
+                "extracted_events": [
+                  {
+                    "source": "DESCRIPTION",
+                    "range": [
+                      {
+                        "introduced": "2"
+                      },
+                      {
+                        "fixed": "2.10.4"
+                      }
+                    ]
+                  },
+                  {
+                    "cpe": "cpe:2.3:a:xmlsoft:libxml2:*:*:*:*:*:*:*:*",
+                    "range": [
+                      {
+                        "introduced": "0"
+                      },
+                      {
+                        "fixed": "2.10.4"
+                      }
+                    ],
+                    "source": "CPE_RANGE"
+                  }
+                ]
+              }
+            }
+          ],
+          "versions": [
+            "v2.10.3",
+            "v2.10.2",
+            "v2.10.1",
+            "v2.10.0",
+            "v2.9.13",
+            "v2.9.12",
+            "v2.9.11",
+            "CVE-2021-3541",
+            "v2.9.10",
+            "v2.9.10-rc1",
+            "v2.9.9",
+            "v2.9.9-rc2",
+            "v2.9.9-rc1",
+            "v2.9.8",
+            "v2.9.8-rc1",
+            "v2.9.7",
+            "v2.9.7-rc1",
+            "v2.9.6",
+            "v2.9.6-rc1",
+            "v2.9.5",
+            "v2.9.5-rc2",
+            "v2.9.5-rc1",
+            "v2.9.4",
+            "CVE-2016-3627",
+            "CVE-2016-1833",
+            "CVE-2016-1835",
+            "CVE-2016-1837",
+            "CVE-2016-1836",
+            "CVE-2016-1839",
+            "CVE-2016-1838",
+            "CVE-2016-1840",
+            "CVE-2016-4449",
+            "CVE-2016-4483",
+            "CVE-2016-1834",
+            "CVE-2016-3705",
+            "v2.9.4-rc2",
+            "v2.9.4-rc1",
+            "CVE-2016-1762",
+            "v2.9.3",
+            "CVE-2015-8242",
+            "CVE-2015-7500",
+            "CVE-2015-7499-2",
+            "CVE-2015-7499-1",
+            "CVE-2015-5312",
+            "CVE-2015-7497",
+            "CVE-2015-7498",
+            "CVE-2015-8035",
+            "CVE-2015-7942-2",
+            "CVE-2015-7942",
+            "CVE-2015-8317",
+            "CVE-2015-1819",
+            "CVE-2015-7941_2",
+            "CVE-2015-7941_1",
+            "v2.9.2",
+            "CVE-2014-3660",
+            "v2.9.2-rc2",
+            "v2.9.2-rc1",
+            "CVE-2014-0191",
+            "v2.9.1",
+            "CVE-2013-2877",
+            "v2.9.0",
+            "v2.9.0-rc2",
+            "v2.8.0",
+            "v2.8.0-rc2",
+            "v2.8.0-rc1",
+            "v2.7.8",
+            "v2.7.7",
+            "v2.7.6",
+            "v2.7.5",
+            "v2.7.4",
+            "LIBXML2.7.3",
+            "LIBXML2.7.2",
+            "LIBXML2.7.1",
+            "LIBXML2.7.0",
+            "LIBXML2.6.32",
+            "LIBXML2_2_6_28",
+            "LIBXML2_2_6_27",
+            "LIBXML2_2_6_26",
+            "LIBXML2_2_6_24",
+            "LIBXML2_2_6_23",
+            "LIBXML2_2_6_22",
+            "LIBXML2_2_6_21",
+            "LIBXML2_2_6_20",
+            "LIBXML2_2_6_19",
+            "LIBXML2_2_6_18",
+            "LIBXML2_2_6_16",
+            "LIBXML2_2_6_15",
+            "LIBXML2_2_6_14",
+            "LIBXML2_2_6_13",
+            "LIBXML2_2_6_12",
+            "LIBXML2_2_6_11",
+            "LIBXML_2_6_10",
+            "LIBXML2_2_6_9",
+            "LIBXML2_2_6_8",
+            "LIBXML2_2_6_7",
+            "LIBXML2_2_6_6",
+            "LIBXML2_2_6_5",
+            "LIBXML2_2_6_4",
+            "LIBXML2_2_6_3",
+            "LIBXML2_2_6_2",
+            "LIBXML2_2_6_1",
+            "LIBXML2_6_0",
+            "LIBXML2_2_5_x",
+            "LIBXML2_2_5_10",
+            "LIBXML2_2_5_9",
+            "LIBXML2_2_5_8",
+            "LIBXML2_2_5_7",
+            "LIBXML_2_5_6",
+            "LIBXML_2_5_5",
+            "LIBXML_2_5_4",
+            "LIBXML_2_5_3",
+            "LIBXML_2_5_2",
+            "LIBXML_2_5_1",
+            "LIBXML2_2_5_0",
+            "LIBXML_2_4_30",
+            "LIBXML_2_4_29",
+            "LIBXML_2_4_27",
+            "LIBXML_2_4_26",
+            "LIBXML_2_4_25",
+            "LIBXML_2_4_24",
+            "LIBXML_2_4_23",
+            "LIBXML_2_4_22",
+            "LIBXML2_2_4_21",
+            "LIBXML_2_4_20",
+            "LIBXML_2_4_18",
+            "LIBXML_2_4_13",
+            "LIBXML_2_4_16",
+            "LIBXML_2_4_14",
+            "LIBXML_2_4_12",
+            "LIBXML_2_4_11",
+            "LIBXML_2_4_7",
+            "LIBXML_2_4_6",
+            "LIBXML_2_4_4",
+            "LIBXML_2_4_3",
+            "LIBXML_2_4_2",
+            "LIBXML_2_4_0",
+            "LIBXML_2_3_14",
+            "LIBXML_2_3_13",
+            "LIBXML_2_3_12",
+            "LIBXML_2_3_11",
+            "LIBXML_2_3_10",
+            "LIBXML_2_3_9",
+            "LIBXML_2_3_8",
+            "help",
+            "LIBXML_2_3_7",
+            "LIBXML_2_3_6",
+            "LIBXML_2_3_5",
+            "LIBXML_2_3_4",
+            "LIBXML_2_3_3",
+            "LIBXML_2_3_2",
+            "PRE_MUCKUP3",
+            "PRE_MUCKUP2",
+            "PRE_MUCKUP"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2023-28484.json"
+          }
+        }
+      ],
+      "schema_version": "1.9.0",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        }
+      ]
+    },
+    "CVE-2023-29469": {
+      "id": "CVE-2023-29469",
+      "details": "An issue was discovered in libxml2 before 2.10.4. When hashing empty dict strings in a crafted XML document, xmlDictComputeFastKey in dict.c can produce non-deterministic values, leading to various logic and memory errors, such as a double free. This behavior occurs because there is an attempt to use the first byte of an empty string, and any value is possible (not solely the '\\0' value).",
+      "modified": "2026-10-24T02:47:34.818904429Z",
+      "published": "2023-04-24T00:00:00Z",
+      "related": [
+        "ALSA-2023:4349",
+        "ALSA-2023:4529",
+        "SUSE-SU-2023:2048-1",
+        "SUSE-SU-2023:2053-1",
+        "SUSE-SU-2023:2054-1",
+        "SUSE-SU-2023:3665-1",
+        "openSUSE-SU-2024:12877-1",
+        "openSUSE-SU-2024:12963-1",
+        "openSUSE-SU-2024:13440-1",
+        "openSUSE-SU-2024:14174-1",
+        "openSUSE-SU-2025:14697-1",
+        "openSUSE-SU-2026:10356-1"
+      ],
+      "database_specific": {
+        "cna_assigner": "mitre",
+        "osv_generated_from": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/29xxx/CVE-2023-29469.json"
+      },
+      "references": [
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-341067.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-398330.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-556635.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-625862.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://cert-portal.siemens.com/productcert/html/ssa-769027.html"
+        },
+        {
+          "type": "WEB",
+          "url": "https://gitlab.gnome.org/GNOME/libxml2/-/releases/v2.10.4"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/29xxx/CVE-2023-29469.json"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-29469"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://security.netapp.com/advisory/ntap-20230601-0006/"
+        },
+        {
+          "type": "REPORT",
+          "url": "https://gitlab.gnome.org/GNOME/libxml2/-/issues/510"
+        },
+        {
+          "type": "ARTICLE",
+          "url": "https://lists.debian.org/debian-lts-announce/2023/04/msg00031.html"
+        }
+      ],
+      "affected": [
+        {
+          "ranges": [
+            {
+              "type": "GIT",
+              "repo": "https://gitlab.gnome.org/gnome/libxml2",
+              "events": [
+                {
+                  "introduced": "4b637079f26d8f5879ed45eb18cd249cad261951"
+                },
+                {
+                  "fixed": "223cb03a5d27b1b2393b266a8657443d046139d6"
+                }
+              ],
+              "database_specific": {
+                "extracted_events": [
+                  {
+                    "range": [
+                      {
+                        "introduced": "2"
+                      },
+                      {
+                        "fixed": "2.10.4"
+                      }
+                    ],
+                    "source": "DESCRIPTION"
+                  },
+                  {
+                    "range": [
+                      {
+                        "introduced": "0"
+                      },
+                      {
+                        "fixed": "2.10.4"
+                      }
+                    ],
+                    "source": "CPE_RANGE",
+                    "cpe": "cpe:2.3:a:xmlsoft:libxml2:*:*:*:*:*:*:*:*"
+                  }
+                ]
+              }
+            }
+          ],
+          "versions": [
+            "v2.10.3",
+            "v2.10.2",
+            "v2.10.1",
+            "v2.10.0",
+            "v2.9.13",
+            "v2.9.12",
+            "v2.9.11",
+            "CVE-2021-3541",
+            "v2.9.10",
+            "v2.9.10-rc1",
+            "v2.9.9",
+            "v2.9.9-rc2",
+            "v2.9.9-rc1",
+            "v2.9.8",
+            "v2.9.8-rc1",
+            "v2.9.7",
+            "v2.9.7-rc1",
+            "v2.9.6",
+            "v2.9.6-rc1",
+            "v2.9.5",
+            "v2.9.5-rc2",
+            "v2.9.5-rc1",
+            "v2.9.4",
+            "CVE-2016-3627",
+            "CVE-2016-1833",
+            "CVE-2016-1835",
+            "CVE-2016-1837",
+            "CVE-2016-1836",
+            "CVE-2016-1839",
+            "CVE-2016-1838",
+            "CVE-2016-1840",
+            "CVE-2016-4449",
+            "CVE-2016-4483",
+            "CVE-2016-1834",
+            "CVE-2016-3705",
+            "v2.9.4-rc2",
+            "v2.9.4-rc1",
+            "CVE-2016-1762",
+            "v2.9.3",
+            "CVE-2015-8242",
+            "CVE-2015-7500",
+            "CVE-2015-7499-2",
+            "CVE-2015-7499-1",
+            "CVE-2015-5312",
+            "CVE-2015-7497",
+            "CVE-2015-7498",
+            "CVE-2015-8035",
+            "CVE-2015-7942-2",
+            "CVE-2015-7942",
+            "CVE-2015-8317",
+            "CVE-2015-1819",
+            "CVE-2015-7941_2",
+            "CVE-2015-7941_1",
+            "v2.9.2",
+            "CVE-2014-3660",
+            "v2.9.2-rc2",
+            "v2.9.2-rc1",
+            "CVE-2014-0191",
+            "v2.9.1",
+            "CVE-2013-2877",
+            "v2.9.0",
+            "v2.9.0-rc2",
+            "v2.8.0",
+            "v2.8.0-rc2",
+            "v2.8.0-rc1",
+            "v2.7.8",
+            "v2.7.7",
+            "v2.7.6",
+            "v2.7.5",
+            "v2.7.4",
+            "LIBXML2.7.3",
+            "LIBXML2.7.2",
+            "LIBXML2.7.1",
+            "LIBXML2.7.0",
+            "LIBXML2.6.32",
+            "LIBXML2_2_6_28",
+            "LIBXML2_2_6_27",
+            "LIBXML2_2_6_26",
+            "LIBXML2_2_6_24",
+            "LIBXML2_2_6_23",
+            "LIBXML2_2_6_22",
+            "LIBXML2_2_6_21",
+            "LIBXML2_2_6_20",
+            "LIBXML2_2_6_19",
+            "LIBXML2_2_6_18",
+            "LIBXML2_2_6_16",
+            "LIBXML2_2_6_15",
+            "LIBXML2_2_6_14",
+            "LIBXML2_2_6_13",
+            "LIBXML2_2_6_12",
+            "LIBXML2_2_6_11",
+            "LIBXML_2_6_10",
+            "LIBXML2_2_6_9",
+            "LIBXML2_2_6_8",
+            "LIBXML2_2_6_7",
+            "LIBXML2_2_6_6",
+            "LIBXML2_2_6_5",
+            "LIBXML2_2_6_4",
+            "LIBXML2_2_6_3",
+            "LIBXML2_2_6_2",
+            "LIBXML2_2_6_1",
+            "LIBXML2_6_0",
+            "LIBXML2_2_5_x",
+            "LIBXML2_2_5_10",
+            "LIBXML2_2_5_9",
+            "LIBXML2_2_5_8",
+            "LIBXML2_2_5_7",
+            "LIBXML_2_5_6",
+            "LIBXML_2_5_5",
+            "LIBXML_2_5_4",
+            "LIBXML_2_5_3",
+            "LIBXML_2_5_2",
+            "LIBXML_2_5_1",
+            "LIBXML2_2_5_0",
+            "LIBXML_2_4_30",
+            "LIBXML_2_4_29",
+            "LIBXML_2_4_27",
+            "LIBXML_2_4_26",
+            "LIBXML_2_4_25",
+            "LIBXML_2_4_24",
+            "LIBXML_2_4_23",
+            "LIBXML_2_4_22",
+            "LIBXML2_2_4_21",
+            "LIBXML_2_4_20",
+            "LIBXML_2_4_18",
+            "LIBXML_2_4_13",
+            "LIBXML_2_4_16",
+            "LIBXML_2_4_14",
+            "LIBXML_2_4_12",
+            "LIBXML_2_4_11",
+            "LIBXML_2_4_7",
+            "LIBXML_2_4_6",
+            "LIBXML_2_4_4",
+            "LIBXML_2_4_3",
+            "LIBXML_2_4_2",
+            "LIBXML_2_4_0",
+            "LIBXML_2_3_14",
+            "LIBXML_2_3_13",
+            "LIBXML_2_3_12",
+            "LIBXML_2_3_11",
+            "LIBXML_2_3_10",
+            "LIBXML_2_3_9",
+            "LIBXML_2_3_8",
+            "help",
+            "LIBXML_2_3_7",
+            "LIBXML_2_3_6",
+            "LIBXML_2_3_5",
+            "LIBXML_2_3_4",
+            "LIBXML_2_3_3",
+            "LIBXML_2_3_2",
+            "PRE_MUCKUP3",
+            "PRE_MUCKUP2",
+            "PRE_MUCKUP"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2023-29469.json"
+          }
+        }
+      ],
+      "schema_version": "1.9.0",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+        }
+      ]
+    },
+    "CVE-2023-54354": {
+      "id": "CVE-2023-54354",
+      "summary": "Nokogiri before 1.14.3 Null Pointer Dereference via libxml2",
+      "details": "Nokogiri before 1.14.3 (CRuby implementation only, when using the packaged libxml2) bundles libxml2 v2.10.3, which is vulnerable to NULL pointer dereferences in XML Schema processing (xmlSchemaFixupComplexType, CVE-2023-28484, and xmlSchemaCheckCOSSTDerivedOK). An attacker who supplies a crafted/malformed XML schema can cause libxml2 to dereference a NULL pointer and potentially segfault, resulting in a denial of service. Nokogiri 1.14.3 upgrades the packaged libxml2 to v2.10.4 to resolve these issues.",
+      "aliases": [
+        "GHSA-pxvg-2qj5-37jq"
+      ],
+      "modified": "2026-09-03T08:07:07.101120Z",
+      "published": "2026-08-25T15:15:55.858Z",
+      "database_specific": {
+        "cna_assigner": "VulnCheck",
+        "cwe_ids": [
+          "CWE-476"
+        ],
+        "osv_generated_from": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/54xxx/CVE-2023-54354.json"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/CVEProject/cvelistV5/tree/main/cves/2023/54xxx/CVE-2023-54354.json"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/sparklemotion/nokogiri/security/advisories/GHSA-pxvg-2qj5-37jq"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-54354"
+        },
+        {
+          "type": "ADVISORY",
+          "url": "https://www.vulncheck.com/advisories/nokogiri-before-null-pointer-dereference-via-libxml2"
+        },
+        {
+          "type": "FIX",
+          "url": "https://github.com/GNOME/libxml2/commit/09a2dd453007f9c7205274623acdd73747c22d64"
+        },
+        {
+          "type": "FIX",
+          "url": "https://github.com/GNOME/libxml2/commit/4c6922f763ad958c48ff66f82823ae21f2e92ee6"
+        },
+        {
+          "type": "FIX",
+          "url": "https://github.com/GNOME/libxml2/commit/647e072ea0a2f12687fa05c172f4c4713fdb0c4f"
+        }
+      ],
+      "affected": [
+        {
+          "ranges": [
+            {
+              "type": "GIT",
+              "repo": "https://github.com/gnome/libxml2",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "09a2dd453007f9c7205274623acdd73747c22d64"
+                },
+                {
+                  "fixed": "4c6922f763ad958c48ff66f82823ae21f2e92ee6"
+                },
+                {
+                  "fixed": "647e072ea0a2f12687fa05c172f4c4713fdb0c4f"
+                }
+              ],
+              "database_specific": {
+                "source": "REFERENCES"
+              }
+            },
+            {
+              "type": "GIT",
+              "repo": "https://github.com/sparklemotion/nokogiri",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "e8d2f4a829c50e6ad4ccd1625cd094e3a24acf36"
+                }
+              ],
+              "database_specific": {
+                "source": [
+                  "AFFECTED_FIELD",
+                  "CPE_RANGE"
+                ],
+                "cpe": "cpe:2.3:a:nokogiri:nokogiri:*:*:*:*:*:ruby:*:*",
+                "extracted_events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "1.14.3"
+                  }
+                ]
+              }
+            }
+          ],
+          "versions": [
+            "v2.10.3",
+            "v2.10.2",
+            "v2.10.1",
+            "v2.10.0",
+            "v2.9.13",
+            "v2.9.12",
+            "v2.9.11",
+            "CVE-2021-3541",
+            "v2.9.10",
+            "v2.9.10-rc1",
+            "v2.9.9",
+            "v2.9.9-rc2",
+            "v2.9.9-rc1",
+            "v2.9.8",
+            "v2.9.8-rc1",
+            "v2.9.7",
+            "v2.9.7-rc1",
+            "v2.9.6",
+            "v2.9.6-rc1",
+            "v2.9.5",
+            "v2.9.5-rc2",
+            "v2.9.5-rc1",
+            "v2.9.4",
+            "CVE-2016-3627",
+            "CVE-2016-1833",
+            "CVE-2016-1835",
+            "CVE-2016-1837",
+            "CVE-2016-1836",
+            "CVE-2016-1839",
+            "CVE-2016-1838",
+            "CVE-2016-1840",
+            "CVE-2016-4449",
+            "CVE-2016-4483",
+            "CVE-2016-1834",
+            "CVE-2016-3705",
+            "v2.9.4-rc2",
+            "v2.9.4-rc1",
+            "CVE-2016-1762",
+            "v2.9.3",
+            "CVE-2015-8242",
+            "CVE-2015-7500",
+            "CVE-2015-7499-2",
+            "CVE-2015-7499-1",
+            "CVE-2015-5312",
+            "CVE-2015-7497",
+            "CVE-2015-7498",
+            "CVE-2015-8035",
+            "CVE-2015-7942-2",
+            "CVE-2015-7942",
+            "CVE-2015-8317",
+            "CVE-2015-1819",
+            "CVE-2015-7941_2",
+            "CVE-2015-7941_1",
+            "v2.9.2",
+            "CVE-2014-3660",
+            "v2.9.2-rc2",
+            "v2.9.2-rc1",
+            "CVE-2014-0191",
+            "v2.9.1",
+            "CVE-2013-2877",
+            "v2.9.0",
+            "v2.9.0-rc2",
+            "v2.8.0",
+            "v2.8.0-rc2",
+            "v2.8.0-rc1",
+            "v2.7.8",
+            "v2.7.7",
+            "v2.7.6",
+            "v2.7.5",
+            "v2.7.4",
+            "LIBXML2.7.3",
+            "LIBXML2.7.2",
+            "LIBXML2.7.1",
+            "LIBXML2.7.0",
+            "LIBXML2.6.32",
+            "LIBXML2_2_6_28",
+            "LIBXML2_2_6_27",
+            "LIBXML2_2_6_26",
+            "LIBXML2_2_6_24",
+            "LIBXML2_2_6_23",
+            "LIBXML2_2_6_22",
+            "LIBXML2_2_6_21",
+            "LIBXML2_2_6_20",
+            "LIBXML2_2_6_19",
+            "LIBXML2_2_6_18",
+            "LIBXML2_2_6_16",
+            "LIBXML2_2_6_15",
+            "LIBXML2_2_6_14",
+            "LIBXML2_2_6_13",
+            "LIBXML2_2_6_12",
+            "LIBXML2_2_6_11",
+            "LIBXML_2_6_10",
+            "LIBXML2_2_6_9",
+            "LIBXML2_2_6_8",
+            "LIBXML2_2_6_7",
+            "LIBXML2_2_6_6",
+            "LIBXML2_2_6_5",
+            "LIBXML2_2_6_4",
+            "LIBXML2_2_6_3",
+            "LIBXML2_2_6_2",
+            "LIBXML2_2_6_1",
+            "LIBXML2_6_0",
+            "LIBXML2_2_5_x",
+            "LIBXML2_2_5_10",
+            "LIBXML2_2_5_9",
+            "LIBXML2_2_5_8",
+            "LIBXML2_2_5_7",
+            "LIBXML_2_5_6",
+            "LIBXML_2_5_5",
+            "LIBXML_2_5_4",
+            "LIBXML_2_5_3",
+            "LIBXML_2_5_2",
+            "LIBXML_2_5_1",
+            "LIBXML2_2_5_0",
+            "LIBXML_2_4_30",
+            "LIBXML_2_4_29",
+            "LIBXML_2_4_27",
+            "LIBXML_2_4_26",
+            "LIBXML_2_4_25",
+            "LIBXML_2_4_24",
+            "LIBXML_2_4_23",
+            "LIBXML_2_4_22",
+            "LIBXML2_2_4_21",
+            "LIBXML_2_4_20",
+            "LIBXML_2_4_18",
+            "LIBXML_2_4_13",
+            "LIBXML_2_4_16",
+            "LIBXML_2_4_14",
+            "LIBXML_2_4_12",
+            "LIBXML_2_4_11",
+            "LIBXML_2_4_7",
+            "LIBXML_2_4_6",
+            "LIBXML_2_4_4",
+            "LIBXML_2_4_3",
+            "LIBXML_2_4_2",
+            "LIBXML_2_4_0",
+            "LIBXML_2_3_14",
+            "LIBXML_2_3_13",
+            "LIBXML_2_3_12",
+            "LIBXML_2_3_11",
+            "LIBXML_2_3_10",
+            "LIBXML_2_3_9",
+            "LIBXML_2_3_8",
+            "help",
+            "LIBXML_2_3_7",
+            "LIBXML_2_3_6",
+            "LIBXML_2_3_5",
+            "LIBXML_2_3_4",
+            "LIBXML_2_3_3",
+            "LIBXML_2_3_2",
+            "PRE_MUCKUP3",
+            "PRE_MUCKUP2",
+            "PRE_MUCKUP",
+            "LIBXML_2_3_0",
+            "LIBXML_2_2_8",
+            "LIBXML_2_2_7",
+            "LIBXML_2_2_6",
+            "LIBXML_2_2_4",
+            "GNOME_PRINT_0_24",
+            "LIBXML_2_2_3",
+            "LIBXML_2_2_1",
+            "LIBXML_2_1_1",
+            "LIBXML_2_1_0",
+            "LIB_XML_1_X",
+            "EAZEL-NAUTILUS-MS-AUG07",
+            "LIBXML_2_0_0",
+            "LIBXML_TEST_2_0_0",
+            "LIBXML_1_8_6",
+            "LIBXML_1_8_5",
+            "LIB_XML_1_8_3",
+            "LIB_XML_1_7_3",
+            "LIB_XML_1_7_1",
+            "LIB_XML_1_7_0",
+            "LIB_XML_1_6_2",
+            "LIB_XML_1_6_1",
+            "LIBXML_1_5_0",
+            "LIB_XML_1_4",
+            "LIB_XML_1_3",
+            "LIB_XML_1_1",
+            "FOR_GNOME_0_99_1",
+            "LIBXML_0_99",
+            "GNUMERIC_FIRST_PUBLIC_RELEASE",
+            "GNOME_0_30",
+            "v1.14.2",
+            "v1.14.1",
+            "v1.14.0",
+            "v1.14.0.rc1",
+            "v1.13.0",
+            "v1.12.3",
+            "v1.12.2",
+            "v1.12.1",
+            "v1.12.0",
+            "v1.12.0.rc1",
+            "v1.11.3",
+            "v1.11.2",
+            "v1.11.1",
+            "v1.11.0",
+            "v1.11.0.rc4",
+            "v1.11.0.rc3",
+            "v1.11.0.rc2",
+            "v1.11.0.rc1",
+            "v1.10.3",
+            "v1.10.2",
+            "v1.8.5",
+            "v1.10.1",
+            "v1.10.0",
+            "v1.10.0.rc1",
+            "v1.9.1",
+            "v1.9.0",
+            "v1.9.0.rc1",
+            "v1.8.4",
+            "v1.8.3",
+            "v1.8.2",
+            "v1.8.1",
+            "v1.8.0",
+            "v1.7.0.1",
+            "v1.7.0",
+            "v1.6.8",
+            "v1.6.8.rc3",
+            "v1.6.8.rc2",
+            "v1.6.8.rc1",
+            "v1.6.7.rc4",
+            "v1.6.6.2",
+            "v1.6.7.rc3",
+            "v1.6.7.rc2",
+            "v1.6.7.rc1",
+            "1.7.0.1-linux-binary1",
+            "v1.6.6.1",
+            "v1.6.6",
+            "v1.6.5",
+            "v1.6.4",
+            "v1.6.3.1",
+            "v1.6.3",
+            "v1.6.3.rc3",
+            "v1.6.3.rc2",
+            "v1.6.3.rc1",
+            "v1.6.2.1",
+            "v1.6.2",
+            "v1.6.2.rc3",
+            "v1.6.2.rc1",
+            "v1.6.2.beta.1",
+            "v1.6.0",
+            "v1.5.9",
+            "v1.6.0.rc1",
+            "v1.5.8",
+            "v1.5.7",
+            "v1.5.7.rc3",
+            "v1.5.7.rc2",
+            "v1.5.7.rc1",
+            "v1.5.6",
+            "v1.5.6.rc2",
+            "v1.5.5.rc2",
+            "v1.5.5.rc1",
+            "v1.5.4.rc3",
+            "v1.5.4.rc2",
+            "v1.5.4.rc1",
+            "v1.5.3",
+            "v1.5.3.rc6",
+            "v1.5.3.rc5",
+            "v1.5.3.rc4",
+            "v1.5.3.rc3",
+            "v1.5.3.rc1",
+            "v1.5.2",
+            "v1.5.1",
+            "v1.5.1.rc1",
+            "v1.5.0",
+            "v1.5.0.beta.3",
+            "v1.5.0.beta.4",
+            "REL_1.5.0.beta.2",
+            "REL_1.5.0.beta.1",
+            "REL_1.0.7",
+            "REL_1.0.6",
+            "REL_1.0.5",
+            "REL_1.0.4",
+            "REL_1.0.3",
+            "REL_1.0.2",
+            "REL_1.0.1",
+            "REL_1.0.0"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2023-54354.json",
+            "vanir_signatures_modified": "2026-09-03T08:07:07Z",
+            "vanir_signatures": [
+              {
+                "source": "https://github.com/gnome/libxml2/commit/4c6922f763ad958c48ff66f82823ae21f2e92ee6",
+                "target": {
+                  "file": "xmlschemas.c",
+                  "function": "xmlSchemaResolveElementReferences"
+                },
+                "deprecated": false,
+                "digest": {
+                  "length": 1316,
+                  "function_hash": "161823131667449630370724922190556095829"
+                },
+                "id": "CVE-2023-54354-49d37df2",
+                "signature_type": "Function",
+                "signature_version": "v1"
+              },
+              {
+                "source": "https://github.com/gnome/libxml2/commit/09a2dd453007f9c7205274623acdd73747c22d64",
+                "target": {
+                  "file": "dict.c",
+                  "function": "xmlDictComputeFastKey"
+                },
+                "deprecated": false,
+                "digest": {
+                  "function_hash": "267970420252725130199376407402483825008",
+                  "length": 571
+                },
+                "id": "CVE-2023-54354-93aea704",
+                "signature_type": "Function",
+                "signature_version": "v1"
+              },
+              {
+                "id": "CVE-2023-54354-c5752451",
+                "signature_type": "Line",
+                "signature_version": "v1",
+                "source": "https://github.com/gnome/libxml2/commit/4c6922f763ad958c48ff66f82823ae21f2e92ee6",
+                "target": {
+                  "file": "xmlschemas.c"
+                },
+                "deprecated": false,
+                "digest": {
+                  "line_hashes": [
+                    "308981022804931015236413879421957310638",
+                    "282178084622988746890881910680625520695",
+                    "50271736739838765844818037174763357243",
+                    "198715064733683011505754465168917481346",
+                    "69219023379864035696646291254384072462"
+                  ],
+                  "threshold": 0.9
+                }
+              },
+              {
+                "digest": {
+                  "line_hashes": [
+                    "19185847648471670323475216725842154505",
+                    "273593918359875311050534871051271330899",
+                    "160297338630813304163117051522217321186",
+                    "116158295440288060980015079180399826565"
+                  ],
+                  "threshold": 0.9
+                },
+                "id": "CVE-2023-54354-ef21c1eb",
+                "signature_type": "Line",
+                "signature_version": "v1",
+                "source": "https://github.com/gnome/libxml2/commit/09a2dd453007f9c7205274623acdd73747c22d64",
+                "target": {
+                  "file": "dict.c"
+                },
+                "deprecated": false
+              }
+            ]
+          }
+        }
+      ],
+      "schema_version": "1.9.0",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        }
+      ]
+    },
+    "OSV-2021-777": {
+      "id": "OSV-2021-777",
+      "summary": "Heap-use-after-free in xmlAddNextSibling",
+      "details": "OSS-Fuzz report: https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=34461\n\n```\nCrash type: Heap-use-after-free READ 4\nCrash state:\nxmlAddNextSibling\nxmlXIncludeCopyRange\nxmlXIncludeCopyXPointer\n```\n",
+      "modified": "2026-10-19T14:29:28.053903Z",
+      "published": "2021-05-20T00:00:30.166614Z",
+      "references": [
+        {
+          "type": "REPORT",
+          "url": "https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=34461"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "libxml2",
+            "ecosystem": "OSS-Fuzz",
+            "purl": "pkg:generic/libxml2"
+          },
+          "ranges": [
+            {
+              "type": "GIT",
+              "repo": "https://gitlab.gnome.org/GNOME/libxml2.git",
+              "events": [
+                {
+                  "introduced": "6c128fd58a0e4641c23a345d413672494622db1b"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "CVE-2021-3541",
+            "v2.9.11",
+            "v2.9.12",
+            "v2.9.13",
+            "v2.9.14",
+            "v2.10.0",
+            "v2.10.1",
+            "v2.10.2",
+            "v2.10.3",
+            "v2.10.4",
+            "v2.11.0",
+            "v2.11.1",
+            "v2.11.2",
+            "v2.11.3",
+            "v2.11.4",
+            "v2.11.5",
+            "v2.11.6",
+            "v2.12.0",
+            "v2.12.1",
+            "v2.12.2",
+            "v2.12.3",
+            "v2.12.4",
+            "v2.12.5",
+            "v2.11.7",
+            "v2.12.6",
+            "v2.11.8",
+            "v2.12.7",
+            "v2.12.8",
+            "v2.13.0",
+            "v2.13.1",
+            "v2.13.2",
+            "v2.13.3",
+            "v2.11.9",
+            "v2.12.9",
+            "v2.13.4",
+            "v2.13.5",
+            "v2.13.6",
+            "v2.12.10",
+            "v2.13.7",
+            "v2.14.0",
+            "v2.14.1",
+            "v2.13.8",
+            "v2.14.2",
+            "v2.14.3",
+            "v2.14.4",
+            "v2.14.5",
+            "v2.13.9",
+            "v2.14.6",
+            "v2.15.0",
+            "v2.15.1",
+            "v2.15.2",
+            "v2.15.3",
+            "v2.15.4"
+          ],
+          "ecosystem_specific": {
+            "severity": "HIGH"
+          },
+          "database_specific": {
+            "source": "https://github.com/google/oss-fuzz-vulns/blob/main/vulns/libxml2/OSV-2021-777.yaml"
+          }
+        }
+      ],
+      "schema_version": "1.9.1"
+    }
+  }
+}

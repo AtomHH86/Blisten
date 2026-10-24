@@ -1,0 +1,2099 @@
+{
+  "method": "Local package roots from package_config; root LICENSE-like files only; candidate labels are text heuristics, not legal clearance.",
+  "packages": [
+    {
+      "name": "archive",
+      "version": "4.3.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/archive-4.3.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/archive-4.3.0/LICENSE",
+          "sha256": "32f97d332eae7453ec4079858e6f1d74be85beeb6d3881068b47d02a379cccea",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1101
+        },
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/archive-4.3.0/LICENSE-other.md",
+          "sha256": "ebe5a199af245d7e3e761673fbf3db341427060407e50713861ab24bb2cb1552",
+          "candidate_labels": [
+            "MIT",
+            "BSD-2-Clause"
+          ],
+          "bytes": 4678
+        }
+      ]
+    },
+    {
+      "name": "args",
+      "version": "2.7.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/args-2.7.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/args-2.7.0/LICENSE",
+          "sha256": "dfb09c74e29386cd3e2719f32d4995d59526179753931d31840757c77fbf2791",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/async-2.13.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/async-2.13.1/LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "audio_service",
+      "version": "0.18.19",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_service-0.18.19",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_service-0.18.19/LICENSE",
+          "sha256": "9cad5d44e82dccb45ceb822e16932e3a127db1960dc68b0e49a33ba7ab62477f",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1102
+        }
+      ]
+    },
+    {
+      "name": "audio_service_platform_interface",
+      "version": "0.1.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_service_platform_interface-0.1.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_service_platform_interface-0.1.3/LICENSE",
+          "sha256": "160f8768e3bbab986314ac5cc28043bd49c131809c63b34ddc1c4511500aac84",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1097
+        }
+      ]
+    },
+    {
+      "name": "audio_service_web",
+      "version": "0.1.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_service_web-0.1.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_service_web-0.1.4/LICENSE",
+          "sha256": "ec9b14bdd5e74617c4c51770cb9df4cea156a82e05867df7ae36049f252f31a9",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1112
+        }
+      ]
+    },
+    {
+      "name": "audio_session",
+      "version": "0.2.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_session-0.2.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/audio_session-0.2.4/LICENSE",
+          "sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1097
+        }
+      ]
+    },
+    {
+      "name": "blisten_audio_focus",
+      "version": "0.0.1",
+      "source": "path",
+      "dependency": "direct main",
+      "root_path": "${PROJECT}/packages/blisten_audio_focus",
+      "licenses": [],
+      "inherited_license_path": "${PROJECT}/LICENSE",
+      "license_basis": "User-confirmed newly authored local plugin inherits root MIT"
+    },
+    {
+      "name": "boolean_selector",
+      "version": "2.1.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/boolean_selector-2.1.2/LICENSE",
+          "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "cached_network_image",
+      "version": "3.4.1",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cached_network_image-3.4.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cached_network_image-3.4.1/LICENSE",
+          "sha256": "31b6d676e72277911cfee3688ca9411387eb5ce7a2f722cef30bbea0bcbee60e",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1078
+        }
+      ]
+    },
+    {
+      "name": "cached_network_image_platform_interface",
+      "version": "4.1.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cached_network_image_platform_interface-4.1.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cached_network_image_platform_interface-4.1.1/LICENSE",
+          "sha256": "31b6d676e72277911cfee3688ca9411387eb5ce7a2f722cef30bbea0bcbee60e",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1078
+        }
+      ]
+    },
+    {
+      "name": "cached_network_image_web",
+      "version": "1.3.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cached_network_image_web-1.3.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cached_network_image_web-1.3.1/LICENSE",
+          "sha256": "31b6d676e72277911cfee3688ca9411387eb5ce7a2f722cef30bbea0bcbee60e",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1078
+        }
+      ]
+    },
+    {
+      "name": "characters",
+      "version": "1.4.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/characters-1.4.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/characters-1.4.0/LICENSE",
+          "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "clock",
+      "version": "1.1.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/clock-1.1.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/clock-1.1.2/LICENSE",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+          "candidate_labels": [
+            "Apache-2.0"
+          ],
+          "bytes": 11357
+        }
+      ]
+    },
+    {
+      "name": "code_assets",
+      "version": "1.2.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/code_assets-1.2.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/code_assets-1.2.1/LICENSE",
+          "sha256": "21ae23b0b9ff67a2dc75ab085d1e8db8ac548c5faf370af17f28dd2ef3b52b7b",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/collection-1.19.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/collection-1.19.1/LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.5+5",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cross_file-0.3.5+5",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cross_file-0.3.5+5/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.7",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/crypto-3.0.7",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/crypto-3.0.7/LICENSE",
+          "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "cupertino_icons",
+      "version": "1.0.9",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cupertino_icons-1.0.9",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/cupertino_icons-1.0.9/LICENSE",
+          "sha256": "310d6ab6483280280c9db122bded0a63c09558bc5743720f61dbcbb494db370a",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1086
+        }
+      ]
+    },
+    {
+      "name": "dio",
+      "version": "5.11.1",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/dio-5.11.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/dio-5.11.1/LICENSE",
+          "sha256": "0b4d36faa9f74d67c3b7e082fc860c643b41f5bb14b4d262fe9c3559c88992b7",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1104
+        }
+      ]
+    },
+    {
+      "name": "dio_web_adapter",
+      "version": "2.2.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/dio_web_adapter-2.2.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/dio_web_adapter-2.2.2/LICENSE",
+          "sha256": "0b4d36faa9f74d67c3b7e082fc860c643b41f5bb14b4d262fe9c3559c88992b7",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1104
+        }
+      ]
+    },
+    {
+      "name": "fake_async",
+      "version": "1.3.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/fake_async-1.3.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/fake_async-1.3.3/LICENSE",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+          "candidate_labels": [
+            "Apache-2.0"
+          ],
+          "bytes": 11357
+        }
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/ffi-2.2.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/ffi-2.2.0/LICENSE",
+          "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/file-7.0.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/file-7.0.1/LICENSE",
+          "sha256": "f6df86b1412172537273e8e80ee2fb8a66aa7307ce0b39ea5ddab47ca41b8c49",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1523
+        }
+      ]
+    },
+    {
+      "name": "fixnum",
+      "version": "1.1.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/fixnum-1.1.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/fixnum-1.1.1/LICENSE",
+          "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "flutter",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "direct main",
+      "root_path": "${FLUTTER_SDK}/packages/flutter",
+      "licenses": [
+        {
+          "path": "${FLUTTER_SDK}/packages/flutter/LICENSE",
+          "sha256": "a598db94b6290ffbe10b5ecf911057b6a943351c727fdda9e5f2891d68700a20",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "flutter_cache_manager",
+      "version": "3.4.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/flutter_cache_manager-3.4.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/flutter_cache_manager-3.4.4/LICENSE",
+          "sha256": "c18c2b23af83fdb3dc1c857b1df7561f7807fc3667a01d9475878733258d840e",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1078
+        }
+      ]
+    },
+    {
+      "name": "flutter_driver",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "transitive",
+      "root_path": "${FLUTTER_SDK}/packages/flutter_driver",
+      "licenses": [],
+      "inherited_license_path": "${FLUTTER_SDK}/LICENSE",
+      "license_basis": "Flutter SDK aggregate/root BSD license; no package-root license file"
+    },
+    {
+      "name": "flutter_lints",
+      "version": "6.0.0",
+      "source": "hosted",
+      "dependency": "direct dev",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/flutter_lints-6.0.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/flutter_lints-6.0.0/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "flutter_test",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "direct dev",
+      "root_path": "${FLUTTER_SDK}/packages/flutter_test",
+      "licenses": [],
+      "inherited_license_path": "${FLUTTER_SDK}/LICENSE",
+      "license_basis": "Flutter SDK aggregate/root BSD license; no package-root license file"
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "transitive",
+      "root_path": "${FLUTTER_SDK}/packages/flutter_web_plugins",
+      "licenses": [],
+      "inherited_license_path": "${FLUTTER_SDK}/LICENSE",
+      "license_basis": "Flutter SDK aggregate/root BSD license; no package-root license file"
+    },
+    {
+      "name": "fuchsia_remote_debug_protocol",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "transitive",
+      "root_path": "${FLUTTER_SDK}/packages/fuchsia_remote_debug_protocol",
+      "licenses": [],
+      "inherited_license_path": "${FLUTTER_SDK}/LICENSE",
+      "license_basis": "Flutter SDK aggregate/root BSD license; no package-root license file"
+    },
+    {
+      "name": "hooks",
+      "version": "2.0.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/hooks-2.0.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/hooks-2.0.2/LICENSE",
+          "sha256": "21ae23b0b9ff67a2dc75ab085d1e8db8ac548c5faf370af17f28dd2ef3b52b7b",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "http",
+      "version": "1.6.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/http-1.6.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/http-1.6.0/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "http_parser",
+      "version": "4.1.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/http_parser-4.1.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/http_parser-4.1.2/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.10.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/image-4.10.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/image-4.10.1/LICENSE",
+          "sha256": "f3c17da84e0780e1c334325c73098257c32221d62498ed55ef3c1361904925aa",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1122
+        },
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/image-4.10.1/LICENSE-other.md",
+          "sha256": "dea0e9e446e57c0987d241d5471e47e7b66796fb286706ec993c3fa6696cb08e",
+          "candidate_labels": [
+            "BSD-3-Clause",
+            "Apache-2.0"
+          ],
+          "bytes": 8488
+        }
+      ]
+    },
+    {
+      "name": "integration_test",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "direct dev",
+      "root_path": "${FLUTTER_SDK}/packages/integration_test",
+      "licenses": [],
+      "inherited_license_path": "${FLUTTER_SDK}/LICENSE",
+      "license_basis": "Flutter SDK aggregate/root BSD license; no package-root license file"
+    },
+    {
+      "name": "jni",
+      "version": "1.0.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/jni-1.0.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/jni-1.0.3/LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "jni_flutter",
+      "version": "1.0.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/jni_flutter-1.0.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/jni_flutter-1.0.3/LICENSE",
+          "sha256": "b1fcb475d67817411f335ac92872507011e574c4cb29cfdaaf7707b75641932c",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "jni_util",
+      "version": "1.0.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/jni_util-1.0.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/jni_util-1.0.0/LICENSE",
+          "sha256": "b1fcb475d67817411f335ac92872507011e574c4cb29cfdaaf7707b75641932c",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "js",
+      "version": "0.7.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/js-0.7.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/js-0.7.2/LICENSE",
+          "sha256": "efa4eaf6fdec22a36a61395ea70843db9ae815760bf663e068012c92b93c0184",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "leak_tracker",
+      "version": "11.0.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/leak_tracker-11.0.2/LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "version": "3.0.10",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10/LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "leak_tracker_testing",
+      "version": "3.0.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2/LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "lints",
+      "version": "6.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/lints-6.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/lints-6.1.0/LICENSE",
+          "sha256": "421fe78c3b5df297f8b4ab2c74f2450a274ee6d245a113091f6b9f90570af193",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "logging",
+      "version": "1.3.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/logging-1.3.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/logging-1.3.0/LICENSE",
+          "sha256": "dfb09c74e29386cd3e2719f32d4995d59526179753931d31840757c77fbf2791",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "matcher",
+      "version": "0.12.17",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/matcher-0.12.17",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/matcher-0.12.17/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "material_color_utilities",
+      "version": "0.11.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/material_color_utilities-0.11.1/LICENSE",
+          "sha256": "d103f246ef4c18dab8af0c1dcf6a8af884e5cff554da7261a48ac43c17d98f2e",
+          "candidate_labels": [
+            "Apache-2.0"
+          ],
+          "bytes": 11317
+        }
+      ]
+    },
+    {
+      "name": "media_kit",
+      "version": "1.2.6",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit-1.2.6",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit-1.2.6/LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1112
+        }
+      ]
+    },
+    {
+      "name": "media_kit_libs_android_audio",
+      "version": "1.3.8",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_android_audio-1.3.8",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_android_audio-1.3.8/LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1112
+        }
+      ]
+    },
+    {
+      "name": "media_kit_libs_audio",
+      "version": "1.0.7",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_audio-1.0.7",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_audio-1.0.7/LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1112
+        }
+      ]
+    },
+    {
+      "name": "media_kit_libs_ios_audio",
+      "version": "1.1.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_ios_audio-1.1.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_ios_audio-1.1.4/LICENSE",
+          "sha256": "a78baa721ad6f5c0b2d8fb0c6cfff835ad8ed90393cac0087a90e8813490f2bd",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1133
+        }
+      ]
+    },
+    {
+      "name": "media_kit_libs_linux",
+      "version": "1.2.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_linux-1.2.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_linux-1.2.1/LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1112
+        }
+      ]
+    },
+    {
+      "name": "media_kit_libs_macos_audio",
+      "version": "1.1.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_macos_audio-1.1.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_macos_audio-1.1.4/LICENSE",
+          "sha256": "a78baa721ad6f5c0b2d8fb0c6cfff835ad8ed90393cac0087a90e8813490f2bd",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1133
+        }
+      ]
+    },
+    {
+      "name": "media_kit_libs_windows_audio",
+      "version": "1.0.9",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_windows_audio-1.0.9",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/media_kit_libs_windows_audio-1.0.9/LICENSE",
+          "sha256": "a78baa721ad6f5c0b2d8fb0c6cfff835ad8ed90393cac0087a90e8813490f2bd",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1133
+        }
+      ]
+    },
+    {
+      "name": "meta",
+      "version": "1.17.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/meta-1.17.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/meta-1.17.0/LICENSE",
+          "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "mime",
+      "version": "2.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/mime-2.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/mime-2.1.0/LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "nested",
+      "version": "1.0.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/nested-1.0.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/nested-1.0.0/LICENSE",
+          "sha256": "fccaeae95a39c93176de9321c734c90d8e36f465c48fcf278840844d8eab1af4",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1070
+        }
+      ]
+    },
+    {
+      "name": "objective_c",
+      "version": "9.5.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/objective_c-9.5.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/objective_c-9.5.0/LICENSE",
+          "sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "octo_image",
+      "version": "2.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/octo_image-2.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/octo_image-2.1.0/LICENSE",
+          "sha256": "9a64f4b486cd12af348a9716640d121dfca9b5ac2d8c3a24a9444b65e8560f9b",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "package_config",
+      "version": "2.2.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/package_config-2.2.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/package_config-2.2.0/LICENSE",
+          "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path-1.9.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path-1.9.1/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.6",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider-2.1.6",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider-2.1.6/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "path_provider_android",
+      "version": "2.3.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_android-2.3.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_android-2.3.1/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "path_provider_foundation",
+      "version": "2.6.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "path_provider_linux",
+      "version": "2.2.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_linux-2.2.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_linux-2.2.2/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "version": "2.1.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.3/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "path_provider_windows",
+      "version": "2.3.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "permission_handler",
+      "version": "11.3.1",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler-11.3.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler-11.3.1/LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_android",
+      "version": "12.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_android-12.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_android-12.1.0/LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_apple",
+      "version": "9.6.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_apple-9.6.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_apple-9.6.1/LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_html",
+      "version": "0.1.4+1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_html-0.1.4+1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_html-0.1.4+1/LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_platform_interface",
+      "version": "4.4.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_platform_interface-4.4.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_platform_interface-4.4.1/LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_windows",
+      "version": "0.2.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_windows-0.2.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/permission_handler_windows-0.2.2/LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1065
+        }
+      ]
+    },
+    {
+      "name": "platform",
+      "version": "3.1.6",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/platform-3.1.6",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/platform-3.1.6/LICENSE",
+          "sha256": "143839f62c9b7f88143ea9f688361c27050888acde7696b34e04414bd254fafc",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1524
+        }
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.5.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/posix-6.5.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/posix-6.5.2/LICENSE",
+          "sha256": "aaf6271abd048deb3125828613f1797b7556472de6c7acd7103bd43e9cb6a84b",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1069
+        }
+      ]
+    },
+    {
+      "name": "process",
+      "version": "5.0.6",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/process-5.0.6",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/process-5.0.6/LICENSE",
+          "sha256": "5f018bbc25a55406d7a4e1d3229135439e315210b0050ca56dbb367a4934e85d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1502
+        }
+      ]
+    },
+    {
+      "name": "provider",
+      "version": "6.1.5+1",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/provider-6.1.5+1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/provider-6.1.5+1/LICENSE",
+          "sha256": "fccaeae95a39c93176de9321c734c90d8e36f465c48fcf278840844d8eab1af4",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1070
+        }
+      ]
+    },
+    {
+      "name": "pub_semver",
+      "version": "2.2.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/pub_semver-2.2.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/pub_semver-2.2.1/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "qr",
+      "version": "3.0.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/qr-3.0.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/qr-3.0.2/LICENSE",
+          "sha256": "1d6c0bc8208cd835577eeb9195dc646f092728b62803abd60c404d984524abf7",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1527
+        }
+      ]
+    },
+    {
+      "name": "qr_flutter",
+      "version": "4.1.0",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/qr_flutter-4.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/qr_flutter-4.1.0/LICENSE",
+          "sha256": "1bc86cb2619634e54a97f88dd9c11fd99afcacd52c25bdf6f84c2700b4174203",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1521
+        }
+      ]
+    },
+    {
+      "name": "record_use",
+      "version": "0.6.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/record_use-0.6.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/record_use-0.6.0/LICENSE",
+          "sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "rxdart",
+      "version": "0.28.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/rxdart-0.28.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/rxdart-0.28.0/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "candidate_labels": [
+            "Apache-2.0"
+          ],
+          "bytes": 11357
+        }
+      ]
+    },
+    {
+      "name": "safe_local_storage",
+      "version": "2.0.6",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/safe_local_storage-2.0.6",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/safe_local_storage-2.0.6/LICENSE",
+          "sha256": "d4cfdb498601b2872c7a09d06c62f92f5c751261bdb6fc4ce436940c7ccac78a",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1102
+        }
+      ]
+    },
+    {
+      "name": "share_plus",
+      "version": "12.0.2",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/share_plus-12.0.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/share_plus-12.0.2/LICENSE",
+          "sha256": "eb9741a672906ebd01fd9b3bef38f6c82eff250e91149cf404539ee7981079fd",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1489
+        }
+      ]
+    },
+    {
+      "name": "share_plus_platform_interface",
+      "version": "6.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/share_plus_platform_interface-6.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/share_plus_platform_interface-6.1.0/LICENSE",
+          "sha256": "3b38d48befd0af70b892e13d10c9e34679416c24a9277f962629951c64d71f4c",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1481
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences",
+      "version": "2.5.5",
+      "source": "hosted",
+      "dependency": "direct main",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences-2.5.5",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences-2.5.5/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_android",
+      "version": "2.4.23",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_android-2.4.23",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_android-2.4.23/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "version": "2.5.7",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.7",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.7/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_linux",
+      "version": "2.4.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "version": "2.4.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_platform_interface-2.4.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_platform_interface-2.4.2/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_web",
+      "version": "2.4.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_windows",
+      "version": "2.4.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "sky_engine",
+      "version": "0.0.0",
+      "source": "sdk",
+      "dependency": "transitive",
+      "root_path": "${FLUTTER_SDK}/bin/cache/pkg/sky_engine",
+      "licenses": [
+        {
+          "path": "${FLUTTER_SDK}/bin/cache/pkg/sky_engine/LICENSE",
+          "sha256": "66f37204b91a314563d3261efdd4b1858a49684ed99c267e0ee4ad5f00f74ea0",
+          "candidate_labels": [
+            "MIT",
+            "BSD-3-Clause",
+            "Apache-2.0",
+            "LGPL",
+            "GPL",
+            "MPL-2.0"
+          ],
+          "bytes": 1299341
+        }
+      ],
+      "license_basis": "Aggregate engine third-party notices; multiple candidate labels do not mean package is licensed as a single GPL work"
+    },
+    {
+      "name": "source_span",
+      "version": "1.10.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/source_span-1.10.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/source_span-1.10.2/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "sqflite",
+      "version": "2.4.2+1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite-2.4.2+1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite-2.4.2+1/LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da",
+          "candidate_labels": [
+            "BSD-2-Clause"
+          ],
+          "bytes": 1328
+        }
+      ]
+    },
+    {
+      "name": "sqflite_android",
+      "version": "2.4.2+3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_android-2.4.2+3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_android-2.4.2+3/LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da",
+          "candidate_labels": [
+            "BSD-2-Clause"
+          ],
+          "bytes": 1328
+        }
+      ]
+    },
+    {
+      "name": "sqflite_common",
+      "version": "2.5.8",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_common-2.5.8",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_common-2.5.8/LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da",
+          "candidate_labels": [
+            "BSD-2-Clause"
+          ],
+          "bytes": 1328
+        }
+      ]
+    },
+    {
+      "name": "sqflite_darwin",
+      "version": "2.4.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da",
+          "candidate_labels": [
+            "BSD-2-Clause"
+          ],
+          "bytes": 1328
+        }
+      ]
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "version": "2.4.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.0/LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da",
+          "candidate_labels": [
+            "BSD-2-Clause"
+          ],
+          "bytes": 1328
+        }
+      ]
+    },
+    {
+      "name": "stack_trace",
+      "version": "1.12.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/stack_trace-1.12.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/stack_trace-1.12.1/LICENSE",
+          "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "stream_channel",
+      "version": "2.1.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/stream_channel-2.1.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/stream_channel-2.1.4/LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "string_scanner",
+      "version": "1.4.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/string_scanner-1.4.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/string_scanner-1.4.1/LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "sync_http",
+      "version": "0.3.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sync_http-0.3.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/sync_http-0.3.1/LICENSE",
+          "sha256": "b9b748d4dd6f725387bf69e96df4e4ebff167ae83547954242a731504d037644",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "synchronized",
+      "version": "3.4.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/synchronized-3.4.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/synchronized-3.4.0/LICENSE",
+          "sha256": "6d07c6bb60afb906049d507e19fcc4c6b59e35c0dd0f8a7302e87b3fb0576900",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1081
+        }
+      ]
+    },
+    {
+      "name": "term_glyph",
+      "version": "1.2.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/term_glyph-1.2.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/term_glyph-1.2.2/LICENSE",
+          "sha256": "ea97a7558a7bd7cee4e2355f7529e3cbebb0dcbb546ddb9a90f10c9eb6b08da5",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "test_api",
+      "version": "0.7.7",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/test_api-0.7.7",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/test_api-0.7.7/LICENSE",
+          "sha256": "ff1b9f0df9036c04be424b1e3ce12789bea880ad5ffc3a48e069ae2d40a087a4",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/typed_data-1.4.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/typed_data-1.4.0/LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1504
+        }
+      ]
+    },
+    {
+      "name": "universal_platform",
+      "version": "1.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/universal_platform-1.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/universal_platform-1.1.0/LICENSE",
+          "sha256": "8a135e09d6288f03171b04f07f00eb5ee04e54f2f5e9c9b952f6adbd1de48c3f",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1076
+        }
+      ]
+    },
+    {
+      "name": "uri_parser",
+      "version": "3.0.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/uri_parser-3.0.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/uri_parser-3.0.2/LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1112
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_linux",
+      "version": "3.2.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_linux-3.2.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_linux-3.2.3/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_platform_interface",
+      "version": "2.3.2",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_platform_interface-2.3.2",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_platform_interface-2.3.2/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_web",
+      "version": "2.4.3",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_web-2.4.3",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_web-2.4.3/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_windows",
+      "version": "3.1.6",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_windows-3.1.6",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/url_launcher_windows-3.1.6/LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1497
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "version": "4.6.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/uuid-4.6.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/uuid-4.6.0/LICENSE",
+          "sha256": "ad3e5523e51004e94ba9ce728805b1b4242dbccdb65e62b523800e35a8a7cfdc",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1064
+        }
+      ]
+    },
+    {
+      "name": "vector_math",
+      "version": "2.2.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/vector_math-2.2.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/vector_math-2.2.0/LICENSE",
+          "sha256": "b5d856a1e27e9ebea4957fc3526f1c65782a04894b113c6b3b0fb1321dbdec55",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 2327
+        }
+      ]
+    },
+    {
+      "name": "vm_service",
+      "version": "15.3.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/vm_service-15.3.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/vm_service-15.3.0/LICENSE",
+          "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1503
+        }
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/web-1.1.1",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/web-1.1.1/LICENSE",
+          "sha256": "aa913ff50d7542eb8cc35b9f48a80928ac6819ba9057f85d424655e3e8dc271c",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1502
+        }
+      ]
+    },
+    {
+      "name": "webdriver",
+      "version": "3.2.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/webdriver-3.2.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/webdriver-3.2.0/LICENSE",
+          "sha256": "74cb46b123c9fa918ea8e0a0f5be736a1cd661edf145ccc723dc7ce30324ebab",
+          "candidate_labels": [
+            "Apache-2.0"
+          ],
+          "bytes": 11340
+        }
+      ]
+    },
+    {
+      "name": "win32",
+      "version": "5.15.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/win32-5.15.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/win32-5.15.0/LICENSE",
+          "sha256": "87ef8bccdd619f2345ba5b9026cf1d6cccb305e36ab83849a8a3af9293abde7e",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1499
+        }
+      ]
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/xdg_directories-1.1.0",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/xdg_directories-1.1.0/LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+          "candidate_labels": [
+            "BSD-3-Clause"
+          ],
+          "bytes": 1519
+        }
+      ]
+    },
+    {
+      "name": "yaml",
+      "version": "3.1.4",
+      "source": "hosted",
+      "dependency": "transitive",
+      "root_path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/yaml-3.1.4",
+      "licenses": [
+        {
+          "path": "${ANDROID_TOOLCHAIN}/pub-cache/hosted/pub.dev/yaml-3.1.4/LICENSE",
+          "sha256": "d47b93335401b052d79a2f5a3710e4cf7b5aed782faedf84d40fbdd6eb934ec7",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1106
+        }
+      ]
+    },
+    {
+      "name": "blisten",
+      "version": null,
+      "source": "root",
+      "dependency": "root",
+      "root_path": "${PROJECT}",
+      "licenses": [
+        {
+          "path": "${PROJECT}/LICENSE",
+          "sha256": "52b62047b1cf209df870b96c203913fb72f2792d42c0685f8d9ab347325619f1",
+          "candidate_labels": [
+            "MIT"
+          ],
+          "bytes": 1081
+        }
+      ]
+    }
+  ],
+  "inputs": {
+    "pubspec.lock": "5704e6735c4f7fb15c50ed5ba0964d240ccced8379f9666dd2ddf6838dae927f",
+    ".dart_tool/package_config.json": "e5c9969f5a454a3ca12a0206ad2c5acf12512c5a970d4f6d716e77e19f206037"
+  }
+}

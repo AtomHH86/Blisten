@@ -1,0 +1,656 @@
+{
+  "checked_at_utc": "2026-10-24T05:41:51.721577+00:00",
+  "responses": {
+    "releases/tags/v1.1.8": {
+      "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/tags/v1.1.8",
+      "sha256": "a25971369bc8b7617e9eab10fdc6adcee1d7f1f391cc9d17edcec1f9b720d612",
+      "data": {
+        "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/237065613",
+        "assets_url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/237065613/assets",
+        "upload_url": "https://uploads.github.com/repos/media-kit/libmpv-android-audio-build/releases/237065613/assets{?name,label}",
+        "html_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/tag/v1.1.8",
+        "id": 237065613,
+        "author": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "node_id": "MDM6Qm90NDE4OTgyODI=",
+          "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+          "html_url": "https://github.com/apps/github-actions",
+          "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+          "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+          "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+          "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+          "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+          "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+          "type": "Bot",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "node_id": "RE_kwDOJ7rSQs4OIVWN",
+        "tag_name": "v1.1.8",
+        "target_commitish": "main",
+        "name": "v1.1.8",
+        "draft": false,
+        "immutable": false,
+        "prerelease": false,
+        "created_at": "2025-08-02T14:04:45Z",
+        "updated_at": "2025-08-02T14:17:29Z",
+        "published_at": "2025-08-02T14:17:29Z",
+        "assets": [
+          {
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/assets/278733627",
+            "id": 278733627,
+            "node_id": "RA_kwDOJ7rSQs4QnSM7",
+            "name": "debug-symbols-default.zip",
+            "label": "",
+            "uploader": {
+              "login": "github-actions[bot]",
+              "id": 41898282,
+              "node_id": "MDM6Qm90NDE4OTgyODI=",
+              "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+              "html_url": "https://github.com/apps/github-actions",
+              "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+              "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+              "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+              "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+              "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+              "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+              "type": "Bot",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "content_type": "application/zip",
+            "state": "uploaded",
+            "size": 84151457,
+            "digest": "sha256:33772ece215f4ec577869eec634a3ca82ac459fa2aa1779441f00eb927d1afd8",
+            "download_count": 11,
+            "created_at": "2025-08-02T14:13:47Z",
+            "updated_at": "2025-08-02T14:13:51Z",
+            "browser_download_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/debug-symbols-default.zip"
+          },
+          {
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/assets/278733630",
+            "id": 278733630,
+            "node_id": "RA_kwDOJ7rSQs4QnSM-",
+            "name": "default-arm64-v8a.jar",
+            "label": "",
+            "uploader": {
+              "login": "github-actions[bot]",
+              "id": 41898282,
+              "node_id": "MDM6Qm90NDE4OTgyODI=",
+              "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+              "html_url": "https://github.com/apps/github-actions",
+              "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+              "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+              "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+              "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+              "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+              "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+              "type": "Bot",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "content_type": "application/java-archive",
+            "state": "uploaded",
+            "size": 2983585,
+            "digest": "sha256:0481a64b5e246774da22573d7a4e67f9fb3d89a68630864d8819d3ff3a08bb09",
+            "download_count": 52231,
+            "created_at": "2025-08-02T14:13:47Z",
+            "updated_at": "2025-08-02T14:13:48Z",
+            "browser_download_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-arm64-v8a.jar"
+          },
+          {
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/assets/278733629",
+            "id": 278733629,
+            "node_id": "RA_kwDOJ7rSQs4QnSM9",
+            "name": "default-armeabi-v7a.jar",
+            "label": "",
+            "uploader": {
+              "login": "github-actions[bot]",
+              "id": 41898282,
+              "node_id": "MDM6Qm90NDE4OTgyODI=",
+              "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+              "html_url": "https://github.com/apps/github-actions",
+              "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+              "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+              "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+              "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+              "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+              "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+              "type": "Bot",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "content_type": "application/java-archive",
+            "state": "uploaded",
+            "size": 2865617,
+            "digest": "sha256:1bba852f5b7f0098c54ab8c3a945866d2b730b9e146b472a6ffaa80fc0dceae9",
+            "download_count": 50340,
+            "created_at": "2025-08-02T14:13:47Z",
+            "updated_at": "2025-08-02T14:13:47Z",
+            "browser_download_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-armeabi-v7a.jar"
+          },
+          {
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/assets/278733628",
+            "id": 278733628,
+            "node_id": "RA_kwDOJ7rSQs4QnSM8",
+            "name": "default-x86.jar",
+            "label": "",
+            "uploader": {
+              "login": "github-actions[bot]",
+              "id": 41898282,
+              "node_id": "MDM6Qm90NDE4OTgyODI=",
+              "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+              "html_url": "https://github.com/apps/github-actions",
+              "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+              "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+              "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+              "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+              "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+              "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+              "type": "Bot",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "content_type": "application/java-archive",
+            "state": "uploaded",
+            "size": 3040597,
+            "digest": "sha256:824deeee316dfa3085832c6308e2953425bd428ba7eeeefd59bb51101b7ce8b7",
+            "download_count": 50154,
+            "created_at": "2025-08-02T14:13:47Z",
+            "updated_at": "2025-08-02T14:13:47Z",
+            "browser_download_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-x86.jar"
+          },
+          {
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/releases/assets/278733626",
+            "id": 278733626,
+            "node_id": "RA_kwDOJ7rSQs4QnSM6",
+            "name": "default-x86_64.jar",
+            "label": "",
+            "uploader": {
+              "login": "github-actions[bot]",
+              "id": 41898282,
+              "node_id": "MDM6Qm90NDE4OTgyODI=",
+              "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+              "html_url": "https://github.com/apps/github-actions",
+              "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+              "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+              "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+              "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+              "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+              "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+              "type": "Bot",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "content_type": "application/java-archive",
+            "state": "uploaded",
+            "size": 3114935,
+            "digest": "sha256:ddffa0465e2dbb42d52937dae08516dbe07c534d489e9ea995f36a02d31a7106",
+            "download_count": 51074,
+            "created_at": "2025-08-02T14:13:47Z",
+            "updated_at": "2025-08-02T14:13:48Z",
+            "browser_download_url": "https://github.com/media-kit/libmpv-android-audio-build/releases/download/v1.1.8/default-x86_64.jar"
+          }
+        ],
+        "tarball_url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/tarball/v1.1.8",
+        "zipball_url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/zipball/v1.1.8",
+        "body": "v1.1.8"
+      }
+    },
+    "git/ref/tags/v1.1.8": {
+      "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/ref/tags/v1.1.8",
+      "sha256": "b03bbb9c57c5ae4510f5e8b131ac3fe53a50d589cbde5c995f6f44064b699ae7",
+      "data": {
+        "ref": "refs/tags/v1.1.8",
+        "node_id": "REF_kwDOJ7rSQrByZWZzL3RhZ3MvdjEuMS44",
+        "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/refs/tags/v1.1.8",
+        "object": {
+          "sha": "87744be8b337c50ed54961249b7a97c5e8cc37c9",
+          "type": "commit",
+          "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/commits/87744be8b337c50ed54961249b7a97c5e8cc37c9"
+        }
+      }
+    },
+    "git/trees/v1.1.8?recursive=1": {
+      "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/v1.1.8?recursive=1",
+      "sha256": "1fa7ff0076434151b5e2cc72e0f34aa9c5a60a7d9b835c9eae284878e6489f46",
+      "data": {
+        "sha": "87744be8b337c50ed54961249b7a97c5e8cc37c9",
+        "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/87744be8b337c50ed54961249b7a97c5e8cc37c9",
+        "tree": [
+          {
+            "path": ".github",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "9839ed9e2e9d5ac21e4c910a93eec4006875e51e",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/9839ed9e2e9d5ac21e4c910a93eec4006875e51e"
+          },
+          {
+            "path": ".github/workflows",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "ad15d6b99dbaa78b3df9359650c1c5a7fad69d49",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/ad15d6b99dbaa78b3df9359650c1c5a7fad69d49"
+          },
+          {
+            "path": ".github/workflows/build.yaml",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "5cd1ea21f1d7f0c660a073147e5c48ad51c3796f",
+            "size": 1295,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/5cd1ea21f1d7f0c660a073147e5c48ad51c3796f"
+          },
+          {
+            "path": ".gitignore",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "2897c68956e6745039e4e82d28cea28b93bdfa82",
+            "size": 87,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/2897c68956e6745039e4e82d28cea28b93bdfa82"
+          },
+          {
+            "path": "LICENSE",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "cfaa955c74d733787bd8fdefb19d20dbae31a27a",
+            "size": 1879,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/cfaa955c74d733787bd8fdefb19d20dbae31a27a"
+          },
+          {
+            "path": "README.md",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "74c67b054bc7438dba8a29823ac251b342c998a1",
+            "size": 29,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/74c67b054bc7438dba8a29823ac251b342c998a1"
+          },
+          {
+            "path": "build.gradle.kts",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "ed1e3536f23e35c3aa142c75031ca30940de3b99",
+            "size": 403,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/ed1e3536f23e35c3aa142c75031ca30940de3b99"
+          },
+          {
+            "path": "buildscripts",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "e8fdbdb016a4548f7164d5c3125029ce8753fcde",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/e8fdbdb016a4548f7164d5c3125029ce8753fcde"
+          },
+          {
+            "path": "buildscripts/.gitignore",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "43cfa80ba866634b5796679424744e21e162b787",
+            "size": 31,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/43cfa80ba866634b5796679424744e21e162b787"
+          },
+          {
+            "path": "buildscripts/build.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "33282bdfbbd13543b325662f3e1c3033f18f863b",
+            "size": 3515,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/33282bdfbbd13543b325662f3e1c3033f18f863b"
+          },
+          {
+            "path": "buildscripts/bundle.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "57c8eb39782bc70636f4284e615567df85071dec",
+            "size": 1690,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/57c8eb39782bc70636f4284e615567df85071dec"
+          },
+          {
+            "path": "buildscripts/download.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "84a5f5a7c5fe43baf1684c2357b3b1d2a60b27aa",
+            "size": 69,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/84a5f5a7c5fe43baf1684c2357b3b1d2a60b27aa"
+          },
+          {
+            "path": "buildscripts/include",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "ac8da38913faf36608cd005f79e8284460283142",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/ac8da38913faf36608cd005f79e8284460283142"
+          },
+          {
+            "path": "buildscripts/include/depinfo.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "d5e05744d505a7d3d6cbd93e262f27a26eb4f405",
+            "size": 318,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/d5e05744d505a7d3d6cbd93e262f27a26eb4f405"
+          },
+          {
+            "path": "buildscripts/include/download-deps.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "872dab23160f5c49a130272147526daea8a55afa",
+            "size": 750,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/872dab23160f5c49a130272147526daea8a55afa"
+          },
+          {
+            "path": "buildscripts/include/download-sdk.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "5bc1670b205e7d2e2a8d31c48afeab41541d35b5",
+            "size": 2246,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/5bc1670b205e7d2e2a8d31c48afeab41541d35b5"
+          },
+          {
+            "path": "buildscripts/include/path.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "5b9839e75d0858c4a184b83fc1b11d55f9196dc0",
+            "size": 870,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/5b9839e75d0858c4a184b83fc1b11d55f9196dc0"
+          },
+          {
+            "path": "buildscripts/patch.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "51260010be888a9860d1cec7b037b6569e3c4be4",
+            "size": 425,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/51260010be888a9860d1cec7b037b6569e3c4be4"
+          },
+          {
+            "path": "buildscripts/patches",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "f85ded24735c57bd0ca97748c09f3259423b808a",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/f85ded24735c57bd0ca97748c09f3259423b808a"
+          },
+          {
+            "path": "buildscripts/patches/ffmpeg",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "f5d7cba268fb11e17d8dbf54ffd7b8cbd87a1848",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/f5d7cba268fb11e17d8dbf54ffd7b8cbd87a1848"
+          },
+          {
+            "path": "buildscripts/patches/ffmpeg/001.dash_base_url_escape.patch",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "36ed6d5b26c41dd02362525e7fb96b061eaf48ba",
+            "size": 1135,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/36ed6d5b26c41dd02362525e7fb96b061eaf48ba"
+          },
+          {
+            "path": "buildscripts/patches/mpv",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "1ebe79ffafb85478d33456bfd42010c74d3d14f3",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/1ebe79ffafb85478d33456bfd42010c74d3d14f3"
+          },
+          {
+            "path": "buildscripts/patches/mpv/001.audiotrack_threadsafe.patch",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "a62ee3bc029062dc73003743110afaa8a52323fe",
+            "size": 4926,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/a62ee3bc029062dc73003743110afaa8a52323fe"
+          },
+          {
+            "path": "buildscripts/patches/mpv/002.lavc_set_java_vm.patch",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "53d3f95147990baf0aa48d4d269f6b25a198581b",
+            "size": 1723,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/53d3f95147990baf0aa48d4d269f6b25a198581b"
+          },
+          {
+            "path": "buildscripts/patches/mpv/003.mpv_remove_libass.patch",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "786eada12c20ba480dc5c644c725c97d5de79f4a",
+            "size": 90153,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/786eada12c20ba480dc5c644c725c97d5de79f4a"
+          },
+          {
+            "path": "buildscripts/scripts",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "1d98f97cee6f128b0135923cfc1871ddc4259ab9",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/1d98f97cee6f128b0135923cfc1871ddc4259ab9"
+          },
+          {
+            "path": "buildscripts/scripts/ffmpeg.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "8fa7e240d51fe6decd50e8ee7b47e07be7d8de2d",
+            "size": 4405,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/8fa7e240d51fe6decd50e8ee7b47e07be7d8de2d"
+          },
+          {
+            "path": "buildscripts/scripts/libxml2.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "4418462119b7032e89987e75a458a6d64cda3e73",
+            "size": 517,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/4418462119b7032e89987e75a458a6d64cda3e73"
+          },
+          {
+            "path": "buildscripts/scripts/mbedtls.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "220a81215816153b0589ac20f1cc6c4b17d12e6b",
+            "size": 344,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/220a81215816153b0589ac20f1cc6c4b17d12e6b"
+          },
+          {
+            "path": "buildscripts/scripts/mpv.sh",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "3536178275f5e5edfc91b914efbf7e4b1b748b66",
+            "size": 581,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/3536178275f5e5edfc91b914efbf7e4b1b748b66"
+          },
+          {
+            "path": "gradle.properties",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "dbb7bf70d15c9c47ae831e64298c1bbc8b5edce9",
+            "size": 53,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/dbb7bf70d15c9c47ae831e64298c1bbc8b5edce9"
+          },
+          {
+            "path": "gradle",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "e8244a17f70fb7226946a61e682571f094beffb0",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/e8244a17f70fb7226946a61e682571f094beffb0"
+          },
+          {
+            "path": "gradle/libs.versions.toml",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "10ebc17a5488e0ec4cc00a104febc236684e1137",
+            "size": 408,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/10ebc17a5488e0ec4cc00a104febc236684e1137"
+          },
+          {
+            "path": "gradle/wrapper",
+            "mode": "040000",
+            "type": "tree",
+            "sha": "72b4d4e8d99d9fcbc242ecd151a6687b0360b725",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/72b4d4e8d99d9fcbc242ecd151a6687b0360b725"
+          },
+          {
+            "path": "gradle/wrapper/gradle-wrapper.jar",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "943f0cbfa754578e88a3dae77fce6e3dea56edbf",
+            "size": 61574,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/943f0cbfa754578e88a3dae77fce6e3dea56edbf"
+          },
+          {
+            "path": "gradle/wrapper/gradle-wrapper.properties",
+            "mode": "100644",
+            "type": "blob",
+            "sha": "5c40527d4cfcbcf8905f43baa15b45e4660afee8",
+            "size": 224,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/5c40527d4cfcbcf8905f43baa15b45e4660afee8"
+          },
+          {
+            "path": "gradlew",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "65dcd68d65c82f2a5338fded4af852f9caf93b93",
+            "size": 8497,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/65dcd68d65c82f2a5338fded4af852f9caf93b93"
+          },
+          {
+            "path": "settings.gradle.kts",
+            "mode": "100755",
+            "type": "blob",
+            "sha": "3f77b513db6d6ac837154194be1fef5a56282a02",
+            "size": 134,
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/blobs/3f77b513db6d6ac837154194be1fef5a56282a02"
+          }
+        ],
+        "truncated": false
+      }
+    },
+    "commits/v1.1.8": {
+      "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/commits/v1.1.8",
+      "sha256": "961827db8e2dfc70b651e9fc833913cb0993ec214e2de6952994a3b3b6997aa6",
+      "data": {
+        "sha": "87744be8b337c50ed54961249b7a97c5e8cc37c9",
+        "node_id": "C_kwDOJ7rSQtoAKDg3NzQ0YmU4YjMzN2M1MGVkNTQ5NjEyNDliN2E5N2M1ZThjYzM3Yzk",
+        "commit": {
+          "author": {
+            "name": "Hitesh",
+            "email": "saini123hitesh@gmail.com",
+            "date": "2025-08-02T14:04:45Z"
+          },
+          "committer": {
+            "name": "GitHub",
+            "email": "noreply@github.com",
+            "date": "2025-08-02T14:04:45Z"
+          },
+          "message": "Create README.md",
+          "tree": {
+            "sha": "df7b201b12e5fbd5f8bc57ae4878c0d93448b6ec",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/trees/df7b201b12e5fbd5f8bc57ae4878c0d93448b6ec"
+          },
+          "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/git/commits/87744be8b337c50ed54961249b7a97c5e8cc37c9",
+          "comment_count": 0,
+          "verification": {
+            "verified": true,
+            "reason": "valid",
+            "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJojhr9CRC1aQ7uu5UhlAAAlHIQAGW7l4BQXEq3pNKK7ke8Lb4q\n0F0KTi7mMf7nJQL0YMzV4do+8oo01eOhy5cbWzAzUVzsHzynVJrm1Ta9nIjremGn\n+4hHHDE9H/Cfa3N2W+ZyzuWG4nTnEhqM3qIo1uGVpER86RV7ESUNaxAQiWyuhC9Z\npzYj+MbhESbWaHZyfvcK/7tvAZ01IZ6T9/BSMVnA6O4+DvH3oOKQHYU8pMIsSRZM\nrNLFOwAZhJVisUTxuryRJfTiBwJForaoeLEXJ9O8dOPZUn4YNDc+TgvH7DZcRnM9\nVHxjHqdQEITZTHL4hriPamA/Fe6ae3LBFztRph+q9UU2tD8EbHOnzylO+KVvFfc1\nROxKfmikEIV/qa+OI7Bvlnz3YYh5Zp7udvjtZ5+365RJQvYybc+lhj9dpMGkFEFx\nvrpcuLlLWOpF76IWXuKbAWovHE2iIeiSUbRqfByTpnQO+8Tx+GQ9qjlvmg68a5sF\nx8zt+GUZ24+86ol0F8ac1iAqao6CgXZjzFaEEOx2WtyDzQi8tbn6Z8JffyuCToAk\nbrxe+62YHE+BQcFA5QamBipWxMn9V2gS/iCaftOdvCE4IZFkC4d78IYal9+2tY04\nRWAEJ/LSR9twDr9lpFG+/xlG6lfE7CLBGrgPosDVOdHs8CN6NMuHPqVufr0BLU2p\nvI6eO77BAJRR8W1pSIHo\n=I+Xr\n-----END PGP SIGNATURE-----\n",
+            "payload": "tree df7b201b12e5fbd5f8bc57ae4878c0d93448b6ec\nparent 60ea4e599d06153bce6e82b0ef8cef539a4c4e8f\nauthor Hitesh <saini123hitesh@gmail.com> 1754143485 +0530\ncommitter GitHub <noreply@github.com> 1754143485 +0530\n\nCreate README.md",
+            "verified_at": "2025-08-02T14:04:45Z"
+          }
+        },
+        "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/commits/87744be8b337c50ed54961249b7a97c5e8cc37c9",
+        "html_url": "https://github.com/media-kit/libmpv-android-audio-build/commit/87744be8b337c50ed54961249b7a97c5e8cc37c9",
+        "comments_url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/commits/87744be8b337c50ed54961249b7a97c5e8cc37c9/comments",
+        "author": {
+          "login": "alexmercerind",
+          "id": 28951144,
+          "node_id": "MDQ6VXNlcjI4OTUxMTQ0",
+          "avatar_url": "https://avatars.githubusercontent.com/u/28951144?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/alexmercerind",
+          "html_url": "https://github.com/alexmercerind",
+          "followers_url": "https://api.github.com/users/alexmercerind/followers",
+          "following_url": "https://api.github.com/users/alexmercerind/following{/other_user}",
+          "gists_url": "https://api.github.com/users/alexmercerind/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/alexmercerind/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/alexmercerind/subscriptions",
+          "organizations_url": "https://api.github.com/users/alexmercerind/orgs",
+          "repos_url": "https://api.github.com/users/alexmercerind/repos",
+          "events_url": "https://api.github.com/users/alexmercerind/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/alexmercerind/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "committer": {
+          "login": "web-flow",
+          "id": 19864447,
+          "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+          "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/web-flow",
+          "html_url": "https://github.com/web-flow",
+          "followers_url": "https://api.github.com/users/web-flow/followers",
+          "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+          "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+          "organizations_url": "https://api.github.com/users/web-flow/orgs",
+          "repos_url": "https://api.github.com/users/web-flow/repos",
+          "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/web-flow/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "parents": [
+          {
+            "sha": "60ea4e599d06153bce6e82b0ef8cef539a4c4e8f",
+            "url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/commits/60ea4e599d06153bce6e82b0ef8cef539a4c4e8f",
+            "html_url": "https://github.com/media-kit/libmpv-android-audio-build/commit/60ea4e599d06153bce6e82b0ef8cef539a4c4e8f"
+          }
+        ],
+        "stats": {
+          "total": 1,
+          "additions": 1,
+          "deletions": 0
+        },
+        "files": [
+          {
+            "sha": "74c67b054bc7438dba8a29823ac251b342c998a1",
+            "filename": "README.md",
+            "status": "added",
+            "additions": 1,
+            "deletions": 0,
+            "changes": 1,
+            "blob_url": "https://github.com/media-kit/libmpv-android-audio-build/blob/87744be8b337c50ed54961249b7a97c5e8cc37c9/README.md",
+            "raw_url": "https://github.com/media-kit/libmpv-android-audio-build/raw/87744be8b337c50ed54961249b7a97c5e8cc37c9/README.md",
+            "contents_url": "https://api.github.com/repos/media-kit/libmpv-android-audio-build/contents/README.md?ref=87744be8b337c50ed54961249b7a97c5e8cc37c9",
+            "patch": "@@ -0,0 +1 @@\n+# libmpv-android-audio-build"
+          }
+        ]
+      }
+    }
+  }
+}
