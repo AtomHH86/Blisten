@@ -13,6 +13,7 @@ class PreviewPlayer extends ChangeNotifier implements BookPlayer {
   Book? active;
   ShelfBook? selected;
   int toggles = 0;
+  int retries = 0;
   bool playing = false;
   bool waiting = false;
   bool failed = false;
@@ -53,6 +54,12 @@ class PreviewPlayer extends ChangeNotifier implements BookPlayer {
   Future<void> clearListeningRecord(String bvid) async {
     if (active?.bvid == bvid) await stop();
     await ShelfStore.instance.clearListeningRecord(bvid);
+  }
+
+  @override
+  Future<bool> retryPlayback() async {
+    retries++;
+    return false;
   }
 
   @override
@@ -252,6 +259,11 @@ void main() {
       await tester.pump();
       expect(find.text('正在选择的内容'), findsOneWidget);
       expect(find.byTooltip('重试播放'), findsOneWidget);
+      await tester.tap(find.byTooltip('重试播放'));
+      await tester.pump();
+      expect(player.retries, 1);
+      expect(player.toggles, 0);
+      expect(player.selected, isNull);
     },
   );
 }

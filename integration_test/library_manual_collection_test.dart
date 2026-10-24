@@ -291,12 +291,57 @@ void main() {
       expect(shelf.books, isEmpty);
       fixture.apiAvailable = false;
       fixture.mediaAvailable = false;
-      await player.playCachedEntry(book.bvid, chapter.cid, book);
-      await _until(
-        tester,
-        () => player.currentPosition.inSeconds >= 2,
-        'offline advances',
-      );
+      Duration? previousNativePosition;
+      var forwardNativeEvents = 0;
+      void observeNativePosition() {
+        final position = player.positionTick.value;
+        final previous = previousNativePosition;
+        previousNativePosition = position;
+        if (player.loaded &&
+            !player.loading &&
+            player.isPlaying &&
+            !player.buffering &&
+            previous != null &&
+            position > previous &&
+            position - previous <= const Duration(seconds: 5)) {
+          forwardNativeEvents++;
+        }
+      }
+
+      player.positionTick.addListener(observeNativePosition);
+      try {
+        expect(
+          await player.playCachedEntry(book.bvid, chapter.cid, book),
+          CachePlayOutcome.okOffline,
+        );
+        await _until(
+          tester,
+          () =>
+              forwardNativeEvents >= 2 && player.currentPosition.inSeconds >= 2,
+          'offline native playback advances across multiple position events',
+        );
+        // Actual native advancement and debounced persistence are distinct.
+        // Keep playing while waiting for the production save timer, rather than
+        // fabricating history or assuming position >=2 means it already saved.
+        await _until(tester, () {
+          final recent = shelf.recentBooks.where(
+            (row) => row.book.bvid == book.bvid,
+          );
+          final persisted =
+              jsonDecode(prefs.getString('abts_recent_progress') ?? '[]')
+                  as List;
+          return recent.isNotEmpty &&
+              recent.single.hasListened &&
+              persisted.any(
+                (row) =>
+                    row['book']['bvid'] == book.bvid &&
+                    (row['lastListenedAt'] as num? ?? 0) > 0 &&
+                    (row['positionMs'] as num? ?? 0) > 0,
+              );
+        }, 'actual heard cache record reaches normal persistent save');
+      } finally {
+        player.positionTick.removeListener(observeNativePosition);
+      }
       expect(player.isOffline, isTrue);
       expect(shelf.recentBooks.single.book.bvid, book.bvid);
       expect(shelf.books, isEmpty);
