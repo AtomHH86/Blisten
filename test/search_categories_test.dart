@@ -135,10 +135,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byType(TextField).hitTestable(), findsOneWidget);
-      for (final label in ['听书', '听歌', '听现场', '儿童', 'UP 主']) {
+      for (final label in ['听书', '听歌', '听现场', '听故事', 'UP 主']) {
         expect(_category(label).hitTestable(), findsOneWidget);
       }
-      expect(tester.widget<ChoiceChip>(_category('儿童')).selected, isTrue);
+      expect(tester.widget<ChoiceChip>(_category('听故事')).selected, isTrue);
       await tester.testTextInput.receiveAction(TextInputAction.search);
       tester.view.viewInsets = const FakeViewPadding();
       await tester.pumpAndSettle();
@@ -155,7 +155,7 @@ void main() {
       final api = _Api();
       await tester.pumpWidget(_host(api, brightness: brightness, textScale: 2));
       await tester.pumpAndSettle();
-      for (final label in ['听书', '听歌', '听现场', '儿童', 'UP 主']) {
+      for (final label in ['听书', '听歌', '听现场', '听故事', 'UP 主']) {
         expect(_category(label).hitTestable(), findsOneWidget);
         await tester.tap(_category(label));
         await tester.pumpAndSettle();
@@ -164,7 +164,7 @@ void main() {
             .where((chip) => chip.selected), hasLength(1));
         expect(tester.takeException(), isNull);
       }
-      await tester.tap(_category('儿童'));
+      await tester.tap(_category('听故事'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '小星星');
       await tester.testTextInput.receiveAction(TextInputAction.search);
@@ -181,9 +181,9 @@ void main() {
     final api = _Api();
     await tester.pumpWidget(_host(api));
     await tester.pumpAndSettle();
-    await tester.tap(_category('儿童'));
+    await tester.tap(_category('听故事'));
     await tester.pumpAndSettle();
-    expect(find.text('儿歌、动画、故事 · 仅收听声音'), findsOneWidget);
+    expect(find.text('儿童 · 儿歌、动画、故事'), findsOneWidget);
     for (final keyword in ['儿歌', '儿童动画片', '儿童故事']) {
       expect(find.text(keyword), findsOneWidget);
     }

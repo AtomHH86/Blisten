@@ -57,7 +57,7 @@ class _LayoutApi implements BiliApi {
     searches++;
     onFirstPage?.call(1);
     onRawCount?.call(1);
-    return [_book(mode)];
+    return order == 'click' ? [_book(mode), _book(mode)] : [_book(mode)];
   }
 
   @override
@@ -141,7 +141,7 @@ void main() {
         await tester.pumpWidget(_host(DiscoverPage(api: api), Brightness.dark));
         await tester.pump(const Duration(milliseconds: 500));
         await tester.pumpAndSettle();
-        final category = find.byKey(const ValueKey('discover-category-1'));
+        final category = find.byKey(const ValueKey('discover-category-audiobook-1'));
         expect(
           tester.getSemantics(category).flagsCollection.isSelected !=
               Tristate.none,

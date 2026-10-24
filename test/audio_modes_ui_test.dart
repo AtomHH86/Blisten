@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:blisten/core/storage/search_history_store.dart';
+import 'package:blisten/core/nav/home_tabs.dart';
 import 'package:blisten/core/storage/follow_store.dart';
 import 'package:blisten/core/storage/cache_store.dart';
 import 'package:blisten/core/theme/app_theme.dart';
@@ -29,6 +30,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class _Api implements BiliApi {
   final requests = <({String keyword, int page, ContentMode mode})>[];
+  final orders = <String?>[];
   final pending = <Completer<List<Book>>>[];
   bool defer = false;
   bool deferUsers = false;
@@ -49,6 +51,7 @@ class _Api implements BiliApi {
     CancelToken? cancelToken,
   }) async {
     requests.add((keyword: keyword, page: page, mode: mode));
+    orders.add(order);
     onRawCount?.call(20);
     if (defer) {
       final completer = Completer<List<Book>>();
@@ -207,6 +210,7 @@ Widget _host(Widget child, {_Player? player}) => MultiProvider(
 
 void main() {
   setUp(() async {
+    HomeTabs.discoverMode.value = null;
     SharedPreferences.setMockInitialValues({'abts_shelf': '[]'});
     await ShelfStore.instance.load();
     await SearchHistoryStore.instance.clear();
@@ -272,6 +276,86 @@ void main() {
     },
   );
 
+  testWidgets('discover ignores delayed old channel and caches only current response', (tester) async {
+    final api = _Api()..defer = true;
+    await tester.pumpWidget(_host(DiscoverPage(api: api)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('听歌'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    api.pending.last.complete([_book(ContentMode.music, '新频道结果')]);
+    await tester.pumpAndSettle();
+    api.pending.first.complete([_book(ContentMode.audiobook, '迟到旧结果')]);
+    await tester.pumpAndSettle();
+    expect(find.text('新频道结果'), findsOneWidget);
+    expect(find.text('迟到旧结果'), findsNothing);
+    api.defer = false;
+    await tester.tap(find.text('听书'));
+    await tester.pumpAndSettle();
+    expect(find.text('迟到旧结果'), findsNothing);
+    expect(api.requests.where((r) => r.mode == ContentMode.audiobook).length, 2);
+  });
+
+  testWidgets('openDiscover switches existing page and restores channel after remount', (tester) async {
+    final api = _Api();
+    await tester.pumpWidget(_host(DiscoverPage(api: api)));
+    await tester.pumpAndSettle();
+    HomeTabs.openDiscover(ContentMode.children);
+    await tester.pumpAndSettle();
+    expect(HomeTabs.index.value, 1);
+    expect(api.requests.last.mode, ContentMode.children);
+    expect(api.orders.last, 'click');
+    await tester.tap(find.text('儿歌'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox());
+    HomeTabs.discoverMode.value = null;
+    await tester.pumpWidget(_host(DiscoverPage(api: api)));
+    await tester.pumpAndSettle();
+    expect(api.requests.last.mode, ContentMode.children);
+    expect(api.requests.last.keyword, contains('儿歌'));
+    await tester.tap(find.byTooltip('添加 B 站资源'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '听故事').last).selected, isTrue);
+  });
+
+  testWidgets('discover channel return restores scroll and reuses loaded category', (tester) async {
+    final api = _Api();
+    await tester.pumpWidget(_host(DiscoverPage(api: api)));
+    await tester.pumpAndSettle();
+    final list = find.byWidgetPredicate((w) => w is ListView && w.scrollDirection == Axis.vertical);
+    await tester.drag(list, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    final offset = tester.widget<ListView>(list).controller!.offset;
+    expect(offset, greaterThan(0));
+    await tester.tap(find.text('听歌'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('听书'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ListView>(list).controller!.offset, closeTo(offset, 1));
+    expect(api.requests.where((r) => r.mode == ContentMode.audiobook).length, 1);
+  });
+
+  testWidgets('discover children category uses its own query and remembers category', (tester) async {
+    final api = _Api();
+    await tester.pumpWidget(_host(DiscoverPage(api: api)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('听故事'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('儿歌'));
+    await tester.pumpAndSettle();
+    expect(api.requests.last.mode, ContentMode.children);
+    expect(api.requests.last.keyword, contains('儿歌'));
+    await tester.tap(find.text('听歌'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('听故事'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('更多'));
+    await tester.pumpAndSettle();
+    expect(api.requests.last.keyword, contains('儿歌'));
+    expect(api.requests.last.mode, ContentMode.children);
+  });
+
   testWidgets('discover song category and more search preserve content mode', (
     tester,
   ) async {
@@ -279,8 +363,8 @@ void main() {
     await tester.pumpWidget(_host(DiscoverPage(api: api)));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
-    expect(find.text('热门听书'), findsOneWidget);
-    expect(find.text('推荐测试作品'), findsOneWidget);
+    expect(find.text('热门'), findsOneWidget);
+    expect(find.text('audiobook 第 1 页'), findsOneWidget);
     await tester.tap(find.text('听歌'));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
@@ -288,7 +372,7 @@ void main() {
     await tester.tap(find.text('更多'));
     await tester.pumpAndSettle();
     expect(find.byType(SearchPage), findsOneWidget);
-    expect(api.requests.last.keyword, '歌曲 现场 MV');
+    expect(api.requests.last.keyword, '歌曲 音乐');
     expect(api.requests.last.mode, ContentMode.music);
     final selected = tester.widget<ChoiceChip>(
       find.widgetWithText(ChoiceChip, '听歌'),

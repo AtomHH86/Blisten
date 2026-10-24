@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/content_mode.dart';
 
-/// 发现页分类与精选主播（本地种子数据，确保无网络时也有内容可看）
+/// 发现页分类及真实主播配置；资源列表由 B 站接口获取。
 class DiscoverCategory {
   final String label;
   final String keyword;
@@ -37,9 +37,9 @@ class AnchorPick {
 class DiscoverSeeds {
   DiscoverSeeds._();
 
-  static const List<DiscoverCategory> categories = [
+  static const List<DiscoverCategory> _legacyCategories = [
     DiscoverCategory(
-      label: '热门听书',
+      label: '有声小说',
       keyword: '有声小说',
       icon: Icons.local_fire_department_rounded,
       anchors: [
@@ -361,6 +361,38 @@ class DiscoverSeeds {
       ],
     ),
   ];
+
+  static List<DiscoverCategory> categoriesFor(ContentMode mode) => switch (mode) {
+    ContentMode.audiobook => [
+      const DiscoverCategory(label: '热门', keyword: '有声小说', icon: Icons.local_fire_department_rounded, anchors: []),
+      DiscoverCategory(label: '有声小说', keyword: '有声小说', icon: Icons.menu_book_rounded, anchors: _legacyCategories.first.anchors),
+      ..._legacyCategories.where((c) => c.mode == ContentMode.audiobook).skip(1),
+    ],
+    ContentMode.music => const [
+      DiscoverCategory(label: '热门', keyword: '歌曲 音乐', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+      DiscoverCategory(label: '华语', keyword: '华语 歌曲', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+      DiscoverCategory(label: '经典老歌', keyword: '经典老歌', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+      DiscoverCategory(label: '翻唱', keyword: '歌曲 翻唱', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+      DiscoverCategory(label: '纯音乐', keyword: '纯音乐', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+      DiscoverCategory(label: '欧美', keyword: '欧美 歌曲', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+      DiscoverCategory(label: '日韩', keyword: '日韩 歌曲', icon: Icons.music_note_rounded, mode: ContentMode.music, anchors: []),
+    ],
+    ContentMode.concert => const [
+      DiscoverCategory(label: '热门', keyword: '演唱会 完整版', icon: Icons.stadium_rounded, mode: ContentMode.concert, anchors: []),
+      DiscoverCategory(label: '演唱会', keyword: '演唱会 完整版', icon: Icons.stadium_rounded, mode: ContentMode.concert, anchors: []),
+      DiscoverCategory(label: '音乐节', keyword: '音乐节 现场', icon: Icons.stadium_rounded, mode: ContentMode.concert, anchors: []),
+      DiscoverCategory(label: 'Livehouse', keyword: 'Livehouse 现场', icon: Icons.stadium_rounded, mode: ContentMode.concert, anchors: []),
+      DiscoverCategory(label: '舞台现场', keyword: '舞台现场', icon: Icons.stadium_rounded, mode: ContentMode.concert, anchors: []),
+    ],
+    ContentMode.children => const [
+      DiscoverCategory(label: '热门', keyword: '儿童 儿歌 动画 故事', icon: Icons.child_care_rounded, mode: ContentMode.children, anchors: []),
+      DiscoverCategory(label: '儿歌', keyword: '儿歌', icon: Icons.child_care_rounded, mode: ContentMode.children, anchors: []),
+      DiscoverCategory(label: '动画', keyword: '儿童动画', icon: Icons.child_care_rounded, mode: ContentMode.children, anchors: []),
+      DiscoverCategory(label: '睡前故事', keyword: '儿童 睡前故事', icon: Icons.child_care_rounded, mode: ContentMode.children, anchors: []),
+      DiscoverCategory(label: '童话寓言', keyword: '儿童 童话 寓言', icon: Icons.child_care_rounded, mode: ContentMode.children, anchors: []),
+      DiscoverCategory(label: '启蒙', keyword: '儿童 启蒙', icon: Icons.child_care_rounded, mode: ContentMode.children, anchors: []),
+    ],
+  };
 
   static List<String> hotKeysFor(ContentMode mode) => switch (mode) {
     ContentMode.audiobook => hotKeys,

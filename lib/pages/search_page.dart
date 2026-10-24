@@ -391,7 +391,7 @@ class _SearchPageState extends State<SearchPage> {
               MediaQuery.viewInsetsOf(context).bottom == 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text('儿歌、动画、故事 · 仅收听声音',
+              child: Text('儿童 · 儿歌、动画、故事',
                 style: TextStyle(fontSize: 12, color: AppTheme.textSub)),
             ),
           Expanded(child: _buildBody()),

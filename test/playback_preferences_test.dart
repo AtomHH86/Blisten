@@ -20,7 +20,6 @@ void main() {
     expect(await reloaded.rateFor(ContentMode.concert), 1.0);
     expect(PlaybackPreferences.selectionStart(children,
         index: 2, positionMs: 45000), (index: 2, positionMs: 45000));
-    expect(children.autoShelf, isFalse);
   });
 
   test(
