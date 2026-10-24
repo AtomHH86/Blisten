@@ -154,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
   /// 账号信息：未登录显示登录入口，已登录显示昵称头像与退出登录
   Widget _buildAccountCard(LoginStore auth) {
     final logged = auth.isLogin;
-    final action = logged
+    final action = (logged || auth.status == LoginStatus.unverified)
         ? OutlinedButton(
             onPressed: _logout,
             style: OutlinedButton.styleFrom(
@@ -211,7 +211,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         logged
                             ? (auth.userName.isEmpty ? 'B 站用户' : auth.userName)
-                            : '未登录',
+                            : switch (auth.status) {
+                                LoginStatus.expired => '登录已失效',
+                                LoginStatus.unverified => '登录待验证',
+                                _ => '未登录',
+                              },
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -222,7 +226,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        logged ? '已登录' : '登录后可同步昵称与头像',
+                        switch (auth.status) {
+                          LoginStatus.verified => '已登录',
+                          LoginStatus.expired => '请重新扫码登录',
+                          LoginStatus.unverified => '暂时无法验证，请检查网络',
+                          LoginStatus.loggedOut => '登录后可同步昵称与头像',
+                        },
                         style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                       ),
                     ],

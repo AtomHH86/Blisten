@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../storage/credential_store.dart';
 import 'api_config.dart';
 import 'cookie_jar.dart';
 import 'wbi_signer.dart';
@@ -23,7 +24,6 @@ class BiliClient {
   BiliClient._();
   static final BiliClient instance = BiliClient._();
 
-  static const _prefCookie = 'bili_cookie';
   static const _prefWbi = 'bili_wbi_keys';
 
   late Dio _dio;
@@ -35,6 +35,12 @@ class BiliClient {
 
   bool _buvidActivated = false;
   int _lastReqAt = 0;
+  int _sessionGeneration = 0;
+  int get sessionGeneration => _sessionGeneration;
+
+  /// Invalidate pending responses on login attempt replacement or cancellation.
+  void invalidateSessionRequests() { _sessionGeneration++; }
+
 
   /// 未登录（游客）请求的最小间隔。
   /// 官方客户端与主流第三方客户端都刻意放慢游客请求节奏，
@@ -68,7 +74,9 @@ class BiliClient {
   Future<void> initLocal() async {
     _setupIo();
     final prefs = await SharedPreferences.getInstance();
-    final cookie = prefs.getString(_prefCookie);
+    _sessionGeneration++;
+    _jar.clear();
+    final cookie = await CredentialStore.instance.load();
     if (cookie != null && cookie.isNotEmpty) {
       final map = <String, String>{};
       for (final seg in cookie.split(';')) {
@@ -108,11 +116,7 @@ class BiliClient {
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     final cookie = _jar.buildHeader();
-    if (cookie.isNotEmpty) {
-      await prefs.setString(_prefCookie, cookie);
-    } else {
-      await prefs.remove(_prefCookie);
-    }
+    await CredentialStore.instance.write(cookie.isEmpty ? null : cookie);
     if (_imgUrl != null && _subUrl != null) {
       await prefs.setString(_prefWbi, '$_imgUrl|$_subUrl|$_wbiFetchedAt');
     }
@@ -120,18 +124,20 @@ class BiliClient {
 
   /// 预热：访问首页种入 buvid，激活 buvid，并从 nav 拉取 WBI 密钥
   Future<void> warmup() async {
+    final generation = _sessionGeneration;
     try {
       final res = await _fetchRaw(BiliEndpoints.warmup);
+      if (generation != _sessionGeneration) return;
       if (res.headers['set-cookie'] != null) {
         _jar.mergeFromHeaders(res.headers['set-cookie']);
       }
       _jar.markSuccess();
-      debugPrint('[BiliClient] warmup cookie ok: ${_jar.buildHeader()}');
+      debugPrint('[BiliClient] warmup completed');
       await _ensureBuvidActivated();
       await _refreshWbiKeys();
       await _persist();
     } catch (e) {
-      debugPrint('[BiliClient] warmup failed: $e');
+      debugPrint('[BiliClient] warmup failed: ${e.runtimeType}');
     }
   }
 
@@ -166,9 +172,9 @@ class BiliClient {
         },
       });
       await post(BiliEndpoints.activateBuvid, data: {'payload': payload});
-      debugPrint('[BiliClient] buvid activated: ${_jar.get('buvid3')}');
+      debugPrint('[BiliClient] buvid activated');
     } catch (e) {
-      debugPrint('[BiliClient] buvid activate failed: $e');
+      debugPrint('[BiliClient] buvid activate failed: ${e.runtimeType}');
     }
   }
 
@@ -232,6 +238,7 @@ class BiliClient {
   Future<Response<dynamic>> _exec(
     String url, {
     required Map<String, String> headers,
+    required int generation,
   }) async {
     Response<dynamic> res;
     try {
@@ -241,11 +248,25 @@ class BiliClient {
       await Future<void>.delayed(const Duration(milliseconds: 800));
       res = await _fetchRaw(url, headers: headers);
     }
-    if (res.headers['set-cookie'] != null) {
-      _jar.mergeFromHeaders(res.headers['set-cookie']);
-      await _persist();
+    res = _normalize(res);
+    final isQrPoll = url == BiliEndpoints.qrPoll ||
+        url.startsWith('${BiliEndpoints.qrPoll}?');
+    if (isQrPoll && generation != _sessionGeneration) {
+      throw BiliApiException(-2, '登录请求已取消');
     }
-    return _normalize(res);
+    if (generation == _sessionGeneration) {
+      final body = res.data;
+      if (isQrPoll && body is Map && body['code'] == 0 &&
+          body['data'] is Map && body['data']['code'] == 0) {
+        // Commit the new account before any competing old response can merge.
+        _sessionGeneration++;
+      }
+      if (res.headers['set-cookie'] != null) {
+        _jar.mergeFromHeaders(res.headers['set-cookie']);
+        await _persist();
+      }
+    }
+    return res;
   }
 
   static bool _riskCode(int c) => c == -412 || c == -352;
@@ -276,13 +297,15 @@ class BiliClient {
       await _persist();
       await warmup();
     } catch (e) {
-      debugPrint('[BiliClient] risk mitigate failed: $e');
+      debugPrint('[BiliClient] risk mitigate failed: ${e.runtimeType}');
     }
   }
 
   Future<void> _refreshWbiKeys() async {
+    final generation = _sessionGeneration;
     try {
       final res = await _fetchRaw(BiliEndpoints.nav);
+      if (generation != _sessionGeneration) return;
       if (res.headers['set-cookie'] != null) {
         _jar.mergeFromHeaders(res.headers['set-cookie']);
       }
@@ -303,7 +326,7 @@ class BiliClient {
       }
       await _persist();
     } catch (e) {
-      debugPrint('[BiliClient] refresh wbi keys failed: $e');
+      debugPrint('[BiliClient] refresh wbi keys failed: ${e.runtimeType}');
     }
   }
 
@@ -314,6 +337,7 @@ class BiliClient {
     bool useWbi = false,
     Map<String, String>? headers,
   }) async {
+    final generation = _sessionGeneration;
     await _throttle();
     var q = {...?query};
     if (useWbi) {
@@ -337,6 +361,7 @@ class BiliClient {
       Response<dynamic> res = await _exec(
         fullUrl,
         headers: {'Referer': BiliEndpoints.home, ...?headers},
+        generation: generation,
       );
       // 风控退避重试：HTTP 412/403 与 body code -412/-352 一视同仁，
       // 首次命中时补齐 buvid 并重新预热，海外 IP 尤其需要这一步。
@@ -347,6 +372,7 @@ class BiliClient {
         res = await _exec(
           fullUrl,
           headers: {'Referer': BiliEndpoints.home, ...?headers},
+          generation: generation,
         );
       }
       final last = res.data;
@@ -366,7 +392,7 @@ class BiliClient {
       }
       return res;
     } on DioException catch (e) {
-      throw BiliApiException(-1, '网络请求失败：${e.message}');
+      throw BiliApiException(-1, '网络请求失败：${e.type.name}');
     }
   }
 
@@ -377,6 +403,7 @@ class BiliClient {
     Map<String, String>? headers,
     bool jsonBody = true,
   }) async {
+    final generation = _sessionGeneration;
     await _throttle();
     Response<dynamic>? res;
     Object? lastErr;
@@ -400,10 +427,10 @@ class BiliClient {
       }
     }
     if (res == null) {
-      throw BiliApiException(-1, '网络请求失败：$lastErr');
+      throw BiliApiException(-1, '网络请求失败：${lastErr.runtimeType}');
     }
     var resp = _normalize(res);
-    if (resp.headers['set-cookie'] != null) {
+    if (generation == _sessionGeneration && resp.headers['set-cookie'] != null) {
       _jar.mergeFromHeaders(resp.headers['set-cookie']);
       await _persist();
     }
@@ -423,7 +450,7 @@ class BiliClient {
       } catch (e) {
         lastErr = e;
       }
-      if (resp.headers['set-cookie'] != null) {
+      if (generation == _sessionGeneration && resp.headers['set-cookie'] != null) {
         _jar.mergeFromHeaders(resp.headers['set-cookie']);
         await _persist();
       }
@@ -442,7 +469,7 @@ class BiliClient {
     return resp;
   }
 
-  /// 是否已登录（有有效 SESSDATA）
+  /// 是否存在会话凭据；有效性由 nav 验证，不能用于展示已登录。
   bool get isLoggedIn {
     final s = _jar.get('SESSDATA');
     return s != null && s.isNotEmpty;
@@ -450,6 +477,7 @@ class BiliClient {
 
   /// 退出登录：清空并持久化
   Future<void> logout() async {
+    _sessionGeneration++;
     _jar.clear();
     await _persist();
   }

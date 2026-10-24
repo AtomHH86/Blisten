@@ -213,8 +213,8 @@ class CacheTask {
 
 /// 一集缓存失败后的记录（页面展示 + 一键重试）
 ///
-/// 之前失败只写 debugPrint，而 debugPrint 在 release 包里是空实现，
-/// 批量缓存失败时用户和开发者都看不到任何痕迹，这一集就「人间蒸发」了。
+/// debugPrint 在 release 中仍可能输出，但不能替代用户可见的失败记录。
+/// 批量缓存失败时保留这一集及可读原因，便于用户重试。
 class CacheFailure {
   final String bvid;
   final ContentMode contentMode;
@@ -269,8 +269,8 @@ class CacheFailure {
 
 /// 缓存相关的一条事件记录
 ///
-/// release 包里 `debugPrint` 是空实现，出问题手机上没有任何日志，
-/// 只能靠这个把「索引/磁盘/播放器」到底发生了什么显示给用户看。
+/// 将「索引/磁盘/播放器」事件显示给用户；日志在 release 中也可能输出，
+/// 因此事件和诊断输出都不能包含凭据或完整音源地址。
 class CacheEvent {
   final int at;
   final String text;
@@ -1117,7 +1117,7 @@ class CacheStore extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('[CacheStore] 下载失败 $bvid/$cid: $e');
+      debugPrint('[CacheStore] 下载失败 $bvid/$cid: ${e.runtimeType}');
       try {
         if (tmp != null && await tmp.exists()) await tmp.delete();
       } catch (_) {}

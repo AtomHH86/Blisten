@@ -67,6 +67,28 @@ class MainActivity : AudioServiceActivity() {
         super.configureFlutterEngine(flutterEngine)
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
+        // Credentials are isolated from settings and all backup domains.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "abts/credentials",
+        ).setMethodCallHandler { call, result ->
+            try {
+                when (call.method) {
+                    "read" -> {
+                        CredentialStorage.migrateLegacy(this)
+                        result.success(CredentialStorage.read(this))
+                    }
+                    "write" -> {
+                        CredentialStorage.write(this, call.arguments as String?)
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (_: Exception) {
+                result.error("credential_storage", "Credential storage unavailable", null)
+            }
+        }
+
         // 注册「即将变噪音」广播（拔耳机/蓝牙断开）→ 自动暂停
         try {
             val noisyFilter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)

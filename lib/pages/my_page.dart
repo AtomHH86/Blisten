@@ -207,7 +207,11 @@ class MyPage extends StatelessWidget {
                   Text(
                     auth.isLogin && auth.userName.isNotEmpty
                         ? auth.userName
-                        : (auth.isLogin ? 'B 站用户' : '未登录'),
+                        : (auth.isLogin ? 'B 站用户' : switch (auth.status) {
+                            LoginStatus.expired => '登录已失效',
+                            LoginStatus.unverified => '登录待验证',
+                            _ => '未登录',
+                          }),
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -218,7 +222,11 @@ class MyPage extends StatelessWidget {
                   Text(
                     auth.isLogin
                         ? '已登录 · 已收藏 ${shelf.books.length} 项'
-                        : '未登录 · 点此进入系统设置',
+                        : switch (auth.status) {
+                            LoginStatus.expired => '请重新扫码登录',
+                            LoginStatus.unverified => '暂时无法验证，请检查网络',
+                            _ => '未登录 · 点此进入系统设置',
+                          },
                     style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                   ),
                 ],

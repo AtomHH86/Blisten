@@ -33,6 +33,22 @@ final _book = Book(
   ],
 );
 
+// Layout fixture represents an already server-verified account. Persisted
+// profile data is intentionally insufficient to establish authentication.
+class _VerifiedLogin extends ChangeNotifier implements LoginStore {
+  @override
+  bool get isLogin => status == LoginStatus.verified;
+  @override
+  LoginStatus status = LoginStatus.verified;
+  @override
+  String get userName => '这是一个较长的中文用户昵称';
+  @override
+  String get userFace => '';
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+final _verifiedLogin = _VerifiedLogin();
+
 class _Player extends ChangeNotifier implements BookPlayer {
   Duration timer = Duration.zero;
   bool stopAtEnd = false;
@@ -78,7 +94,7 @@ Widget _host(Widget page, _Player player, ThemeMode mode, {double scale = 1}) {
       ChangeNotifierProvider.value(value: ShelfStore.instance),
       ChangeNotifierProvider.value(value: CacheStore.instance),
       ChangeNotifierProvider.value(value: FollowStore.instance),
-      ChangeNotifierProvider.value(value: LoginStore.instance),
+      ChangeNotifierProvider<LoginStore>.value(value: _verifiedLogin),
       ChangeNotifierProvider<BookPlayer>.value(value: player),
     ],
     child: MaterialApp(
@@ -149,6 +165,7 @@ void _expectRenderedContrast(
 
 void main() {
   setUp(() async {
+    _verifiedLogin.status = LoginStatus.verified;
     const entry = CacheEntry(
       bvid: 'BV1xx411c7mD',
       cid: 11,
@@ -186,6 +203,16 @@ void main() {
     await ThemeController.instance.load();
   });
   tearDown(() => AppTheme.mode = ThemeMode.system);
+
+  testWidgets('unverified credential keeps logout reachable and shows verification state', (tester) async {
+    _verifiedLogin.status = LoginStatus.unverified;
+    await tester.pumpWidget(_host(const SettingsPage(), _Player(), ThemeMode.light));
+    await tester.pumpAndSettle();
+    expect(find.text('登录待验证'), findsOneWidget);
+    expect(find.text('暂时无法验证，请检查网络'), findsOneWidget);
+    expect(find.text('退出登录'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final mode in [ThemeMode.light, ThemeMode.dark]) {
     testWidgets(
@@ -279,7 +306,7 @@ void main() {
         await _reachable(tester, find.text('取消'));
         await tester.tap(find.text('取消'));
         await tester.pumpAndSettle();
-        expect(LoginStore.instance.isLogin, isTrue);
+        expect(_verifiedLogin.isLogin, isTrue);
         expect(tester.takeException(), isNull);
       },
     );

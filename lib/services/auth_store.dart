@@ -1,76 +1,86 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/network/bili_client.dart';
 import 'bili_api.dart';
 
-/// 登录态 + 用户信息（本地持久化，供 UI 展示）
+enum LoginStatus { loggedOut, verified, expired, unverified }
+
+/// Only a current nav response verifies a login; cached profiles never do.
 class LoginStore extends ChangeNotifier {
   LoginStore._();
   static final LoginStore instance = LoginStore._();
 
-  static const _key = 'bili_login_user';
-
-  bool _isLogin = false;
+  LoginStatus _status = LoginStatus.loggedOut;
   String _userName = '';
   String _userFace = '';
 
-  bool get isLogin => _isLogin;
+  LoginStatus get status => _status;
+  bool get isLogin => _status == LoginStatus.verified;
   String get userName => _userName;
   String get userFace => _userFace;
-
   BiliClient get _client => BiliClient.instance;
 
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
-    final raw = sp.getString(_key);
-    if (raw != null) {
-      try {
-        final m = jsonDecode(raw) as Map;
-        _isLogin = m['login'] == true;
-        _userName = m['name'] as String? ?? '';
-        _userFace = m['face'] as String? ?? '';
-      } catch (_) {}
-    } else {
-      _isLogin = _client.isLoggedIn;
-    }
+    await sp.remove('bili_login_user');
+    _status = _client.isLoggedIn ? LoginStatus.unverified : LoginStatus.loggedOut;
+    _userName = '';
+    _userFace = '';
     notifyListeners();
   }
 
-  Future<void> _persist() async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setString(
-      _key,
-      jsonEncode({
-        'login': _isLogin,
-        'name': _userName,
-        'face': _userFace,
-      }),
-    );
-  }
-
-  /// 从 nav 接口刷新登录态与用户名/头像
   Future<void> refreshFromNav() async {
+    final generation = _client.sessionGeneration;
     try {
       final u = await BiliApi.instance.currentUser();
-      _isLogin = u.isLogin || _client.isLoggedIn;
+      if (generation != _client.sessionGeneration) return;
+      if (!u.isLogin) {
+        await _expire();
+        return;
+      }
+      _status = LoginStatus.verified;
       _userName = u.uname;
       _userFace = u.face;
-      await _persist();
       notifyListeners();
-    } catch (e) {
-      debugPrint('[LoginStore] refresh nav failed: $e');
+    } on BiliApiException catch (e) {
+      if (generation != _client.sessionGeneration) return;
+      if (e.code == -101) {
+        await _expire();
+      } else {
+        _unverified();
+      }
+    } catch (_) {
+      if (generation != _client.sessionGeneration) return;
+      _unverified();
     }
+  }
+
+  void _unverified() {
+    _status = _client.isLoggedIn ? LoginStatus.unverified : LoginStatus.loggedOut;
+    _userName = '';
+    _userFace = '';
+    notifyListeners();
+  }
+
+  Future<void> _expire() async {
+    final hadSession = _client.isLoggedIn ||
+        _status == LoginStatus.verified || _status == LoginStatus.unverified;
+    // logout invalidates the response generation synchronously.
+    final clearing = _client.logout();
+    _status = hadSession ? LoginStatus.expired : LoginStatus.loggedOut;
+    _userName = '';
+    _userFace = '';
+    notifyListeners();
+    await clearing;
   }
 
   Future<void> markLoggedOut() async {
-    await _client.logout();
-    _isLogin = false;
+    final clearing = _client.logout();
+    _status = LoginStatus.loggedOut;
     _userName = '';
     _userFace = '';
-    await _persist();
     notifyListeners();
+    await clearing;
   }
 }

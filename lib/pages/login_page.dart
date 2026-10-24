@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/network/bili_client.dart';
 import '../services/auth_store.dart';
 import '../services/bili_api.dart';
 import '../services/gallery_service.dart';
@@ -47,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _destroyed = true;
+    BiliClient.instance.invalidateSessionRequests();
     _timer?.cancel();
     super.dispose();
   }
@@ -54,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _generate() async {
     _timer?.cancel();
     final generation = ++_generation;
+    BiliClient.instance.invalidateSessionRequests();
     setState(() {
       _generating = true;
       _pollFailed = false;
@@ -89,6 +92,7 @@ class _LoginPageState extends State<LoginPage> {
     final key = _qrKey;
     if (key == null || _qrContent == null || _polling) return;
     final generation = _generation;
+    final session = BiliClient.instance.sessionGeneration;
     _polling = true;
     String state;
     try {
@@ -104,13 +108,25 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       _polling = false;
     }
-    if (_destroyed || generation != _generation) return;
+    // A successful real QR response advances the account generation once.
+    final acceptedSession = state == 'success' ? session + 1 : session;
+    if (_destroyed || generation != _generation ||
+        acceptedSession != BiliClient.instance.sessionGeneration) {
+      return;
+    }
     setState(() => _pollFailed = false);
     switch (state) {
       case 'success':
         _timer?.cancel();
         await LoginStore.instance.refreshFromNav();
-        if (_destroyed) return;
+        if (_destroyed || generation != _generation ||
+            acceptedSession != BiliClient.instance.sessionGeneration) {
+          return;
+        }
+        if (!LoginStore.instance.isLogin) {
+          setState(() => _status = '暂时无法验证登录，请重试');
+          return;
+        }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('登录成功，欢迎回来')),

@@ -46,7 +46,7 @@ Future<void> _bootstrap() async {
       CacheStore.instance.load(),
     ]).timeout(const Duration(seconds: 6));
   } catch (e) {
-    debugPrint('[main] local init failed: $e');
+    debugPrint('[main] local init failed: ${e.runtimeType}');
   }
 
   // 播放器初始化 + 系统媒体会话绑定（失败也进主界面，播放时自动降级）
@@ -77,7 +77,7 @@ Future<void> _bootstrap() async {
     ).timeout(const Duration(seconds: 6));
     player.attachHandler(handler);
   } catch (e) {
-    debugPrint('[main] audio service init failed: $e');
+    debugPrint('[main] audio service init failed: ${e.runtimeType}');
   }
 }
 
