@@ -36,7 +36,7 @@ tool/test-android.sh integration   # 专用模拟器，含跨进程恢复
 tool/test-android.sh online        # 真实 B 站联网冒烟，独立于确定性回归
 ```
 
-默认 `tool/test-android.sh` 同时运行 unit 和 integration。工具链由 `tool/android-env.sh` 从仓库父目录加载，SDK/Flutter/AVD 不入库。脚本只操作专用模拟器，禁止改为自动选择连接的手机。测试会重置模拟器内测试应用的数据。
+默认 `tool/test-android.sh` 运行 unit、Android 调试构建/lint 和 integration。工具链由 `tool/android-env.sh` 从仓库父目录加载，SDK/Flutter/AVD 不入库。脚本只操作专用模拟器，禁止改为自动选择连接的手机。测试会重置模拟器内测试应用的数据。
 
 - 运行脚本期间不要修改正在执行的脚本文件。
 - 集成测试使用 `flutter drive --keep-app-running`，不要用会卸载应用的两次 `flutter test` 替代进程恢复检查。
