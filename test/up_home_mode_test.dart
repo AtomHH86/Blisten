@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'dart:async';
 
 import 'package:blisten/core/storage/follow_store.dart';
@@ -29,6 +30,8 @@ class _Api implements BiliApi {
     int page = 1,
     int pageSize = 30,
     ContentMode mode = ContentMode.audiobook,
+    void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
   }) async {
     requests.add((mode: mode, page: page));
     if (respond != null) return respond!(mode, page);
@@ -51,6 +54,7 @@ class _Api implements BiliApi {
     Function(int total)? onFirstPage,
     Function(int rawCount)? onRawCount,
     ContentMode mode = ContentMode.audiobook,
+    CancelToken? cancelToken,
   }) async {
     onRawCount?.call(0);
     return [];

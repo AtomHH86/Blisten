@@ -1,3 +1,5 @@
+import 'content_mode.dart';
+
 /// UP 主（搜索结果条目）
 class UpUser {
   final int mid;
@@ -6,6 +8,7 @@ class UpUser {
   final String sign;
   final int fans;
   final int videos;
+  final ContentMode contentMode;
 
   const UpUser({
     required this.mid,
@@ -14,7 +17,13 @@ class UpUser {
     this.sign = '',
     this.fans = 0,
     this.videos = 0,
+    this.contentMode = ContentMode.audiobook,
   });
+
+  UpUser withContentMode(ContentMode mode) => UpUser(
+    mid: mid, name: name, face: face, sign: sign, fans: fans,
+    videos: videos, contentMode: mode,
+  );
 
   /// 搜索结果里的昵称带 <em class="keyword"> 高亮标签，需要剥掉
   static String _clean(String s) => s
@@ -46,6 +55,7 @@ class UpUser {
         'sign': sign,
         'fans': fans,
         'videos': videos,
+        'contentMode': contentMode.name,
       };
 
   factory UpUser.fromJson(Map<String, dynamic> m) => UpUser(
@@ -55,5 +65,6 @@ class UpUser {
         sign: m['sign'] as String? ?? '',
         fans: int.tryParse('${m['fans'] ?? 0}') ?? 0,
         videos: int.tryParse('${m['videos'] ?? 0}') ?? 0,
+        contentMode: ContentMode.fromJson(m['contentMode']),
       );
 }

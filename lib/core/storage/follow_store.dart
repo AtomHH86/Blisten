@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/up_user.dart';
+import '../../models/content_mode.dart';
 
 /// 关注的 UP 主（本地持久化）：关注后可在「我的」里直达，只听 TA 的内容
 class FollowStore extends ChangeNotifier {
@@ -65,6 +66,15 @@ class FollowStore extends ChangeNotifier {
 
   Future<void> remove(int mid) async {
     _list.removeWhere((u) => u.mid == mid);
+    notifyListeners();
+    await _save();
+  }
+
+  /// Changing the listening context keeps the existing follow relationship.
+  Future<void> setContentMode(int mid, ContentMode mode) async {
+    final i = _list.indexWhere((u) => u.mid == mid);
+    if (i < 0 || _list[i].contentMode == mode) return;
+    _list[i] = _list[i].withContentMode(mode);
     notifyListeners();
     await _save();
   }

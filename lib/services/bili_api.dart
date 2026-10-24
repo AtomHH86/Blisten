@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 
 import '../core/network/api_config.dart';
 import '../core/network/bili_client.dart';
@@ -18,6 +19,12 @@ class _UpCursor {
   bool get exhausted => seasonIdx >= seasonIds.length;
 
   int get currentSeason => seasonIds[seasonIdx];
+
+  _UpCursor copy() => _UpCursor()
+    ..seasonIds.addAll(seasonIds)
+    ..preview.addAll(preview)
+    ..seasonIdx = seasonIdx
+    ..seasonPage = seasonPage;
 
   /// 移到下一个合集
   void advance() {
@@ -93,61 +100,57 @@ class BiliApi {
     /// 关闭听书过滤（UP 主场景：已按 mid 精确过滤，不需要再按题材筛）
     bool applyAudioFilter = true,
     ContentMode mode = ContentMode.audiobook,
+    CancelToken? cancelToken,
   }) async {
-    var attempt = 0;
-    while (true) {
-      attempt++;
-      try {
-        final res = await _client.get(
-          BiliEndpoints.searchType,
-          query: {
-            'search_type': 'video',
-            'keyword': keyword,
-            'page': page,
-            'page_size': pageSize,
-            'platform': 'pc',
-            'web_location': 1430654,
-            if (order != null && order.isNotEmpty) 'order': order,
-          },
-          useWbi: true,
-          headers: {
-            'origin': BiliEndpoints.searchHome,
-            'referer': '${BiliEndpoints.searchHome}/video'
-                '?keyword=${Uri.encodeComponent(keyword)}',
-          },
-        );
-        final data = res.data as Map;
-        final result = data['data'] as Map? ?? {};
-        // v_voucher：触发极验风控，等待后重试
-        if (result['result'] == null && result['v_voucher'] != null) {
-          if (attempt < 3) {
-            await Future<void>.delayed(Duration(milliseconds: 1500 * attempt));
-            continue;
-          }
-          throw BiliApiException(-412, '网络繁忙，请稍后再试');
-        }
-        final numResults = int.tryParse('${result['numResults'] ?? 0}') ?? 0;
-        final list = result['result'] as List? ?? [];
-        final books = <Book>[];
-        for (final item in list) {
-          if (item is! Map) continue;
-          final m = item.cast<String, dynamic>();
-          if (applyAudioFilter && !_isAudiobookItem(m, keyword)) continue;
-          final b = Book.fromSearch(m, mode: mode);
-          if (b.bvid.isEmpty || b.aid == 0) continue;
-          books.add(b);
-        }
-        onRawCount?.call(list.length);
-        onFirstPage?.call(page == 1 ? numResults : 0);
-        return books;
-      } on BiliApiException catch (e) {
-        if (e.code == -412 && attempt < 3) {
-          await Future<void>.delayed(Duration(milliseconds: 1500 * attempt));
-          continue;
-        }
-        rethrow;
-      }
+    final res = await _client.get(
+      BiliEndpoints.searchType,
+      cancelToken: cancelToken,
+      query: {
+        'search_type': 'video',
+        'keyword': keyword,
+        'page': page,
+        'page_size': pageSize,
+        'platform': 'pc',
+        'web_location': 1430654,
+        if (order != null && order.isNotEmpty) 'order': order,
+      },
+      useWbi: true,
+      headers: {
+        'origin': BiliEndpoints.searchHome,
+        'referer': '${BiliEndpoints.searchHome}/video'
+            '?keyword=${Uri.encodeComponent(keyword)}',
+      },
+    );
+    final result = _searchResult(res.data);
+    if (result['v_voucher'] != null) {
+      throw BiliApiException(-412, '网络繁忙，请稍后再试');
     }
+    final numResults = int.tryParse('${result['numResults'] ?? 0}') ?? 0;
+    final list = result['result'] as List? ?? [];
+    final books = <Book>[];
+    for (final item in list) {
+      if (item is! Map) continue;
+      final m = item.cast<String, dynamic>();
+      if (applyAudioFilter && !_isAudiobookItem(m, keyword)) continue;
+      final b = Book.fromSearch(m, mode: mode);
+      if (b.bvid.isEmpty || b.aid == 0) continue;
+      books.add(b);
+    }
+    onRawCount?.call(list.length);
+    onFirstPage?.call(page == 1 ? numResults : 0);
+    return books;
+  }
+
+  static Map _searchResult(dynamic body) {
+    if (body is! Map || body['data'] is! Map) {
+      throw BiliApiException(-1, '搜索响应不完整，请重试');
+    }
+    final data = body['data'] as Map;
+    if (data['result'] is! List && data['v_voucher'] == null &&
+        !(data['result'] == null && data['numResults'] == 0)) {
+      throw BiliApiException(-1, '搜索响应不完整，请重试');
+    }
+    return data;
   }
 
   /// 按收听模式搜索。只有听书需要题材过滤和补搜。
@@ -163,11 +166,13 @@ class BiliApi {
     String? order,
     Function(int total)? onFirstPage,
     Function(int rawCount)? onRawCount,
-  }) async {
+    CancelToken? cancelToken,
+  }) => BiliClient.withRequestBudget(() async {
     final kw = keyword.trim();
     if (kw.isEmpty) return [];
     final primary = await _searchRaw(
       kw,
+      cancelToken: cancelToken,
       mode: mode,
       applyAudioFilter: mode == ContentMode.audiobook,
       page: page,
@@ -182,6 +187,7 @@ class BiliApi {
     try {
       final extra = await _searchRaw(
         '$kw 有声小说',
+        cancelToken: cancelToken,
         page: page,
         pageSize: pageSize,
         order: order,
@@ -191,25 +197,35 @@ class BiliApi {
         if (seen.add(b.bvid)) primary.add(b);
       }
     } catch (_) {
+      if (cancelToken?.isCancelled ?? false) rethrow;
       // 补搜失败不影响主结果
     }
     return primary;
-  }
+  }, cancelToken: cancelToken);
 
   /// 热门推荐（榜单）：有声小说按播放量排序，翻页凑量 + 按标题去重
-  Future<List<Book>> rankHotNovel({int limit = 30}) async {
+  Future<List<Book>> rankHotNovel({int limit = 30,
+    void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
+  }) => BiliClient.withRequestBudget(() async {
     final all = <Book>[];
+    var received = false;
     for (var page = 1; page <= 2; page++) {
       try {
         final list = await _searchRaw(
           '有声小说',
+          cancelToken: cancelToken,
           page: page,
           pageSize: 20,
           order: 'click',
         );
+        received = true;
         all.addAll(list);
         if (list.isEmpty) break;
-      } catch (_) {
+      } catch (error) {
+        if (cancelToken?.isCancelled ?? false) rethrow;
+        if (!received) rethrow;
+        onPartialFailure?.call(error);
         break;
       }
     }
@@ -221,7 +237,7 @@ class BiliApi {
       if (out.length >= limit) break;
     }
     return out;
-  }
+  }, cancelToken: cancelToken);
 
   /// 书籍详情（含分P章节）
   Future<Book> detail(String bvid,
@@ -232,7 +248,7 @@ class BiliApi {
     );
     final data = res.data as Map;
     if (data['data'] is! Map) {
-      throw BiliApiException(-404, '视频不存在或已被删除');
+      throw BiliApiException(-1, '视频信息暂时无法读取，请重试');
     }
     return Book.fromView((data['data'] as Map).cast<String, dynamic>(), mode: mode);
   }
@@ -252,42 +268,27 @@ class BiliApi {
 
   /// 取音频流
   ///
-  /// 短时间连续取地址会触发 B 站风控（-412 / -352），这里内置退避重试；
-  /// 另外把「响应里没有可用音轨」也当作失败重试，
-  /// 避免上层拿到空地址后把这一集静默跳过（批量缓存时尤其致命）。
+  /// 重试与超时统一由客户端控制；缺少音轨仍作为可重试的失败返回。
   Future<BookAudio> playUrl(String bvid, int cid) async {
-    BiliApiException? last;
-    for (var attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) {
-        await Future<void>.delayed(Duration(milliseconds: 1800 * attempt));
-      }
-      try {
-        final res = await _client.get(
-          BiliEndpoints.playUrl,
-          query: {
-            'bvid': bvid,
-            'cid': cid,
-            'qn': 80,
-            'fnval': 4048,
-            'fnver': 0,
-            'fourk': 1,
-            'try_look': 1,
-            'gaia_source': 'prefer-ua',
-          },
-          useWbi: true,
-        );
-        final data = res.data as Map;
-        final audio =
-            BookAudio.fromMap((data['data'] as Map).cast<String, dynamic>());
-        if (_hasPlayableUrl(audio)) return audio;
-        last = BiliApiException(-1, '未返回可用音频地址');
-      } on BiliApiException catch (e) {
-        last = e;
-        // 只有风控类错误值得重试，404 之类重试同样会失败
-        if (e.code != -412 && e.code != -352 && e.code != -509) rethrow;
-      }
-    }
-    throw last ?? BiliApiException(-1, '获取音频地址失败');
+    final res = await _client.get(
+      BiliEndpoints.playUrl,
+      query: {
+        'bvid': bvid,
+        'cid': cid,
+        'qn': 80,
+        'fnval': 4048,
+        'fnver': 0,
+        'fourk': 1,
+        'try_look': 1,
+        'gaia_source': 'prefer-ua',
+      },
+      useWbi: true,
+    );
+    final data = res.data as Map;
+    final audio =
+        BookAudio.fromMap((data['data'] as Map).cast<String, dynamic>());
+    if (_hasPlayableUrl(audio)) return audio;
+    throw BiliApiException(-1, '未返回可用音频地址，请重试');
   }
 
   /// 响应里是否至少有一条可用的音频地址
@@ -307,11 +308,13 @@ class BiliApi {
     String keyword, {
     int page = 1,
     int pageSize = 20,
-  }) async {
+    CancelToken? cancelToken,
+  }) => BiliClient.withRequestBudget(() async {
     final kw = keyword.trim();
     if (kw.isEmpty) return [];
     final res = await _client.get(
       BiliEndpoints.searchType,
+      cancelToken: cancelToken,
       query: {
         'search_type': 'bili_user',
         'keyword': kw,
@@ -325,8 +328,7 @@ class BiliApi {
             '${Uri.encodeComponent(kw)}',
       },
     );
-    final data = res.data as Map;
-    final result = data['data'] as Map? ?? {};
+    final result = _searchResult(res.data);
     final list = result['result'] as List? ?? [];
     final out = <UpUser>[];
     for (final item in list) {
@@ -336,7 +338,7 @@ class BiliApi {
       out.add(u);
     }
     return out;
-  }
+  }, cancelToken: cancelToken);
 
   /// 拉取某个 UP 主的有声内容（只播放这个 UP 的内容）
   ///
@@ -355,38 +357,54 @@ class BiliApi {
     ContentMode mode = ContentMode.audiobook,
     int page = 1,
     int pageSize = 30,
-  }) async {
+    void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
+  }) => BiliClient.withRequestBudget(() async {
     if (up.mid == 0) return (books: <Book>[], hasMore: false);
+    var received = false;
+    Object? lastError;
+    StackTrace? lastStack;
     try {
-      final r = await _upFromCollections(up, page: page, pageSize: pageSize);
+      final r = await _upFromCollections(up, cancelToken: cancelToken, page: page, pageSize: pageSize,
+          onPartialFailure: onPartialFailure);
+      received = true;
       if (r.books.isNotEmpty) {
         return (books: r.books.map((b) => b.withContentMode(mode)).toList(),
             hasMore: r.hasMore);
       }
-    } catch (e) {
-      debugPrint('[BiliApi] 合集取数失败: $e');
+    } catch (e, stack) {
+      if (cancelToken?.isCancelled ?? false) rethrow;
+      lastError = e;
+      lastStack = stack;
+      debugPrint('[BiliApi] 合集取数失败: ${e.runtimeType}');
     }
 
     // 空间投稿（登录后才稳）
     try {
       final bySpace =
-          await _upWorksFromSpace(up, page: page, pageSize: pageSize, mode: mode);
+          await _upWorksFromSpace(up, cancelToken: cancelToken, page: page, pageSize: pageSize, mode: mode);
+      received = true;
       if (bySpace.isNotEmpty) {
         return (books: bySpace, hasMore: bySpace.length >= pageSize);
       }
-    } catch (e) {
-      debugPrint('[BiliApi] 空间投稿失败: $e');
+    } catch (e, stack) {
+      if (cancelToken?.isCancelled ?? false) rethrow;
+      lastError = e;
+      lastStack = stack;
+      debugPrint('[BiliApi] 空间投稿失败: ${e.runtimeType}');
     }
 
     // 搜索兜底：按 UP 名搜，按 mid 精确过滤
     try {
       final list = await _searchRaw(
         up.name,
+        cancelToken: cancelToken,
         mode: mode,
         page: page,
         pageSize: pageSize * 2,
         applyAudioFilter: false,
       );
+      received = true;
       final mine = list.where((b) => b.mid == up.mid).toList();
       if (mine.isNotEmpty) {
         return (
@@ -398,11 +416,17 @@ class BiliApi {
           hasMore: mine.length >= pageSize,
         );
       }
-    } catch (e) {
-      debugPrint('[BiliApi] UP 搜索兜底失败: $e');
+    } catch (e, stack) {
+      if (cancelToken?.isCancelled ?? false) rethrow;
+      lastError = e;
+      lastStack = stack;
+      debugPrint('[BiliApi] UP 搜索兜底失败: ${e.runtimeType}');
+    }
+    if (!received && lastError != null) {
+      Error.throwWithStackTrace(lastError, lastStack!);
     }
     return (books: <Book>[], hasMore: false);
-  }
+  }, cancelToken: cancelToken);
 
   /// 每个 UP 的合集摊平游标（跨分页复用，避免重复请求）
   final Map<int, _UpCursor> _upCursors = {};
@@ -411,19 +435,29 @@ class BiliApi {
   /// hasMore 由游标真实状态决定，不由返回条数推断 —— 否则撞到请求预算上限时
   /// 会被误判成「没有更多」，后面的视频再也刷不出来。
   Future<({List<Book> books, bool hasMore})> _upFromCollections(UpUser up,
-      {required int page, required int pageSize}) async {
+      {required int page, required int pageSize,
+        void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
+  }) async {
     var cursor = _upCursors[up.mid];
     // 第 1 页重新初始化，保证「刷新」拿到的确实是从头开始
     if (cursor == null || page == 1) {
       cursor = _UpCursor();
       // 先登记本次游标，旧初始化晚返回不能覆盖刷新/切换模式后的分页状态。
       _upCursors[up.mid] = cursor;
-      await _initUpCursor(up, cursor);
+      try {
+        await _initUpCursor(up, cursor, cancelToken: cancelToken);
+      } catch (_) {
+        if (identical(_upCursors[up.mid], cursor)) _upCursors.remove(up.mid);
+        rethrow;
+      }
     }
     if (cursor.preview.isEmpty && cursor.seasonIds.isEmpty) {
-      throw StateError('该 UP 没有可用的公开合集');
+      return (books: <Book>[], hasMore: false);
     }
 
+    final original = cursor;
+    cursor = cursor.copy();
     final out = <Book>[];
     final seen = <String>{};
 
@@ -438,9 +472,11 @@ class BiliApi {
     for (var guard = 0;
         out.length < pageSize && guard < 4 && !cursor.exhausted;
         guard++) {
+      try {
       final season = cursor.currentSeason;
       final res = await _client.get(
         BiliEndpoints.upCollectionArchives,
+      cancelToken: cancelToken,
         query: {
           'mid': up.mid,
           'season_id': season,
@@ -456,10 +492,12 @@ class BiliApi {
       final data = res.data as Map;
       final body = data['data'];
       if (data['code'] != 0 || body is! Map) {
-        cursor.advance();
-        continue;
+        throw BiliApiException(-1, '合集响应不完整，请重试');
       }
-      final archives = body['archives'] as List? ?? [];
+      if (body['archives'] is! List) {
+        throw BiliApiException(-1, '合集响应不完整，请重试');
+      }
+      final archives = body['archives'] as List;
       if (archives.isEmpty) {
         cursor.advance();
         continue;
@@ -479,6 +517,15 @@ class BiliApi {
       } else {
         cursor.seasonPage++;
       }
+      } catch (error) {
+        if (cancelToken?.isCancelled ?? false) rethrow;
+        if (out.isEmpty) rethrow;
+        onPartialFailure?.call(error);
+        break;
+      }
+    }
+    if (identical(_upCursors[up.mid], original)) {
+      _upCursors[up.mid] = cursor;
     }
 
     // 按发布时间倒序，和 B 站空间页观感一致
@@ -489,9 +536,10 @@ class BiliApi {
   }
 
   /// 读取 UP 的合集/系列，写入游标
-  Future<void> _initUpCursor(UpUser up, _UpCursor cursor) async {
+  Future<void> _initUpCursor(UpUser up, _UpCursor cursor, {CancelToken? cancelToken}) async {
     final res = await _client.get(
       BiliEndpoints.upCollections,
+      cancelToken: cancelToken,
       query: {'mid': up.mid, 'page_num': 1, 'page_size': 20},
       headers: {
         'origin': BiliEndpoints.home,
@@ -501,10 +549,12 @@ class BiliApi {
     final body = res.data as Map;
     if (body['code'] != 0) throw StateError('collections ${body['code']}');
     final data = body['data'];
-    if (data is! Map) return;
+    if (data is! Map) throw BiliApiException(-1, '合集响应不完整，请重试');
     // 注意：items_lists 是 Map，不是 List
     final box = data['items_lists'];
-    if (box is! Map) return;
+    if (box is! Map || (box['seasons_list'] is! List && box['series_list'] is! List)) {
+      throw BiliApiException(-1, '合集响应不完整，请重试');
+    }
 
     void collect(List? list) {
       if (list == null) return;
@@ -560,9 +610,11 @@ class BiliApi {
     ContentMode mode = ContentMode.audiobook,
     int page = 1,
     int pageSize = 30,
+    CancelToken? cancelToken,
   }) async {
     final res = await _client.get(
       BiliEndpoints.spaceArcSearch,
+      cancelToken: cancelToken,
       query: {
         'mid': up.mid,
         'pn': page,
@@ -579,8 +631,11 @@ class BiliApi {
     );
     final data = res.data as Map;
     if (data['code'] != 0) throw BiliApiException(-352, 'space blocked');
-    final list = (data['data'] as Map?)?['list'] as Map? ?? {};
-    final vlist = list['vlist'] as List? ?? [];
+    final body = data['data'];
+    if (body is! Map || body['list'] is! Map || body['list']['vlist'] is! List) {
+      throw BiliApiException(-1, '投稿响应不完整，请重试');
+    }
+    final vlist = body['list']['vlist'] as List;
     final out = <Book>[];
     for (final item in vlist) {
       if (item is! Map) continue;
@@ -633,7 +688,11 @@ class BiliApi {
   /// 当前用户信息（nav，登录与否均可用）
   Future<({bool isLogin, String uname, String face})> currentUser() async {
     final res = await _client.get(BiliEndpoints.nav);
-    final data = (res.data as Map)['data'] as Map? ?? {};
+    final body = res.data;
+    final data = body is Map ? body['data'] : null;
+    if (data is! Map || data['isLogin'] is! bool) {
+      throw BiliApiException(-1, '账号状态响应不完整，请重试');
+    }
     return (
       isLogin: data['isLogin'] == true,
       uname: data['uname'] as String? ?? '',

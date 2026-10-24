@@ -89,7 +89,7 @@ class FollowPage extends StatelessWidget {
                   ),
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => UpHomePage(up: up)),
+                      MaterialPageRoute(builder: (_) => UpHomePage(up: up, contentMode: up.contentMode)),
                     );
                   },
                 );

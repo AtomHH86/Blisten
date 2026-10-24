@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -9,6 +10,7 @@ import '../storage/credential_store.dart';
 import 'api_config.dart';
 import 'cookie_jar.dart';
 import 'wbi_signer.dart';
+import 'request_scheduler.dart';
 
 class BiliApiException implements Exception {
   final int? code;
@@ -20,8 +22,49 @@ class BiliApiException implements Exception {
 }
 
 /// B 站客户端：Cookie 预热 + buvid 激活 + WBI 签名 + 统一请求头 + 风控兜底
+class _OperationBudget {
+  _OperationBudget(this.cancelToken);
+  final CancelToken? cancelToken;
+  RequestBudget? value;
+}
+
 class BiliClient {
+  static final _budgetKey = Object();
+
+  /// A search may use several endpoints. Share its deadline and total attempts,
+  /// including preparation and fallback, rather than resetting at each endpoint.
+  static Future<T> withRequestBudget<T>(Future<T> Function() action,
+      {CancelToken? cancelToken}) async {
+    if (Zone.current[_budgetKey] != null) return action();
+    final holder = _OperationBudget(cancelToken);
+    try {
+      return await runZoned(action, zoneValues: {_budgetKey: holder});
+    } finally {
+      holder.value?.close();
+    }
+  }
+
+  RequestBudget _budget(CancelToken? token) {
+    final holder = Zone.current[_budgetKey] as _OperationBudget?;
+    if (holder == null) return RequestBudget(_scheduler, cancelToken: token);
+    return holder.value ??= RequestBudget(_scheduler,
+        cancelToken: holder.cancelToken ?? token, maxAttempts: 12);
+  }
+
+  void _closeBudget(RequestBudget budget) {
+    if (Zone.current[_budgetKey] == null) budget.close();
+  }
+
   BiliClient._();
+
+  @visibleForTesting
+  BiliClient.forTesting(Dio dio, RequestScheduler scheduler) {
+    _dio = dio;
+    _scheduler = scheduler;
+    _dio.httpClientAdapter = ScheduledAdapter(_dio.httpClientAdapter, _scheduler);
+  }
+
+  RequestScheduler _scheduler = RequestScheduler();
   static final BiliClient instance = BiliClient._();
 
   static const _prefWbi = 'bili_wbi_keys';
@@ -34,18 +77,12 @@ class BiliClient {
   int _wbiFetchedAt = 0;
 
   bool _buvidActivated = false;
-  int _lastReqAt = 0;
   int _sessionGeneration = 0;
   int get sessionGeneration => _sessionGeneration;
 
   /// Invalidate pending responses on login attempt replacement or cancellation.
   void invalidateSessionRequests() { _sessionGeneration++; }
 
-
-  /// 未登录（游客）请求的最小间隔。
-  /// 官方客户端与主流第三方客户端都刻意放慢游客请求节奏，
-  /// 间隔太密很容易触发 -352/-412 风控，这里取 450ms 偏保守的值。
-  static const _minGapMillis = 450;
 
   void _setupIo() {
     _dio = Dio(
@@ -55,6 +92,7 @@ class BiliClient {
         responseType: ResponseType.json,
       ),
     );
+    _dio.httpClientAdapter = ScheduledAdapter(_dio.httpClientAdapter, _scheduler);
     _dio.interceptors.add(
       QueuedInterceptorsWrapper(
         onRequest: (options, handler) {
@@ -99,11 +137,7 @@ class BiliClient {
   /// 网络预热（进主界面后后台执行，绝不阻塞启动）：
   /// 种入 buvid、激活设备、拉取 WBI 密钥；失败静默，不影响使用。
   Future<void> warmupIfNeeded() async {
-    if (!_jar.ready || _needFreshWbiKeys()) {
-      await warmup();
-    }
-    // buvid 激活独立于 warmup（已登录重启时也会走）
-    await _ensureBuvidActivated();
+    if (!_jar.ready || _needFreshWbiKeys() || !_buvidActivated) await warmup();
   }
 
   bool _needFreshWbiKeys() {
@@ -122,91 +156,44 @@ class BiliClient {
     }
   }
 
-  /// 预热：访问首页种入 buvid，激活 buvid，并从 nav 拉取 WBI 密钥
+  /// 预热共享一个预算；不在风险重试内部递归启动新的预热请求。
   Future<void> warmup() async {
+    final budget = RequestBudget(_scheduler);
     final generation = _sessionGeneration;
     try {
-      final res = await _fetchRaw(BiliEndpoints.warmup);
+      await _request('GET', BiliEndpoints.warmup, budget, generation,
+          responseType: ResponseType.plain);
       if (generation != _sessionGeneration) return;
-      if (res.headers['set-cookie'] != null) {
-        _jar.mergeFromHeaders(res.headers['set-cookie']);
-      }
       _jar.markSuccess();
       debugPrint('[BiliClient] warmup completed');
-      await _ensureBuvidActivated();
-      await _refreshWbiKeys();
+      await _ensureBuvidActivated(budget, generation);
+      await _refreshWbiKeys(budget, generation);
       await _persist();
     } catch (e) {
       debugPrint('[BiliClient] warmup failed: ${e.runtimeType}');
+    } finally {
+      budget.close();
     }
   }
 
-  /// gaia 风控闭环：先本地补齐 buvid3/buvid4，再上报 ExClimbWuzhi 把匿名游客
-  /// 伪装成"活跃设备"，显著降低 v_voucher / -412 概率（海外 IP 尤其需要）。
-  Future<void> _ensureBuvidActivated() async {
+  Future<void> _ensureBuvidActivated(RequestBudget budget, int generation) async {
     if (_buvidActivated) return;
-    _buvidActivated = true;
-    try {
-      // 本地直接种入 buvid3/buvid4：没有这一步，所有请求都缺设备标识，
-      // 会被判定为异常请求而返回 412。
-      if ((_jar.get('buvid3') ?? '').isEmpty) {
-        _jar.put('buvid3', genBuvid3());
-      }
-      if ((_jar.get('buvid4') ?? '').isEmpty) {
-        _jar.put('buvid4', genBuvid3());
-      }
-      await _persist();
-
-      final rnd = Random();
-      final png = base64.encode([
-        for (var i = 0; i < 32; i++) rnd.nextInt(256),
-        0, 0, 0, 0, 73, 69, 78, 68,
-        for (var i = 0; i < 4; i++) rnd.nextInt(256),
-      ]);
-      final payload = jsonEncode({
-        '3064': 1,
-        '39c8': '333.1387.fp.risk',
-        '3c43': {
-          'adca': 'Linux',
-          'bfe9': png.substring(png.length - 50),
-        },
-      });
-      await post(BiliEndpoints.activateBuvid, data: {'payload': payload});
-      debugPrint('[BiliClient] buvid activated');
-    } catch (e) {
-      debugPrint('[BiliClient] buvid activate failed: ${e.runtimeType}');
-    }
-  }
-
-  Future<Response<dynamic>> _fetchRaw(
-    String url, {
-    Map<String, String>? headers,
-    ResponseType? responseType,
-  }) {
-    return _dio.get<dynamic>(
-      url,
-      options: Options(
-        headers: {
-          'Referer': url.startsWith(BiliEndpoints.base) ? BiliEndpoints.home : url,
-          ...?headers,
-        },
-        responseType: responseType ??
-            (url == BiliEndpoints.warmup
-                ? ResponseType.plain
-                : ResponseType.json),
-        validateStatus: (_) => true,
-      ),
-    );
-  }
-
-  /// 请求最小间隔，避免快速连续请求触发风控
-  Future<void> _throttle() async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final wait = _minGapMillis - (now - _lastReqAt);
-    if (wait > 0) {
-      await Future<void>.delayed(Duration(milliseconds: wait));
-    }
-    _lastReqAt = DateTime.now().millisecondsSinceEpoch;
+    if ((_jar.get('buvid3') ?? '').isEmpty) _jar.put('buvid3', genBuvid3());
+    if ((_jar.get('buvid4') ?? '').isEmpty) _jar.put('buvid4', genBuvid3());
+    await _persist();
+    final rnd = Random();
+    final png = base64.encode([
+      for (var i = 0; i < 32; i++) rnd.nextInt(256),
+      0, 0, 0, 0, 73, 69, 78, 68,
+      for (var i = 0; i < 4; i++) rnd.nextInt(256),
+    ]);
+    final payload = jsonEncode({
+      '3064': 1, '39c8': '333.1387.fp.risk',
+      '3c43': {'adca': 'Linux', 'bfe9': png.substring(png.length - 50)},
+    });
+    await _request('POST', BiliEndpoints.activateBuvid, budget, generation,
+        data: {'payload': payload});
+    if (generation == _sessionGeneration) _buvidActivated = true;
   }
 
   /// 部分接口（如 passport 扫码）content-type 非 JSON，dio 会保留原始字符串，
@@ -235,20 +222,8 @@ class BiliClient {
     return res;
   }
 
-  Future<Response<dynamic>> _exec(
-    String url, {
-    required Map<String, String> headers,
-    required int generation,
-  }) async {
-    Response<dynamic> res;
-    try {
-      res = await _fetchRaw(url, headers: headers);
-    } catch (e) {
-      // 网络层透传错误：稍等后重试一次
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-      res = await _fetchRaw(url, headers: headers);
-    }
-    res = _normalize(res);
+  Future<Response<dynamic>> _acceptResponse(
+      String url, Response<dynamic> res, int generation) async {
     final isQrPoll = url == BiliEndpoints.qrPoll ||
         url.startsWith('${BiliEndpoints.qrPoll}?');
     if (isQrPoll && generation != _sessionGeneration) {
@@ -269,204 +244,146 @@ class BiliClient {
     return res;
   }
 
-  static bool _riskCode(int c) => c == -412 || c == -352;
+  static bool _riskCode(int c) => c == -412 || c == -352 || c == -509;
+  static const _backoff = [800, 1600, 3200];
 
-  /// 风控退避阶梯（毫秒）：命中 412/-352 时按序等待再重试
-  static const _backoff = [1200, 2600, 5000];
-
-  /// 判断一次响应是否属于风控拦截（HTTP 412/403 或 body code -412/-352）
   static bool _isRiskResponse(Response<dynamic> res) {
-    final sc = res.statusCode ?? 0;
-    if (sc == 412 || sc == 403) return true;
-    final d = res.data;
-    if (d is Map) {
-      final code = int.tryParse('${d['code'] ?? 0}') ?? 0;
-      if (_riskCode(code)) return true;
-    }
-    return false;
+    if (res.statusCode == 412 || res.statusCode == 403) return true;
+    final body = res.data;
+    return body is Map && (_riskCode(int.tryParse('${body['code']}') ?? 0) ||
+        (body['data'] is Map && body['data']['v_voucher'] != null));
   }
 
-  /// 命中风控时的补救：补齐设备标识并重新激活，抬高后续请求的成功率
-  Future<void> _mitigateRisk() async {
-    try {
-      if ((_jar.get('buvid3') ?? '').isEmpty) {
-        _jar.put('buvid3', genBuvid3());
-        _jar.put('buvid4', genBuvid3());
+  static void _validateResponse(Response<dynamic> res) {
+    if (_isRiskResponse(res)) throw BiliApiException(-412, '网络繁忙，请稍后再试');
+    final status = res.statusCode ?? 0;
+    if (status >= 400) throw BiliApiException(status, 'HTTP $status');
+    final body = res.data;
+    if (body is Map) {
+      final code = int.tryParse('${body['code'] ?? 0}') ?? 0;
+      if (code != 0) {
+        throw BiliApiException(code, '$code：${body['message'] ?? body['msg'] ?? ''}');
       }
-      _jar.put('b_nut', '${DateTime.now().millisecondsSinceEpoch}');
-      await _persist();
-      await warmup();
-    } catch (e) {
-      debugPrint('[BiliClient] risk mitigate failed: ${e.runtimeType}');
     }
   }
 
-  Future<void> _refreshWbiKeys() async {
-    final generation = _sessionGeneration;
-    try {
-      final res = await _fetchRaw(BiliEndpoints.nav);
-      if (generation != _sessionGeneration) return;
-      if (res.headers['set-cookie'] != null) {
-        _jar.mergeFromHeaders(res.headers['set-cookie']);
-      }
-      final data = res.data;
-      if (data is Map && data['data'] is Map && data['data']['wbi_img'] is Map) {
-        final wbi = data['data']['wbi_img'] as Map;
-        final img = wbi['img_url'] as String?;
-        final sub = wbi['sub_url'] as String?;
-        if (img != null && sub != null) {
-          _imgUrl = img;
-          _subUrl = sub;
-          _wbiFetchedAt = DateTime.now().millisecondsSinceEpoch;
-          debugPrint('[BiliClient] wbi keys refreshed');
-        }
-      }
-      if (data is Map && data['code'] == 0) {
-        _jar.markSuccess();
-      }
-      await _persist();
-    } catch (e) {
-      debugPrint('[BiliClient] refresh wbi keys failed: ${e.runtimeType}');
-    }
-  }
-
-  /// 通用 GET：带 Cookie，可 WBI 签名，风控码自动稍等重试一次
-  Future<Response<dynamic>> get(
-    String url, {
-    Map<String, dynamic>? query,
-    bool useWbi = false,
+  /// Every actual attempt (including POST and WBI) reserves a unique slot.
+  Future<Response<dynamic>> _request(
+    String method, String url, RequestBudget budget, int generation, {
     Map<String, String>? headers,
-  }) async {
-    final generation = _sessionGeneration;
-    await _throttle();
-    var q = {...?query};
-    if (useWbi) {
-      if (_imgUrl == null || _subUrl == null || _needFreshWbiKeys()) {
-        await _refreshWbiKeys();
-      }
-      if (_imgUrl == null || _subUrl == null) {
-        throw BiliApiException(-401, '初始化失败，请检查网络后重试');
-      }
-      q = WbiSigner.sign(q, imgUrl: _imgUrl!, subUrl: _subUrl!);
-    }
-    final fullUrl = q.isEmpty
-        ? url
-        : Uri.parse(url).replace(
-            queryParameters: Map<String, String>.fromEntries(
-              q.entries.map((e) => MapEntry(e.key, '${e.value}')),
-            ),
-          ).toString();
-
-    try {
-      Response<dynamic> res = await _exec(
-        fullUrl,
-        headers: {'Referer': BiliEndpoints.home, ...?headers},
-        generation: generation,
-      );
-      // 风控退避重试：HTTP 412/403 与 body code -412/-352 一视同仁，
-      // 首次命中时补齐 buvid 并重新预热，海外 IP 尤其需要这一步。
-      for (var i = 0; _isRiskResponse(res) && i < _backoff.length; i++) {
-        debugPrint('[BiliClient] risk hit, backoff ${_backoff[i]}ms (try ${i + 1})');
-        await Future<void>.delayed(Duration(milliseconds: _backoff[i]));
-        if (i == 0) await _mitigateRisk();
-        res = await _exec(
-          fullUrl,
-          headers: {'Referer': BiliEndpoints.home, ...?headers},
-          generation: generation,
-        );
-      }
-      final last = res.data;
-      final sc = res.statusCode;
-      if (last is! Map && sc != null && sc >= 400) {
-        throw BiliApiException(sc, 'HTTP $sc');
-      }
-      if (last is Map) {
-        final code = last['code'];
-        final message = last['message'] ?? last['msg'] ?? '';
-        if (code != null && code != 0) {
-          throw BiliApiException(
-            _riskCode(code) ? -412 : code,
-            _riskCode(code) ? '网络繁忙，请稍后再试' : '$code：$message',
-          );
-        }
-      }
-      return res;
-    } on DioException catch (e) {
-      throw BiliApiException(-1, '网络请求失败：${e.type.name}');
-    }
-  }
-
-  /// 通用 POST：带 Cookie，JSON 表单，网络失败与风控码自动重试一次
-  Future<Response<dynamic>> post(
-    String url, {
     Map<String, dynamic>? data,
-    Map<String, String>? headers,
     bool jsonBody = true,
+    ResponseType responseType = ResponseType.json,
+    bool allowGuestWbi = false,
   }) async {
-    final generation = _sessionGeneration;
-    await _throttle();
-    Response<dynamic>? res;
-    Object? lastErr;
-    for (var attempt = 0; attempt < 2; attempt++) {
+    var retry = 0;
+    while (true) {
+      budget.check();
       try {
-        res = await _dio.post<dynamic>(
-          url,
-          data: jsonBody ? jsonEncode(data ?? const {}) : data,
+        final res = _normalize(await _dio.request<dynamic>(url,
+          data: method == 'POST' ? (jsonBody ? jsonEncode(data ?? {}) : data) : null,
+          cancelToken: budget.token,
           options: Options(
+            method: method,
+            extra: {ScheduledAdapter.budgetKey: budget},
             headers: {'Referer': BiliEndpoints.home, ...?headers},
-            contentType: jsonBody ? Headers.jsonContentType : null,
-            validateStatus: (_) => true,
-          ),
-        );
-        break;
-      } catch (e) {
-        lastErr = e;
-        if (attempt == 0) {
-          await Future<void>.delayed(const Duration(milliseconds: 800));
-        }
-      }
-    }
-    if (res == null) {
-      throw BiliApiException(-1, '网络请求失败：${lastErr.runtimeType}');
-    }
-    var resp = _normalize(res);
-    if (generation == _sessionGeneration && resp.headers['set-cookie'] != null) {
-      _jar.mergeFromHeaders(resp.headers['set-cookie']);
-      await _persist();
-    }
-    for (var i = 0; _isRiskResponse(resp) && i < _backoff.length; i++) {
-      debugPrint('[BiliClient] POST risk hit, backoff ${_backoff[i]}ms');
-      await Future<void>.delayed(Duration(milliseconds: _backoff[i]));
-      try {
-        resp = _normalize(await _dio.post<dynamic>(
-          url,
-          data: jsonBody ? jsonEncode(data ?? const {}) : data,
-          options: Options(
-            headers: {'Referer': BiliEndpoints.home, ...?headers},
-            contentType: jsonBody ? Headers.jsonContentType : null,
+            contentType: method == 'POST' && jsonBody ? Headers.jsonContentType : null,
+            responseType: responseType,
+            receiveTimeout: budget.remaining,
+            sendTimeout: budget.remaining,
             validateStatus: (_) => true,
           ),
         ));
-      } catch (e) {
-        lastErr = e;
+        budget.check();
+        await _acceptResponse(url, res, generation);
+        if (_isRiskResponse(res) && budget.canRetry && retry < 3) {
+          await budget.wait(Duration(milliseconds: _backoff[retry.clamp(0, 2)]));
+          retry++;
+          continue;
+        }
+        final body = res.data;
+        final guestKeys = allowGuestWbi && body is Map && body['code'] == -101 &&
+            body['data'] is Map && body['data']['wbi_img'] is Map &&
+            body['data']['wbi_img']['img_url'] is String &&
+            body['data']['wbi_img']['sub_url'] is String;
+        if (!guestKeys) _validateResponse(res);
+        return res;
+      } on DioException catch (error) {
+        if (budget.timedOut) throw TimeoutException('Request deadline');
+        if (CancelToken.isCancel(error)) rethrow;
+        if (!budget.canRetry || retry >= 3) {
+          throw BiliApiException(-1, '网络请求失败：${error.type.name}');
+        }
+        await budget.wait(Duration(milliseconds: _backoff[retry.clamp(0, 2)]));
+        retry++;
       }
-      if (generation == _sessionGeneration && resp.headers['set-cookie'] != null) {
-        _jar.mergeFromHeaders(resp.headers['set-cookie']);
+    }
+  }
+
+  Future<void> _refreshWbiKeys(RequestBudget budget, int generation) async {
+    final res = await _request('GET', BiliEndpoints.nav, budget, generation,
+        allowGuestWbi: true);
+    if (generation != _sessionGeneration) return;
+    final body = res.data;
+    if (body is Map && body['data'] is Map && body['data']['wbi_img'] is Map) {
+      final wbi = body['data']['wbi_img'] as Map;
+      final img = wbi['img_url'] as String?;
+      final sub = wbi['sub_url'] as String?;
+      if (img != null && sub != null) {
+        _imgUrl = img;
+        _subUrl = sub;
+        _wbiFetchedAt = DateTime.now().millisecondsSinceEpoch;
+        _jar.markSuccess();
         await _persist();
       }
     }
-    final body = resp.data;
-    if (body is Map) {
-      final code = body['code'];
-      final message = body['message'] ?? body['msg'] ?? '';
-      if (code != null && code != 0) {
-        throw BiliApiException(
-          _riskCode(code) ? -412 : code,
-          _riskCode(code) ? '网络繁忙，请稍后再试' : '$code：$message',
-        );
+  }
+
+  /// Four HTTP attempts / 45 seconds total, including signature preparation.
+  Future<Response<dynamic>> get(String url, {
+    Map<String, dynamic>? query,
+    bool useWbi = false,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    final budget = _budget(cancelToken);
+    final generation = _sessionGeneration;
+    try {
+      var q = {...?query};
+      if (useWbi) {
+        if (_needFreshWbiKeys()) await _refreshWbiKeys(budget, generation);
+        budget.check();
+        if (_imgUrl == null || _subUrl == null) {
+          throw BiliApiException(-401, '初始化失败，请检查网络后重试');
+        }
+        q = WbiSigner.sign(q, imgUrl: _imgUrl!, subUrl: _subUrl!);
       }
+      final fullUrl = q.isEmpty ? url : Uri.parse(url).replace(queryParameters: {
+        for (final e in q.entries) e.key: '${e.value}',
+      }).toString();
+      return await _request('GET', fullUrl, budget, generation, headers: headers);
+    } on TimeoutException {
+      throw BiliApiException(-1, '请求超时，请重试');
+    } finally {
+      _closeBudget(budget);
     }
-    return resp;
+  }
+
+  Future<Response<dynamic>> post(String url, {
+    Map<String, dynamic>? data,
+    Map<String, String>? headers,
+    bool jsonBody = true,
+    CancelToken? cancelToken,
+  }) async {
+    final budget = _budget(cancelToken);
+    try {
+      return await _request('POST', url, budget, _sessionGeneration,
+          data: data, headers: headers, jsonBody: jsonBody);
+    } on TimeoutException {
+      throw BiliApiException(-1, '请求超时，请重试');
+    } finally {
+      _closeBudget(budget);
+    }
   }
 
   /// 是否存在会话凭据；有效性由 nav 验证，不能用于展示已登录。

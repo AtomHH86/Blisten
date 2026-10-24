@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,7 @@ class _UpHomePageState extends State<UpHomePage> {
   late final _bili = widget.api ?? BiliApi.instance;
   late ContentMode _mode = widget.contentMode;
   int _requestId = 0;
+  CancelToken? _cancelToken;
   final _scroll = ScrollController();
 
   List<Book> _books = [];
@@ -55,12 +57,15 @@ class _UpHomePageState extends State<UpHomePage> {
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _scroll.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
     final requestId = ++_requestId;
+    _cancelToken?.cancel();
+    final cancelToken = _cancelToken = CancelToken();
     final mode = _mode;
     setState(() {
       _loading = true;
@@ -69,13 +74,16 @@ class _UpHomePageState extends State<UpHomePage> {
       _moreError = null;
     });
     try {
-      final res = await _bili.upAudios(widget.up,
-          page: 1, pageSize: _pageSize, mode: mode);
+      Object? partialError;
+      final res = await _bili.upAudios(widget.up, cancelToken: cancelToken,
+          page: 1, pageSize: _pageSize, mode: mode,
+          onPartialFailure: (e) => partialError = e);
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _books = res.books.map((book) => book.withContentMode(mode)).toList();
         _loading = false;
         _page = 1;
+        _moreError = partialError == null ? null : '部分内容加载失败，请重试';
         // 是否还有更多由接口给出，不能按返回条数猜
         _noMore = !res.hasMore;
       });
@@ -97,6 +105,7 @@ class _UpHomePageState extends State<UpHomePage> {
       _page = 1;
       _noMore = false;
     });
+    context.read<FollowStore>().setContentMode(widget.up.mid, mode);
     // _load 先更新请求代次，旧模式首屏或分页晚返回都不能混入新列表。
     _load();
     if (_scroll.hasClients) _scroll.jumpTo(0);
@@ -105,6 +114,7 @@ class _UpHomePageState extends State<UpHomePage> {
   Future<void> _loadMore({bool retry = false}) async {
     if (_loading || _loadingMore || _noMore || (_moreError != null && !retry)) return;
     final requestId = _requestId;
+    final cancelToken = _cancelToken;
     final mode = _mode;
     setState(() {
       _loadingMore = true;
@@ -112,8 +122,10 @@ class _UpHomePageState extends State<UpHomePage> {
     });
     try {
       final next = _page + 1;
+      Object? partialError;
       final res =
-          await _bili.upAudios(widget.up, page: next, pageSize: _pageSize, mode: mode);
+          await _bili.upAudios(widget.up, cancelToken: cancelToken, page: next, pageSize: _pageSize, mode: mode,
+              onPartialFailure: (e) => partialError = e);
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _page = next;
@@ -124,7 +136,8 @@ class _UpHomePageState extends State<UpHomePage> {
               .map((book) => book.withContentMode(mode)),
         ];
         _loadingMore = false;
-        if (res.books.isEmpty || !res.hasMore) _noMore = true;
+        _moreError = partialError == null ? null : '部分内容加载失败，请重试';
+        if (!res.hasMore) _noMore = true;
       });
     } catch (e) {
       if (!mounted || requestId != _requestId) return;
@@ -137,7 +150,7 @@ class _UpHomePageState extends State<UpHomePage> {
 
   Future<void> _toggleFollow() async {
     final store = context.read<FollowStore>();
-    final now = await store.toggle(widget.up);
+    final now = await store.toggle(widget.up.withContentMode(_mode));
     if (!mounted) return;
     AppAnalytics.onEvent(now ? 'up_follow' : 'up_unfollow');
     ScaffoldMessenger.of(context).showSnackBar(

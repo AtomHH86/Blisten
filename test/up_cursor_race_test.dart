@@ -40,6 +40,7 @@ class _CursorClient implements BiliClient {
     Map<String, dynamic>? query,
     bool useWbi = false,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async {
     if (url == BiliEndpoints.upCollections) {
       initializationCount++;

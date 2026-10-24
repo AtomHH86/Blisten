@@ -46,6 +46,7 @@ class _Api implements BiliApi {
     Function(int total)? onFirstPage,
     Function(int rawCount)? onRawCount,
     ContentMode mode = ContentMode.audiobook,
+    CancelToken? cancelToken,
   }) async {
     requests.add((keyword: keyword, page: page, mode: mode));
     onRawCount?.call(20);
@@ -65,7 +66,9 @@ class _Api implements BiliApi {
   }
 
   @override
-  Future<List<Book>> rankHotNovel({int limit = 30}) async => [
+  Future<List<Book>> rankHotNovel({int limit = 30, void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
+  }) async => [
     _book(ContentMode.audiobook, '推荐测试作品'),
   ];
 
@@ -74,6 +77,7 @@ class _Api implements BiliApi {
     String keyword, {
     int page = 1,
     int pageSize = 20,
+    CancelToken? cancelToken,
   }) async {
     if (deferUsers) {
       final completer = Completer<List<UpUser>>();
@@ -89,6 +93,8 @@ class _Api implements BiliApi {
     int page = 1,
     int pageSize = 30,
     ContentMode mode = ContentMode.audiobook,
+    void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
   }) async {
     upRequests.add((page: page, mode: mode));
     return (
@@ -148,7 +154,7 @@ class _Player extends ChangeNotifier implements BookPlayer {
   Future<bool> playBook(
     Book book, {
     int resumeIndex = 0,
-    int resumeMs = 0,
+    int resumeMs = 0, int? resumeCid,
     bool resume = true,
   }) {
     selection = (book: book, index: resumeIndex, ms: resumeMs, resume: resume);

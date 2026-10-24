@@ -27,6 +27,7 @@ class _FailingClient implements BiliClient {
     Map<String, dynamic>? query,
     bool useWbi = false,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async {
     calls.add(url);
     throw BiliApiException(-1, 'synthetic offline');

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -38,6 +39,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   List<Book> _browseBooks = [];
   final Map<int, List<Book>> _browseCache = {};
   int _browseRequestId = 0;
+  CancelToken? _cancelToken;
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -66,6 +69,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
     // 若还用 _cat 写缓存/渲染，A 的结果会落到 B 的分类下。
     final catIndex = _cat;
     final requestId = ++_browseRequestId;
+    _cancelToken?.cancel();
+    final cancelToken = _cancelToken = CancelToken();
     if (!force && _browseCache.containsKey(catIndex)) {
       setState(() {
         _browseBooks = _browseCache[catIndex]!;
@@ -84,15 +89,17 @@ class _DiscoverPageState extends State<DiscoverPage> {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       if (!mounted || requestId != _browseRequestId) return;
       // 热门推荐：有声小说按播放量排序的榜单；其余分类走关键词搜索
+      Object? partialError;
       final list = catIndex == 0
-          ? await _bili.rankHotNovel()
-          : await _bili.search(cat.keyword, mode: cat.mode);
+          ? await _bili.rankHotNovel(cancelToken: cancelToken, onPartialFailure: (e) => partialError = e)
+          : await _bili.search(cat.keyword, cancelToken: cancelToken, mode: cat.mode);
       if (!mounted || requestId != _browseRequestId) return;
-      _browseCache[catIndex] = list;
+      if (partialError == null) _browseCache[catIndex] = list;
       // 期间用户已切到别的分类就别覆盖当前界面
       if (_cat != catIndex) return;
       setState(() {
         _browseBooks = list;
+        _browseError = partialError == null ? null : '部分内容加载失败，可重试';
         _browseLoading = false;
       });
     } catch (e) {

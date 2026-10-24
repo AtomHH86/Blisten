@@ -17,6 +17,7 @@ class SearchClient implements BiliClient {
     Map<String, dynamic>? query,
     bool useWbi = false,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async {
     final request = Map<String, dynamic>.from(query!);
     calls.add(request);
@@ -57,6 +58,7 @@ class UpClient implements BiliClient {
     Map<String, dynamic>? query,
     bool useWbi = false,
     Map<String, String>? headers,
+    CancelToken? cancelToken,
   }) async => Response<dynamic>(
     requestOptions: RequestOptions(path: url),
     data: {

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'dart:async';
 
 import 'package:blisten/core/storage/follow_store.dart';
@@ -19,6 +20,7 @@ class _Api implements BiliApi {
   final videos = <({String keyword, ContentMode mode})>[];
   final users = <({String keyword, int page})>[];
   Completer<List<UpUser>>? pendingUsers;
+  CancelToken? userCancelToken;
   bool paginate = false;
   bool failSecondPage = false;
 
@@ -31,6 +33,7 @@ class _Api implements BiliApi {
     Function(int total)? onFirstPage,
     Function(int rawCount)? onRawCount,
     ContentMode mode = ContentMode.audiobook,
+    CancelToken? cancelToken,
   }) async {
     videos.add((keyword: keyword, mode: mode));
     onRawCount?.call(1);
@@ -50,8 +53,10 @@ class _Api implements BiliApi {
     String keyword, {
     int page = 1,
     int pageSize = 20,
+    CancelToken? cancelToken,
   }) async {
     users.add((keyword: keyword, page: page));
+    userCancelToken = cancelToken;
     if (pendingUsers != null) return pendingUsers!.future;
     if (page == 2 && failSecondPage) throw Exception('temporary failure');
     if (!paginate) return const [UpUser(mid: 1, name: '独立搜索的创作者')];
@@ -70,6 +75,8 @@ class _Api implements BiliApi {
     int page = 1,
     int pageSize = 30,
     ContentMode mode = ContentMode.audiobook,
+    void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
   }) async => (books: <Book>[], hasMore: false);
 
   @override
@@ -142,6 +149,7 @@ void main() {
     expect(find.text('audiobook内容'), findsNothing);
     await tester.tap(_category('听书'));
     await tester.pumpAndSettle();
+    expect(api.userCancelToken!.isCancelled, isTrue);
     api.pendingUsers!.complete(const [UpUser(mid: 9, name: '迟到的UP')]);
     await tester.pumpAndSettle();
     expect(find.text('迟到的UP'), findsNothing);
@@ -182,6 +190,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.byTooltip('清空搜索'));
       await tester.pumpAndSettle();
+      expect(api.userCancelToken!.isCancelled, isTrue);
       api.pendingUsers!.complete(const [UpUser(mid: 9, name: '清空后的迟到结果')]);
       await tester.pumpAndSettle();
       expect(find.text('清空后的迟到结果'), findsNothing);

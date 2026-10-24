@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -36,6 +37,7 @@ class _SearchPageState extends State<SearchPage> {
   late final _bili = widget.api ?? BiliApi.instance;
   late ContentMode _mode = widget.initialMode;
   int _requestId = 0;
+  CancelToken? _cancelToken;
   String _searchedKeyword = '';
 
   /// UP 主是独立搜索分类；_mode 保留最近选择的内容模式。
@@ -77,6 +79,7 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
+    _cancelToken?.cancel();
     _scrollController.dispose();
     _controller.dispose();
     _focusNode.dispose();
@@ -107,6 +110,8 @@ class _SearchPageState extends State<SearchPage> {
     final kw = _controller.text.trim();
     if (kw.isEmpty) return;
     final requestId = ++_requestId;
+    _cancelToken?.cancel();
+    final cancelToken = _cancelToken = CancelToken();
     final mode = _mode;
     final searchUsers = _searchUsers;
     FocusScope.of(context).unfocus();
@@ -129,11 +134,12 @@ class _SearchPageState extends State<SearchPage> {
       var rawCount = _pageSize;
       var total = 0;
       final ups = searchUsers
-          ? await _bili.searchUser(kw, pageSize: _pageSize)
+          ? await _bili.searchUser(kw, cancelToken: cancelToken, pageSize: _pageSize)
           : <UpUser>[];
       final books = !searchUsers
           ? await _bili.search(
               kw,
+              cancelToken: cancelToken,
               mode: mode,
               pageSize: _pageSize,
               onFirstPage: (t) => total = t,
@@ -186,6 +192,7 @@ class _SearchPageState extends State<SearchPage> {
     final mode = _mode;
     final searchUsers = _searchUsers;
     final nextPage = _page + 1;
+    final cancelToken = _cancelToken;
     setState(() {
       _loadingMore = true;
       _moreFailed = false;
@@ -193,11 +200,12 @@ class _SearchPageState extends State<SearchPage> {
     try {
       var rawCount = _pageSize;
       final ups = searchUsers
-          ? await _bili.searchUser(kw, page: nextPage, pageSize: _pageSize)
+          ? await _bili.searchUser(kw, cancelToken: cancelToken, page: nextPage, pageSize: _pageSize)
           : <UpUser>[];
       final books = !searchUsers
           ? await _bili.search(
               kw,
+              cancelToken: cancelToken,
               mode: mode,
               page: nextPage,
               pageSize: _pageSize,
@@ -228,6 +236,7 @@ class _SearchPageState extends State<SearchPage> {
 
   void _clearSearch() {
     ++_requestId;
+    _cancelToken?.cancel();
     _controller.clear();
     setState(() {
       _hasSearched = false;
@@ -485,7 +494,7 @@ class _SearchPageState extends State<SearchPage> {
             style: TextStyle(fontSize: 12, color: AppTheme.textSub),
           ),
           trailing: FilledButton.tonal(
-            onPressed: () => follows.toggle(up),
+            onPressed: () => follows.toggle(up.withContentMode(_mode)),
             style: FilledButton.styleFrom(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

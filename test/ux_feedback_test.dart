@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:blisten/core/network/bili_client.dart';
 import 'package:blisten/core/storage/cache_store.dart';
 import 'package:blisten/core/storage/follow_store.dart';
@@ -30,7 +31,9 @@ class _Api implements BiliApi {
   final pages = <int>[];
 
   @override
-  Future<List<Book>> rankHotNovel({int limit = 30}) async {
+  Future<List<Book>> rankHotNovel({int limit = 30, void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
+  }) async {
     browseCalls++;
     if (failBrowse) throw BiliApiException(-500, '接口暂不可用');
     return [];
@@ -42,6 +45,8 @@ class _Api implements BiliApi {
     int page = 1,
     int pageSize = 30,
     ContentMode mode = ContentMode.audiobook,
+    void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
   }) async {
     pages.add(page);
     if (page == 2 && failMore) throw BiliApiException(-500, '分页失败');

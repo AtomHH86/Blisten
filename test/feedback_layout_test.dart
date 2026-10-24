@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'dart:ui' show Tristate;
 
 import 'package:blisten/core/storage/cache_store.dart';
@@ -35,7 +36,9 @@ class _LayoutApi implements BiliApi {
   );
 
   @override
-  Future<List<Book>> rankHotNovel({int limit = 30}) async => [
+  Future<List<Book>> rankHotNovel({int limit = 30, void Function(Object error)? onPartialFailure,
+    CancelToken? cancelToken,
+  }) async => [
     _book(ContentMode.audiobook),
     _book(ContentMode.audiobook),
   ];
@@ -49,6 +52,7 @@ class _LayoutApi implements BiliApi {
     Function(int total)? onFirstPage,
     Function(int rawCount)? onRawCount,
     ContentMode mode = ContentMode.audiobook,
+    CancelToken? cancelToken,
   }) async {
     searches++;
     onFirstPage?.call(1);
@@ -61,6 +65,7 @@ class _LayoutApi implements BiliApi {
     String keyword, {
     int page = 1,
     int pageSize = 20,
+    CancelToken? cancelToken,
   }) async => const [
     UpUser(
       mid: 17,
