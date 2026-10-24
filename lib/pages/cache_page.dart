@@ -903,28 +903,30 @@ class _CacheEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.download_for_offline_outlined,
-              size: 52,
-              color: AppTheme.textHint,
-            ),
-            const SizedBox(height: 14),
-            Text(
-              '还没有缓存任何内容',
-              style: TextStyle(fontSize: 16, color: AppTheme.textMain),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '在作品详情页点下载图标，\n或用「批量缓存」保存内容，无网也能听',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: AppTheme.textSub),
-            ),
-          ],
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.download_for_offline_outlined,
+                size: 52,
+                color: AppTheme.textHint,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '还没有缓存任何内容',
+                style: TextStyle(fontSize: 16, color: AppTheme.textMain),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '在作品详情页点下载图标，\n或用「批量缓存」保存内容，无网也能听',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: AppTheme.textSub),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -84,7 +84,7 @@ void main() {
       await prefs.remove('abts_recent_progress');
       await FollowStore.instance.remove(1);
       await shelf.load();
-      HomeTabs.switchTo(0);
+      HomeTabs.openLibrary(LibraryView.favorites);
     }),
   );
 
@@ -113,6 +113,7 @@ void main() {
     testWidgets(
       '$tone brand, import, tabs and native playback remain coherent',
       (tester) async {
+        addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
         AppTheme.mode = dark ? ThemeMode.dark : ThemeMode.light;
         await tester.pumpWidget(
           _host(const SplashScreen(), player, dark: dark),
@@ -270,7 +271,10 @@ void main() {
         await tester.pump(const Duration(milliseconds: 450));
         await capture(tester, '$tone-silent-preview-page');
         expect(find.text('上次收听'), findsOneWidget);
-        expect(find.textContaining(shelf.recentBooks.first.positionText), findsOneWidget);
+        expect(
+          find.textContaining(shelf.recentBooks.first.positionText),
+          findsOneWidget,
+        );
         expect(player.loaded, isFalse);
         expect(fixture.playUrlRequests.length, requests);
         expect(fixture.mediaRequests.length, mediaRequests);
@@ -281,6 +285,7 @@ void main() {
     testWidgets('$tone 200% text keeps main tabs and player reachable', (
       tester,
     ) async {
+      addTearDown(() async => tester.pumpWidget(const SizedBox.shrink()));
       AppTheme.mode = dark ? ThemeMode.dark : ThemeMode.light;
       final book = await BiliApi.instance.detail(LocalBiliFixture.audiobook);
       await shelf.add(book);
