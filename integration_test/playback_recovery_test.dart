@@ -166,7 +166,9 @@ void main() {
         () => player.currentPosition.inSeconds >= 11,
         'offline P3 seek',
       );
-      final sought = player.currentPosition;
+      final observed = player.currentPosition;
+      final sought = observed > const Duration(seconds: 12)
+          ? observed : const Duration(seconds: 12);
       await _until(
         tester,
         () =>

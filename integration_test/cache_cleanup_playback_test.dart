@@ -92,7 +92,9 @@ void main() {
     expect(player.chapters, hasLength(1));
     await player.seek(const Duration(seconds: 12));
     await _until(tester, () => player.currentPosition.inMilliseconds >= 11500, 'native seek position');
-    final sought = player.currentPosition;
+    final observed = player.currentPosition;
+    final sought = observed > const Duration(seconds: 12)
+        ? observed : const Duration(seconds: 12);
     await _until(tester, () => player.isPlaying && !player.buffering &&
         player.currentPosition > sought + const Duration(seconds: 1),
         'offline playback advances before saving history');
@@ -258,8 +260,13 @@ void main() {
           pic: '', contentMode: ContentMode.concert);
       expect(await player.playBook(active), isTrue);
       await player.seek(const Duration(seconds: 12));
+      await _until(tester,
+          () => player.currentPosition >= const Duration(seconds: 12),
+          'active native seek position settles');
       // RecentPage can only clear an active item that was actually heard.
-      final sought = player.currentPosition;
+      final observed = player.currentPosition;
+      final sought = observed > const Duration(seconds: 12)
+          ? observed : const Duration(seconds: 12);
       await _until(tester, () => player.isPlaying && !player.buffering &&
           player.currentPosition > sought + const Duration(seconds: 1),
           'active playback establishes the record to clear');

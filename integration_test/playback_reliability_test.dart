@@ -193,7 +193,12 @@ void main() {
         mode: ContentMode.music,
       );
       expect(await player.playBook(first, resumeMs: 26000), isTrue);
-      final restored = player.currentPosition;
+      await _until(tester,
+          () => player.currentPosition >= const Duration(seconds: 26),
+          'native restore position settles');
+      final observed = player.currentPosition;
+      final restored = observed > const Duration(seconds: 26)
+          ? observed : const Duration(seconds: 26);
       await _until(
         tester,
         () =>
@@ -221,7 +226,12 @@ void main() {
         mode: ContentMode.concert,
       );
       expect(await player.playBook(book, resumeMs: 20000), isTrue);
-      final restored = player.currentPosition;
+      await _until(tester,
+          () => player.currentPosition >= const Duration(seconds: 20),
+          'native restore position settles');
+      final observed = player.currentPosition;
+      final restored = observed > const Duration(seconds: 20)
+          ? observed : const Duration(seconds: 20);
       await _until(
         tester,
         () =>

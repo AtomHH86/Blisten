@@ -138,7 +138,9 @@ void main() {
             'seed position for ${sample.mode.name}',
           );
           // A seek establishes an offset, not heard history.
-          final sought = player.currentPosition;
+          final observed = player.currentPosition;
+          final target = Duration(seconds: sample.seconds);
+          final sought = observed > target ? observed : target;
           await _until(
             tester,
             () => player.isPlaying && !player.buffering &&
