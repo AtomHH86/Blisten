@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/book.dart';
 import '../../models/chapter.dart';
+import '../../models/content_mode.dart';
 
 /// 书架上的书 + 阅读进度（本地持久化）
 class ShelfBook {
@@ -15,9 +16,11 @@ class ShelfBook {
   int positionMs;
   int chapterDurationMs;
   int updatedAt;
+  int lastListenedAt;
+  bool get hasListened => lastListenedAt > 0;
   /// 完整目录与离线缓存子集必须跨重启保持区分。
   bool chaptersComplete;
-  /// 取消收藏后，在这条收听记录保留期间禁止自动重新收藏。
+  /// 兼容旧版持久化字段；当前版本不会自动收藏。
   bool autoAddSuppressed;
 
   /// 已听完的章节 cid 列表（用于「已听 ✓」区分）
@@ -42,6 +45,7 @@ class ShelfBook {
     this.positionMs = 0,
     this.chapterDurationMs = 0,
     int? updatedAt,
+    this.lastListenedAt = 0,
     List<int>? doneCids,
     this.totalChapters = 0,
     Map<int, double>? chapterProgress,
@@ -61,6 +65,7 @@ class ShelfBook {
         'chaptersComplete': chaptersComplete,
         'autoAddSuppressed': autoAddSuppressed,
         'updatedAt': updatedAt,
+        'lastListenedAt': lastListenedAt,
         'doneCids': doneCids,
         'totalChapters': totalChapters,
         'chapterProgress':
@@ -89,6 +94,13 @@ class ShelfBook {
           <int>[],
       totalChapters: int.tryParse('${m['totalChapters'] ?? 0}') ?? 0,
       chapterProgress: progress,
+      lastListenedAt: m.containsKey('lastListenedAt')
+          ? (int.tryParse('${m['lastListenedAt']}') ?? 0)
+          : ((int.tryParse('${m['positionMs']}') ?? 0) > 0 ||
+                  (int.tryParse('${m['lastChapterIndex']}') ?? 0) > 0 ||
+                  (m['doneCids'] as List? ?? []).isNotEmpty || progress.isNotEmpty
+              ? ((int.tryParse('${m['updatedAt']}') ?? 0) > 0
+                  ? int.parse('${m['updatedAt']}') : 1) : 0),
       chaptersComplete: m['chaptersComplete'] as bool?,
       autoAddSuppressed: m['autoAddSuppressed'] as bool? ?? false,
     );
@@ -186,8 +198,8 @@ class ShelfStore extends ChangeNotifier {
       for (final b in _recent) b.book.bvid: b,
       for (final b in _books) b.book.bvid: b,
     };
-    final sorted = merged.values.toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final sorted = merged.values.where((b) => b.hasListened).toList()
+      ..sort((a, b) => b.lastListenedAt.compareTo(a.lastListenedAt));
     return List.unmodifiable(sorted);
   }
 
@@ -307,8 +319,17 @@ class ShelfStore extends ChangeNotifier {
     _books.removeWhere((b) => b.book.bvid == bvid);
     if (existing != null) {
       existing.autoAddSuppressed = true;
-      _rememberRecent(existing);
+      if (existing.hasListened) _rememberRecent(existing);
     }
+    notifyListeners();
+    await _save();
+  }
+
+  Future<void> moveToMode(String bvid, ContentMode mode) async {
+    final existing = progressByBvid(bvid);
+    if (existing == null || existing.book.contentMode == mode) return;
+    existing.book = existing.book.withContentMode(mode);
+    existing.updatedAt = DateTime.now().millisecondsSinceEpoch;
     notifyListeners();
     await _save();
   }
@@ -319,6 +340,7 @@ class ShelfStore extends ChangeNotifier {
     final favorite = byBvid(bvid);
     if (favorite != null) {
       favorite
+        ..lastListenedAt = 0
         ..lastCid = 0
         ..lastChapterIndex = 0
         ..positionMs = 0
@@ -355,10 +377,11 @@ class ShelfStore extends ChangeNotifier {
     int totalChapters = 0,
     List<Chapter>? chapters,
     bool? chaptersComplete,
+    bool listened = true,
   }) async {
     var existing = progressByBvid(bvid);
     if (existing == null) {
-      if (book == null) return null;
+      if (book == null || !listened) return null;
       existing = ShelfBook(book: book, chaptersComplete: chaptersComplete);
     }
     final directory = chapters ?? book?.chapters;
@@ -384,11 +407,13 @@ class ShelfStore extends ChangeNotifier {
       ..chapterDurationMs = chapterDurationMs
       ..updatedAt = DateTime.now().millisecondsSinceEpoch;
 
+    if (listened) existing.lastListenedAt = DateTime.now().millisecondsSinceEpoch;
+
     // 记下实测的总章节数，整本书进度才有可靠的分母
     if (totalChapters > 0) existing.totalChapters = totalChapters;
 
     // 记下这一章听到哪了（整本书进度的分子来源）
-    if (cid != 0 && chapterDurationMs > 0) {
+    if (listened && cid != 0 && chapterDurationMs > 0) {
       final f = (positionMs / chapterDurationMs).clamp(0.0, 1.0);
       // 只前进不后退：单章回退不重听不该让整本进度倒退
       final prev = existing.chapterProgress[cid] ?? 0;
@@ -407,8 +432,8 @@ class ShelfStore extends ChangeNotifier {
 
   /// 标记某章节为「已听完」（幂等）
   Future<void> markChapterDone(String bvid, int cid) async {
-    final existing = byBvid(bvid);
-    if (existing == null || cid == 0) return;
+    final existing = progressByBvid(bvid);
+    if (existing == null || !existing.hasListened || cid == 0) return;
     if (existing.doneCids.contains(cid)) return;
     existing.doneCids.add(cid);
     // 上限保护：只保留最近 800 条，避免极端长篇把本地存储撑爆
@@ -423,11 +448,11 @@ class ShelfStore extends ChangeNotifier {
 
   /// 某章节是否已听完
   bool isChapterDone(String bvid, int cid) {
-    final existing = byBvid(bvid);
+    final existing = progressByBvid(bvid);
     if (existing == null) return false;
     return existing.doneCids.contains(cid);
   }
 
   /// 本书已听完的章节数
-  int doneCount(String bvid) => byBvid(bvid)?.doneCids.length ?? 0;
+  int doneCount(String bvid) => progressByBvid(bvid)?.doneCids.length ?? 0;
 }

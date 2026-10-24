@@ -173,7 +173,7 @@ class _ResourceImportDialogState extends State<ResourceImportDialog> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('添加资源'),
+                : const Text('添加到收藏'),
           ),
         ],
       ),

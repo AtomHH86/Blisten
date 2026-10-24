@@ -9,7 +9,7 @@ enum ContentMode {
     audiobook => '听书',
     music => '听歌',
     concert => '听现场',
-    children => '儿童',
+    children => '听故事',
   };
 
   String get unitLabel => switch (this) {
@@ -20,7 +20,6 @@ enum ContentMode {
   };
 
   bool get resumesPosition => this != music;
-  bool get autoShelf => this == audiobook;
 
   static ContentMode fromJson(Object? value) => switch (value) {
     'music' => music,

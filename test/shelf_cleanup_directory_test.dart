@@ -50,6 +50,8 @@ void main() {
   test('removed favorite intent survives progress saves and reload until manual add', () async {
     final book = _book();
     await shelf.add(book);
+    await shelf.updateProgress(book.bvid, book: book, cid: 103,
+        chapterIndex: 2, positionMs: 10000, chapterDurationMs: 90000);
     await shelf.remove(book.bvid);
     await shelf.updateProgress(book.bvid, book: book, cid: 103,
         chapterIndex: 2, positionMs: 12000, chapterDurationMs: 90000);

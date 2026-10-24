@@ -229,10 +229,10 @@ void main() {
     ))));
     await tester.tap(find.text('打开儿童导入'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ChoiceChip, '儿童'));
+    await tester.tap(find.widgetWithText(ChoiceChip, '听故事'));
     await tester.enterText(find.byType(TextField),
         'https://www.bilibili.com/video/BV1xx411c7mD?p=2');
-    await tester.tap(find.text('添加资源'));
+    await tester.tap(find.text('添加到收藏'));
     await tester.pumpAndSettle();
     expect(imported?.book.contentMode.name, 'children');
     expect(imported?.page, 2);
@@ -494,7 +494,7 @@ void main() {
       await tester.tap(find.text('打开导入'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'invalid input');
-      await tester.tap(find.text('添加资源'));
+      await tester.tap(find.text('添加到收藏'));
       await tester.pumpAndSettle();
       expect(find.text('请输入有效的 B 站链接或 BV 号'), findsOneWidget);
       expect(find.text('invalid input'), findsOneWidget);
@@ -502,7 +502,7 @@ void main() {
       resolver.fail = false;
       await tester.enterText(find.byType(TextField), 'BV1xx411c7mD');
       await tester.tap(find.text('听现场'));
-      await tester.tap(find.text('添加资源'));
+      await tester.tap(find.text('添加到收藏'));
       await tester.pumpAndSettle();
       expect(api.detailMode, ContentMode.concert);
       expect(imported?.page, 2);
@@ -533,7 +533,7 @@ void main() {
       find.byType(TextField),
       'https://www.bilibili.com/video/BV1xx411c7mD?p=3',
     );
-    await tester.tap(find.text('添加资源'));
+    await tester.tap(find.text('添加到收藏'));
     await tester.pumpAndSettle();
     expect(find.text('链接中的分 P 不存在，请检查 p 参数'), findsOneWidget);
     expect(ShelfStore.instance.books, isEmpty);
@@ -541,7 +541,7 @@ void main() {
       requestOptions: RequestOptions(path: '/'),
       type: DioExceptionType.connectionError,
     );
-    await tester.tap(find.text('添加资源'));
+    await tester.tap(find.text('添加到收藏'));
     await tester.pumpAndSettle();
     expect(find.text('网络连接失败，请检查网络后重试'), findsOneWidget);
     expect(ShelfStore.instance.books, isEmpty);
@@ -576,7 +576,7 @@ void main() {
     await tester.tap(find.text('打开导入'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'BV1xx411c7mD');
-    await tester.tap(find.text('添加资源'));
+    await tester.tap(find.text('添加到收藏'));
     await tester.pumpAndSettle();
     expect(imported, isNotNull);
     expect(imported!.page, isNull);

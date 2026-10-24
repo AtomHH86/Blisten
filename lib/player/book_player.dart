@@ -292,12 +292,13 @@ class BookPlayer extends ChangeNotifier {
     });
     _player.stream.position.listen((p) {
       positionTick.value = p;
+      _tallyPlayTime();
       _tickSave();
       _pushState();
-      _tallyPlayTime();
       _markDoneIfReached(p);
     });
     _player.stream.playing.listen((_) {
+      _lastTallyPos = null;
       _lastPos = currentPosition;
       _lastPosAt = DateTime.now();
       _pushState(force: true);
@@ -506,6 +507,7 @@ class BookPlayer extends ChangeNotifier {
       chapterDurationMs: nextChapter.duration * 1000,
       chapters: _chapters,
       chaptersComplete: _chaptersComplete,
+      listened: false,
     ));
   }
 
@@ -564,10 +566,6 @@ class BookPlayer extends ChangeNotifier {
     await _playIfIntended(current);
   }
 
-  /// 累积的真实播放时长：满 1 分钟才自动加入书架（未手动加入时）
-  Duration _playTally = Duration.zero;
-  Book? _playTallyBook;
-  bool _autoShelved = false;
   bool _notificationAsked = false;
 
   /// 首次播放时按需申请通知权限（Android 13+ 媒体通知需要）。
@@ -644,14 +642,6 @@ class BookPlayer extends ChangeNotifier {
       _loading = false;
       notifyListeners();
       return false;
-    }
-
-    // 换本书时重置「播放 1 分钟自动入书架」的累计
-    if (_playTallyBook?.bvid != book.bvid ||
-        _playTallyBook?.contentMode != book.contentMode) {
-      _playTally = Duration.zero;
-      _playTallyBook = book;
-      _autoShelved = false;
     }
 
     var idx = resume && resumeIndex >= 0 && resumeIndex < chapters.length
@@ -973,6 +963,9 @@ class BookPlayer extends ChangeNotifier {
       _rate = rate;
       _lastAudio = targetAudio ?? prevAudio;
       _index = index;
+      _lastTallyPos = null;
+      _tallyCid = currentChapter?.cid;
+      _heardSinceSave = false;
       _loaded = true;
       AppAnalytics.onEvent('play_start');
     } catch (e) {
@@ -1273,7 +1266,14 @@ class BookPlayer extends ChangeNotifier {
 
   Future<void> seek(Duration to) async {
     _preserveCompletedProgress = false;
-    await _player.seek(to);
+    _seeking = true;
+    _lastTallyPos = null;
+    try {
+      await _player.seek(to);
+    } finally {
+      _lastTallyPos = null;
+      _seeking = false;
+    }
     _pushState(force: true);
   }
 
@@ -1291,6 +1291,9 @@ class BookPlayer extends ChangeNotifier {
     _pausedByInterruption = false;
     // 会话代号自增：让进行中的重连立即作废，避免「按了停止声音又出来」
     _session++;
+    _lastTallyPos = null;
+    _heardSinceSave = false;
+    _tallyCid = null;
     final generation = ++_loadGeneration;
     _nativeLoadGeneration = null;
     _nativeLoadError = null;
@@ -1357,42 +1360,30 @@ class BookPlayer extends ChangeNotifier {
     await _shelf.clearListeningRecord(bvid);
   }
 
-  /// 书籍启用中（真实播放超过 1 分钟）自动加入书架
-  static const Duration _autoShelfAfter = Duration(minutes: 1);
+  // Only position advancement during confirmed playback establishes listening.
+  // Seeks and source/restoration loads reset this baseline explicitly.
+  Duration? _lastTallyPos;
+  int? _tallyCid;
+  bool _heardSinceSave = false;
+  bool _seeking = false;
 
-  /// 正在计数的是哪个 bvid
-  String? _tallyBvid;
-  /// 上次出现的位置，用来累计增量
-  Duration _lastTallyPos = Duration.zero;
-
-  /// 累计真实播放时长；满 1 分钟且不在书架上时自动加入
   void _tallyPlayTime() {
-    if (_loading) return;
-    final book = _book;
-    if (book == null || !_loaded || !book.contentMode.autoShelf) return;
-    if (currentDuration <= Duration.zero) return;
-
     final pos = currentPosition;
-    if (_tallyBvid != book.bvid) {
-      _tallyBvid = book.bvid;
-      _lastTallyPos = pos;
-      return;
-    }
-    final delta = pos - _lastTallyPos;
+    final previous = _lastTallyPos;
     _lastTallyPos = pos;
-    // 忽略异常跳变（seek / 换章位置归零 / 暂停期间无输出）
-    if (delta <= Duration.zero || delta > const Duration(seconds: 60)) {
+    final cid = currentChapter?.cid;
+    if (_tallyCid != cid) {
+      _tallyCid = cid;
+      _heardSinceSave = false;
       return;
     }
-    _playTally += delta;
-    if (_playTally >= _autoShelfAfter && !_autoShelved) {
-      _autoShelved = true;
-      if (!_shelf.isOnShelf(book.bvid) &&
-          !(_shelf.progressByBvid(book.bvid)?.autoAddSuppressed ?? false) &&
-          !_clearedRecords.contains(book.bvid)) {
-        unawaited(_shelf.add(book));
-        AppAnalytics.onEvent('shelf_add_auto');
-      }
+    if (_loading || !_loaded || !_mediaReady || _seeking ||
+        !isPlaying || buffering || previous == null) {
+      return;
+    }
+    final delta = pos - previous;
+    if (delta > Duration.zero && delta <= const Duration(seconds: 5)) {
+      _heardSinceSave = true;
     }
   }
 
@@ -1405,7 +1396,7 @@ class BookPlayer extends ChangeNotifier {
     _markingDone = false;
     if (chapter == null || book == null) return;
     if (_clearedRecords.contains(book.bvid)) return;
-    if (!_shelf.isOnShelf(book.bvid)) return;
+    if (_heardSinceSave) _saveNow();
     _shelf.markChapterDone(book.bvid, chapter.cid);
   }
 
@@ -1418,7 +1409,7 @@ class BookPlayer extends ChangeNotifier {
     if (chapter == null || book == null || dur <= Duration.zero) return;
     if (_clearedRecords.contains(book.bvid)) return;
     if (pos < dur * 0.95) return;
-    if (!_shelf.isOnShelf(book.bvid)) return;
+    if (_heardSinceSave) _saveNow();
     _shelf.markChapterDone(book.bvid, chapter.cid);
   }
 
@@ -1505,15 +1496,8 @@ class BookPlayer extends ChangeNotifier {
     }
 
     // 优先用书架里存的完整书籍信息（合成的 Book 缺作者/章节等字段）
-    var progress = _shelf.progressByBvid(bvid);
+    final progress = _shelf.progressByBvid(bvid);
     final target = progress?.book ?? book;
-    // 保留听书缓存入口自动入架；其他类型只保存独立收听记录。
-    if (!_shelf.isOnShelf(bvid) && target.contentMode.autoShelf &&
-        !(progress?.autoAddSuppressed ?? false) && !_clearedRecords.contains(bvid)) {
-      await _shelf.add(target);
-      if (generation != _loadGeneration) return CachePlayOutcome.failed;
-      progress = _shelf.progressByBvid(bvid);
-    }
     // 离线播放同样要续播：只有当书架记录的就是这一集时才恢复进度
     final start = PlaybackPreferences.selectionStart(target.contentMode,
         index: index,
@@ -1598,6 +1582,7 @@ class BookPlayer extends ChangeNotifier {
     if (chapter == null || book == null) return;
     if (_clearedRecords.contains(book.bvid)) return;
     final pos = currentPosition;
+    final listened = _heardSinceSave;
     // 媒体时长可能还没解析出来（刚点开就退出）。这时用章节列表里带的
     // 时长兜底，否则这一章的进度会被整条丢弃——「点开就退，进度不存」。
     var durMs = currentDuration.inMilliseconds;
@@ -1614,7 +1599,9 @@ class BookPlayer extends ChangeNotifier {
       totalChapters: _chaptersComplete ? _chapters.length : 0,
       chapters: _chapters,
       chaptersComplete: _chaptersComplete,
+      listened: listened,
     );
+    _heardSinceSave = false;
   }
 
   /// 手动留存进度（章节切换/退后台/退出时调用）

@@ -93,6 +93,59 @@ void main() {
     }),
   );
 
+  testWidgets('paused initial load and seeks never establish listening', (tester) async {
+    final book = await BiliApi.instance.detail(LocalBiliFixture.concert,
+        mode: ContentMode.concert);
+    final gate = fixture.gatePlayUrl(LocalBiliFixture.cid(book.bvid, 2));
+    final load = player.playBook(book, resumeIndex: 1, resumeMs: 47000);
+    pending = load;
+    await gate.entered.future.timeout(const Duration(seconds: 15));
+    await player.pause();
+    gate.release();
+    expect(await load, isTrue);
+    pending = null;
+    expect(player.isPlaying, isFalse);
+    await player.seek(const Duration(seconds: 20));
+    player.flushProgress();
+    await player.seek(Duration.zero);
+    player.flushProgress();
+    expect(shelf.recentBooks, isEmpty);
+    expect(shelf.isOnShelf(book.bvid), isFalse);
+    expect(shelf.progressByBvid(book.bvid), isNull);
+  });
+
+  testWidgets('failed playback cannot create history or favorites', (tester) async {
+    final book = await BiliApi.instance.detail(LocalBiliFixture.concert,
+        mode: ContentMode.concert);
+    fixture.mediaAvailable = false;
+    expect(await player.playBook(book, resumeIndex: 1, resumeMs: 47000), isFalse);
+    player.flushProgress();
+    expect(shelf.recentBooks, isEmpty);
+    expect(shelf.isOnShelf(book.bvid), isFalse);
+  });
+
+  for (final mode in ContentMode.values) {
+    testWidgets('$mode playback advancement records listening without favorite', (tester) async {
+      final book = await BiliApi.instance.detail(LocalBiliFixture.concert, mode: mode);
+      expect(await player.playBook(book, resumeIndex: 1, resumeMs: 12000), isTrue);
+      final start = player.currentPosition;
+      await _until(tester,
+          () => player.currentPosition > start + const Duration(seconds: 1),
+          'real native advancement');
+      await player.pause();
+      player.flushProgress();
+      expect(shelf.recentBooks.single.book.bvid, book.bvid);
+      expect(shelf.isOnShelf(book.bvid), isFalse);
+      await player.seek(Duration.zero);
+      player.flushProgress();
+      expect(shelf.recentBooks.single.book.bvid, book.bvid);
+      await player.clearListeningRecord(book.bvid);
+      await tester.pump(const Duration(seconds: 3));
+      expect(shelf.recentBooks, isEmpty);
+      expect(shelf.progressByBvid(book.bvid), isNull);
+    });
+  }
+
   for (final action in ['stop', 'resume']) {
   testWidgets(
     'failed native reconnect followed by $action preserves stable checkpoint',
@@ -100,6 +153,10 @@ void main() {
       final book = await BiliApi.instance.detail(LocalBiliFixture.concert,
           mode: ContentMode.concert);
       expect(await player.playBook(book, resumeMs: 20000), isTrue);
+      final start = player.currentPosition;
+      await _until(tester,
+          () => player.currentPosition > start + const Duration(seconds: 1),
+          'real playback before checkpoint');
       await player.pause();
       expect(shelf.progressByBvid(book.bvid)?.positionMs,
           greaterThanOrEqualTo(19000));
