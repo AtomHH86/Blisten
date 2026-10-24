@@ -448,7 +448,7 @@ void main() {
       );
       final importSubmit = find.descendant(
         of: importDialog,
-        matching: find.widgetWithText(FilledButton, '添加资源'),
+        matching: find.widgetWithText(FilledButton, '添加到收藏'),
       );
       await _enterImportLink(
         tester,
