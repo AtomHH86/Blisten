@@ -61,3 +61,16 @@ key.properties
 
 # 内部调研文档（含本机路径，不公开）
 调研总结.md
+
+# 发布包与 Git 离线备份（备份放在仓库外）
+*.apk
+*.aab
+*.bundle
+
+# 本机凭据配置；允许不含秘密的配置模板
+.env
+.env.*
+!.env.example
+!.env.template
+*.p12
+*.pfx
