@@ -50,6 +50,8 @@ tool/test-android.sh online        # 可选的真实 B 站联网搜索与播放
 tool/android-emulator.sh stop      # 测试结束后关闭模拟器
 ```
 
+全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。现有回归通过，新增边界用例已复现的问题仍待后续修复。
+
 完整操作和测试边界见 [电脑 Android 测试教程](docs/testing/android-desktop-guide.md)。测试仅使用专用模拟器，会重置其中的测试应用数据；无需连接手机。日志保存在 `build/desktop-tests/`。
 
 在其他开发机上，先配置对应平台的 Flutter 和 Android 工具链；快速检查无需模拟器：

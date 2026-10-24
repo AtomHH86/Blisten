@@ -1,0 +1,896 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "reviewed_commit": "273df4a558d8d7c389a53c816fc66ec8e413910f",
+  "branch": "codex/bting-design-v1",
+  "scope": "Whole current application review; production code unchanged. Findings and future improvement plan only.",
+  "production_source_fingerprint": {
+    "sha256": "959b6adfe03a54e42c735a8e717f61ffcb3ab2217c19ef4f6bd81f09e99637b7",
+    "files": 157,
+    "method": "SHA-256 of sorted UTF-8 lines: SHA-256(file) + two spaces + relative path + LF; Git-listed source/test/tool/platform/assets files and pubspec files, excluding docs/build/cache"
+  },
+  "normal_regression": {
+    "command": "tool/test-android.sh all",
+    "exit_code": 0,
+    "run_directory": "build/desktop-tests/20261024-104853-73498",
+    "log_sha256": "5c4aa63aa0d103f57aa890332a06d757b081b02c95819703a046f9aef7c7568b",
+    "unit_widget_passed": 102,
+    "unit_widget_skipped": 1,
+    "packaging_passed": 10,
+    "native_scenarios_passed": 26,
+    "native_setup_teardown_excluded": true,
+    "screenshots_written": 24
+  },
+  "live_smoke": {
+    "command": "tool/test-android.sh online",
+    "exit_code": 0,
+    "run_directory": "build/desktop-tests/20261024-105411-73496",
+    "log_sha256": "8627823e86ab43b2c7ec2e674151509b896edfffd424d0525eb192f8eeaffea4",
+    "result": {
+      "searchCounts": {
+        "audiobook": 16,
+        "music": 20,
+        "concert": 20
+      },
+      "bvid": "BV1wB4y1R7Sg",
+      "positionMs": 3052,
+      "online": true
+    },
+    "scope": "One public resource, no real login. Current availability only; not a long playback or subjective audio quality test."
+  },
+  "review_probes": {
+    "unit_exit_code": 1,
+    "unit_assertion_failures": 12,
+    "native_exit_code": 1,
+    "native_assertion_failures": 5,
+    "issue_groups_reproduced": 11,
+    "intent": "Assertions describe correct behavior; failures are evidence of baseline defects, not approved behavior and not test infrastructure failures.",
+    "cases": [
+      {
+        "case": "api-up-failure",
+        "finding": "R07",
+        "expected": "exception",
+        "observed": "empty successful result"
+      },
+      {
+        "case": "api-rank-failure",
+        "finding": "R07",
+        "expected": "exception",
+        "observed": "empty list"
+      },
+      {
+        "case": "api-expired-session",
+        "finding": "R08",
+        "expected": false,
+        "observed": true
+      },
+      {
+        "case": "api-session-log",
+        "finding": "R01",
+        "expected": "session absent",
+        "observed": "synthetic session present"
+      },
+      {
+        "case": "api-logout-race",
+        "finding": "R08",
+        "expected": false,
+        "observed": true
+      },
+      {
+        "case": "api-concurrent-gap",
+        "finding": "R09",
+        "expected": "at least 400ms",
+        "observed": "0ms observed"
+      },
+      {
+        "case": "ux-detail-failure",
+        "finding": "R12",
+        "expected": "no success text",
+        "observed": "playing text found"
+      },
+      {
+        "case": "ux-timer-320-100",
+        "finding": "R10",
+        "expected": "no overflow",
+        "observed": "48px overflow"
+      },
+      {
+        "case": "ux-timer-320-200",
+        "finding": "R10",
+        "expected": "no overflow",
+        "observed": "285px overflow"
+      },
+      {
+        "case": "ux-timer-360-100",
+        "finding": "R10",
+        "expected": "no overflow",
+        "observed": "48px overflow"
+      },
+      {
+        "case": "ux-timer-360-200",
+        "finding": "R10",
+        "expected": "no overflow",
+        "observed": "285px overflow"
+      },
+      {
+        "case": "ux-timer-selection",
+        "finding": "R11",
+        "expected": 1,
+        "observed": 5
+      },
+      {
+        "case": "native-periodic-progress",
+        "finding": "R02",
+        "expected": "at least 2000ms",
+        "observed": 0
+      },
+      {
+        "case": "native-pause-pending",
+        "finding": "R03",
+        "expected": false,
+        "observed": true
+      },
+      {
+        "case": "native-valid-directory-media-failure",
+        "finding": "R06",
+        "expected": "loadFailed",
+        "observed": "bookGone"
+      },
+      {
+        "case": "native-offline-cid-resume",
+        "finding": "R05",
+        "expected": 503,
+        "observed": 501,
+        "scope": "Offline cache playback plus in-memory metadata JSON roundtrip and session switch; no disk reload or process restart."
+      },
+      {
+        "case": "native-stop-progress",
+        "finding": "R02",
+        "expected": "at least 19000ms",
+        "observed": 0
+      }
+    ]
+  },
+  "final_analyze": {
+    "exit_code": 0,
+    "issues": 0,
+    "note": "Two standalone docs-based tests explicitly allow testing-only SharedPreferences mocks; production analysis rules unchanged."
+  },
+  "coverage": {
+    "command": "flutter test test --no-pub --coverage --reporter expanded",
+    "files_reported": 52,
+    "lines_found": 6249,
+    "lines_hit": 3284,
+    "percentage_of_instrumented_lines": 52.55,
+    "boundaries": "Unit/widget LCOV only; native integration and Kotlin are not included. Missing files are not counted in the percentage.",
+    "files": [
+      {
+        "file": "lib/core/storage/shelf_store.dart",
+        "found": 175,
+        "hit": 153
+      },
+      {
+        "file": "lib/core/theme/app_theme.dart",
+        "found": 117,
+        "hit": 108
+      },
+      {
+        "file": "lib/models/book.dart",
+        "found": 93,
+        "hit": 63
+      },
+      {
+        "file": "lib/models/content_mode.dart",
+        "found": 13,
+        "hit": 12
+      },
+      {
+        "file": "lib/pages/player_page.dart",
+        "found": 389,
+        "hit": 218
+      },
+      {
+        "file": "lib/pages/recent_page.dart",
+        "found": 61,
+        "hit": 52
+      },
+      {
+        "file": "lib/player/book_player.dart",
+        "found": 787,
+        "hit": 0
+      },
+      {
+        "file": "lib/core/app_meta.dart",
+        "found": 1,
+        "hit": 0
+      },
+      {
+        "file": "lib/core/nav/home_tabs.dart",
+        "found": 3,
+        "hit": 0
+      },
+      {
+        "file": "lib/core/network/api_config.dart",
+        "found": 4,
+        "hit": 2
+      },
+      {
+        "file": "lib/core/network/bili_client.dart",
+        "found": 233,
+        "hit": 5
+      },
+      {
+        "file": "lib/core/network/cookie_jar.dart",
+        "found": 33,
+        "hit": 3
+      },
+      {
+        "file": "lib/core/network/wbi_signer.dart",
+        "found": 30,
+        "hit": 0
+      },
+      {
+        "file": "lib/core/storage/cache_store.dart",
+        "found": 566,
+        "hit": 216
+      },
+      {
+        "file": "lib/models/chapter.dart",
+        "found": 13,
+        "hit": 8
+      },
+      {
+        "file": "lib/core/storage/follow_store.dart",
+        "found": 34,
+        "hit": 13
+      },
+      {
+        "file": "lib/models/up_user.dart",
+        "found": 31,
+        "hit": 1
+      },
+      {
+        "file": "lib/core/storage/search_history_store.dart",
+        "found": 31,
+        "hit": 23
+      },
+      {
+        "file": "lib/core/theme/theme_controller.dart",
+        "found": 15,
+        "hit": 15
+      },
+      {
+        "file": "lib/data/seed_books.dart",
+        "found": 8,
+        "hit": 6
+      },
+      {
+        "file": "lib/models/audio_stream.dart",
+        "found": 41,
+        "hit": 0
+      },
+      {
+        "file": "lib/pages/book_detail_page.dart",
+        "found": 394,
+        "hit": 241
+      },
+      {
+        "file": "lib/services/bili_api.dart",
+        "found": 264,
+        "hit": 117
+      },
+      {
+        "file": "lib/services/umeng_analytics.dart",
+        "found": 4,
+        "hit": 1
+      },
+      {
+        "file": "lib/utils/format.dart",
+        "found": 24,
+        "hit": 16
+      },
+      {
+        "file": "lib/widgets/book_cover.dart",
+        "found": 24,
+        "hit": 14
+      },
+      {
+        "file": "lib/widgets/shelf_common.dart",
+        "found": 100,
+        "hit": 49
+      },
+      {
+        "file": "lib/pages/cache_sheet.dart",
+        "found": 135,
+        "hit": 78
+      },
+      {
+        "file": "lib/pages/up_home_page.dart",
+        "found": 240,
+        "hit": 173
+      },
+      {
+        "file": "lib/pages/search_page.dart",
+        "found": 452,
+        "hit": 392
+      },
+      {
+        "file": "lib/widgets/book_cards.dart",
+        "found": 67,
+        "hit": 49
+      },
+      {
+        "file": "lib/widgets/resource_import_dialog.dart",
+        "found": 73,
+        "hit": 68
+      },
+      {
+        "file": "lib/services/audio_focus.dart",
+        "found": 22,
+        "hit": 0
+      },
+      {
+        "file": "lib/player/playback_preferences.dart",
+        "found": 14,
+        "hit": 14
+      },
+      {
+        "file": "lib/services/bili_resource.dart",
+        "found": 41,
+        "hit": 40
+      },
+      {
+        "file": "lib/pages/bookshelf_page.dart",
+        "found": 85,
+        "hit": 17
+      },
+      {
+        "file": "lib/pages/splash_screen.dart",
+        "found": 23,
+        "hit": 23
+      },
+      {
+        "file": "lib/pages/discover_page.dart",
+        "found": 303,
+        "hit": 213
+      },
+      {
+        "file": "lib/pages/follow_page.dart",
+        "found": 46,
+        "hit": 18
+      },
+      {
+        "file": "lib/pages/login_page.dart",
+        "found": 135,
+        "hit": 94
+      },
+      {
+        "file": "lib/services/auth_store.dart",
+        "found": 37,
+        "hit": 15
+      },
+      {
+        "file": "lib/pages/cache_page.dart",
+        "found": 362,
+        "hit": 229
+      },
+      {
+        "file": "lib/services/gallery_service.dart",
+        "found": 12,
+        "hit": 0
+      },
+      {
+        "file": "lib/pages/about_page.dart",
+        "found": 114,
+        "hit": 111
+      },
+      {
+        "file": "lib/services/app_update.dart",
+        "found": 38,
+        "hit": 6
+      },
+      {
+        "file": "lib/services/browser.dart",
+        "found": 6,
+        "hit": 3
+      },
+      {
+        "file": "lib/pages/favorites_page.dart",
+        "found": 24,
+        "hit": 1
+      },
+      {
+        "file": "lib/pages/my_page.dart",
+        "found": 264,
+        "hit": 184
+      },
+      {
+        "file": "lib/pages/settings_page.dart",
+        "found": 121,
+        "hit": 97
+      },
+      {
+        "file": "lib/pages/sleep_timer_page.dart",
+        "found": 104,
+        "hit": 84
+      },
+      {
+        "file": "lib/pages/theme_page.dart",
+        "found": 34,
+        "hit": 34
+      },
+      {
+        "file": "lib/services/device_service.dart",
+        "found": 9,
+        "hit": 5
+      }
+    ]
+  },
+  "android_lint": {
+    "command": "./gradlew :app:lintDebug -Ptarget-platform=android-x64 --console=plain",
+    "exit_code": 1,
+    "errors": 1,
+    "warnings": 11,
+    "issues": [
+      {
+        "id": "NewApi",
+        "severity": "Error",
+        "message": "Call requires API level 26 (current min is 24): `android.app.Notification.Builder()`",
+        "location": {
+          "file": "android/app/src/main/kotlin/com/bting/audio/MainActivity.kt",
+          "line": "298",
+          "column": "46"
+        }
+      },
+      {
+        "id": "BatteryLife",
+        "severity": "Warning",
+        "message": "Use of `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` violates the Play Store Content Policy regarding acceptable use cases, as described in https://developer.android.com/training/monitoring-device-state/doze-standby.html",
+        "location": {
+          "file": "android/app/src/main/kotlin/com/bting/audio/MainActivity.kt",
+          "line": "211",
+          "column": "42"
+        }
+      },
+      {
+        "id": "ExportedService",
+        "severity": "Warning",
+        "message": "Exported service does not require permission",
+        "location": {
+          "file": "android/app/src/main/AndroidManifest.xml",
+          "line": "41",
+          "column": "10"
+        }
+      },
+      {
+        "id": "ObsoleteSdkInt",
+        "severity": "Warning",
+        "message": "Unnecessary; `SDK_INT` is always >= 24",
+        "location": {
+          "file": "android/app/src/main/kotlin/com/bting/audio/MainActivity.kt",
+          "line": "181",
+          "column": "44"
+        }
+      },
+      {
+        "id": "ObsoleteSdkInt",
+        "severity": "Warning",
+        "message": "This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 24. Merge all the resources in this folder into `drawable`.",
+        "location": {
+          "file": "android/app/src/main/res/drawable-v21"
+        }
+      },
+      {
+        "id": "IconLauncherShape",
+        "severity": "Warning",
+        "message": "Launcher icons should not fill every pixel of their square region; see the design guide for details",
+        "location": {
+          "file": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png"
+        }
+      },
+      {
+        "id": "IconLauncherShape",
+        "severity": "Warning",
+        "message": "Launcher icons should not fill every pixel of their square region; see the design guide for details",
+        "location": {
+          "file": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png"
+        }
+      },
+      {
+        "id": "IconLauncherShape",
+        "severity": "Warning",
+        "message": "Launcher icons should not fill every pixel of their square region; see the design guide for details",
+        "location": {
+          "file": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
+        }
+      },
+      {
+        "id": "IconLauncherShape",
+        "severity": "Warning",
+        "message": "Launcher icons should not fill every pixel of their square region; see the design guide for details",
+        "location": {
+          "file": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png"
+        }
+      },
+      {
+        "id": "IconLauncherShape",
+        "severity": "Warning",
+        "message": "Launcher icons should not fill every pixel of their square region; see the design guide for details",
+        "location": {
+          "file": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
+        }
+      },
+      {
+        "id": "UseKtx",
+        "severity": "Warning",
+        "message": "Use the KTX extension function `String.toUri` instead?",
+        "location": {
+          "file": "android/app/src/main/kotlin/com/bting/audio/MainActivity.kt",
+          "line": "212",
+          "column": "33"
+        }
+      },
+      {
+        "id": "UseKtx",
+        "severity": "Warning",
+        "message": "Use the KTX extension function `String.toUri` instead?",
+        "location": {
+          "file": "android/app/src/main/kotlin/com/bting/audio/MainActivity.kt",
+          "line": "280",
+          "column": "53"
+        }
+      }
+    ],
+    "earlier_attempts": "First offline attempt lacked ARM debug engine; x64 offline attempt lacked two lint dependencies. Final online dependency resolution completed and lint reported actual source findings. No application dependency version upgrade."
+  },
+  "android_binary": {
+    "artifact": "debug test-entry APK, not a release artifact",
+    "apk_sha256": "2ba79ed2f521b3aec985593edc32b56577f5c2b76e00627de08256b59afe0409",
+    "apk_bytes": 122856719,
+    "zipalign_16k_exit": 0,
+    "native_libraries": [
+      {
+        "file": "lib/arm64-v8a/libdartjni.so",
+        "bits": 64,
+        "uncompressed_bytes": 97952,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x1b000",
+            "rounded_end": "0x1c000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/arm64-v8a/libdatastore_shared_counter.so",
+        "bits": 64,
+        "uncompressed_bytes": 7112,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x6000",
+            "rounded_end": "0x8000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/arm64-v8a/libmediakitandroidhelper.so",
+        "bits": 64,
+        "uncompressed_bytes": 386696,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x62000",
+            "rounded_end": "0x64000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/arm64-v8a/libmpv.so",
+        "bits": 64,
+        "uncompressed_bytes": 6215848,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": true,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x5f4000",
+            "rounded_end": "0x5f4000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/armeabi-v7a/libdartjni.so",
+        "bits": 32,
+        "uncompressed_bytes": 57600,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false
+      },
+      {
+        "file": "lib/armeabi-v7a/libdatastore_shared_counter.so",
+        "bits": 32,
+        "uncompressed_bytes": 4416,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false
+      },
+      {
+        "file": "lib/armeabi-v7a/libmediakitandroidhelper.so",
+        "bits": 32,
+        "uncompressed_bytes": 286812,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false
+      },
+      {
+        "file": "lib/armeabi-v7a/libmpv.so",
+        "bits": 32,
+        "uncompressed_bytes": 5648496,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false
+      },
+      {
+        "file": "lib/x86_64/libdartjni.so",
+        "bits": 64,
+        "uncompressed_bytes": 99968,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": true,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x1c000",
+            "rounded_end": "0x1c000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/x86_64/libdatastore_shared_counter.so",
+        "bits": 64,
+        "uncompressed_bytes": 6224,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x6000",
+            "rounded_end": "0x8000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/x86_64/libflutter.so",
+        "bits": 64,
+        "uncompressed_bytes": 37941088,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          65536,
+          65536,
+          65536
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x243b000",
+            "rounded_end": "0x243c000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/x86_64/libmediakitandroidhelper.so",
+        "bits": 64,
+        "uncompressed_bytes": 367528,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": false,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x5e000",
+            "rounded_end": "0x60000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      },
+      {
+        "file": "lib/x86_64/libmpv.so",
+        "bits": 64,
+        "uncompressed_bytes": 6983648,
+        "compressed_in_apk": false,
+        "load_alignment_bytes": [
+          16384,
+          16384,
+          16384,
+          16384
+        ],
+        "load_alignment_at_least_16k": true,
+        "relro_end_aligned_16k": true,
+        "relro_layout_checks": [
+          {
+            "relro_end": "0x6b0000",
+            "rounded_end": "0x6b0000",
+            "writable_load_overlaps_after_end": []
+          }
+        ]
+      }
+    ],
+    "note": "Static ELF/ZIP inspection only. Does not verify an actual 16 KiB Android device or future signed release APKs."
+  },
+  "logs": [
+    {
+      "local_path": "build/review-20261024/unit-probes.log",
+      "sha256": "89db8c61bc5a01200f7ed6d7f53810aca6d45820dfe752ab869a427e06859ed8",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/native-probes.log",
+      "sha256": "a04f26726b1ccea5ce0ed3957ea94450acae19b2f0372869a1d01ed8f10168ad",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/coverage-run.log",
+      "sha256": "672613da77860d260014b8db2af48538c3a8f269711f6593353733c03dccf2d4",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/analyze-with-probes.log",
+      "sha256": "410c064877d1f875a933c7a75db26aaa3a531813fb2bb6cf98913202a10acb36",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/android-lint.log",
+      "sha256": "28075fc686e981f8afb1519e53d1b6c9e9a7578e89b0d934807fbf3a7bdb272e",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/android-lint-x64.log",
+      "sha256": "95a35381d25792f376c0f7df79c9ed5da00cf5109cb1711bd7b25798e30ba848",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/android-lint-final.log",
+      "sha256": "33c7a1952edffacc61fedc5685f2b6a7aeaa8f841ff463bbefca692594c88b28",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/zipalign.txt",
+      "sha256": "6a84514f1f95c983b36723805353a9582547f977145788f7a3144ad442c60a3e",
+      "versioned": false
+    },
+    {
+      "local_path": "build/review-20261024/apk-badging.txt",
+      "sha256": "775447dcca58ee57958358c9100f99b1f57ff7f4ac6b144b4ccde94b940a43e6",
+      "versioned": false
+    }
+  ],
+  "probes": [
+    {
+      "path": "docs/reviews/2026-10-24/probes/api_review_test.dart",
+      "sha256": "edc574c4de5dd96ac7d75e61af0244e18532303f6f95d3b93c4694af2652fb68"
+    },
+    {
+      "path": "docs/reviews/2026-10-24/probes/playback_review_test.dart",
+      "sha256": "cef73440b0136ceeb0e4554d1095b4a3c6f55c045ce7f7c5f2c8d22cefa789ce"
+    },
+    {
+      "path": "docs/reviews/2026-10-24/probes/ux_review_test.dart",
+      "sha256": "81dbc793c2320ada8402a799ed1d2c8da84b4067c3f75fbf12edc899e4989027"
+    }
+  ],
+  "finding_priorities": {
+    "P1": [
+      "R01",
+      "R02",
+      "R03",
+      "R04"
+    ],
+    "P2": [
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R19"
+    ],
+    "P3": [
+      "R20"
+    ]
+  },
+  "not_verified": [
+    "Actual Android API24/25 and ARM64/16KiB runtime this round",
+    "Full TalkBack task flow",
+    "Long playback, Bluetooth, calls, OEM background policy",
+    "Real account login/expiry/backup restore",
+    "Windows build/runtime",
+    "Full vulnerability/SBOM/transitive-license audit",
+    "Formal signing, four release APK install/upgrade, remote CI"
+  ],
+  "privacy": "All probe credentials and fixture media are synthetic. Raw online logs stay local and are not committed.",
+  "official_references": [
+    "https://api.flutter.dev/flutter/rendering/debugPrint.html",
+    "https://developer.android.com/reference/android/app/Notification.Builder",
+    "https://developer.android.com/identity/data/autobackup",
+    "https://developer.android.com/media/optimize/audio-focus",
+    "https://developer.android.com/guide/practices/page-sizes",
+    "https://developer.android.com/training/monitoring-device-state/doze-standby",
+    "https://pub.dev/packages/audio_service"
+  ]
+}
