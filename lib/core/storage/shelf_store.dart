@@ -273,6 +273,7 @@ class ShelfStore extends ChangeNotifier {
   void _rememberRecent(ShelfBook progress) {
     _recent.removeWhere((b) => b.book.bvid == progress.book.bvid);
     _recent.insert(0, progress);
+    _recent.sort((a, b) => b.lastListenedAt.compareTo(a.lastListenedAt));
     if (_recent.length > 100) _recent.removeRange(100, _recent.length);
   }
 
@@ -397,9 +398,6 @@ class ShelfStore extends ChangeNotifier {
       existing.book = existing.book.withChapters(directory);
       existing.chaptersComplete = complete;
     }
-    if (!isOnShelf(bvid)) {
-      _rememberRecent(existing);
-    }
     existing
       ..lastCid = cid
       ..lastChapterIndex = chapterIndex
@@ -408,6 +406,9 @@ class ShelfStore extends ChangeNotifier {
       ..updatedAt = DateTime.now().millisecondsSinceEpoch;
 
     if (listened) existing.lastListenedAt = DateTime.now().millisecondsSinceEpoch;
+    if (!isOnShelf(bvid)) {
+      _rememberRecent(existing);
+    }
 
     // 记下实测的总章节数，整本书进度才有可靠的分母
     if (totalChapters > 0) existing.totalChapters = totalChapters;

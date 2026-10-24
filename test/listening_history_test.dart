@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:blisten/core/storage/shelf_store.dart';
 import 'package:blisten/models/content_mode.dart';
 import 'package:blisten/models/chapter.dart';
@@ -108,6 +110,53 @@ void main() {
     await shelf.remove('unplayed');
     expect(shelf.recentBooks, hasLength(100));
     expect(shelf.progressByBvid('heard-0'), isNotNull);
+  });
+
+  Future<void> fillRecent({bool oldFavorite = false}) async {
+    SharedPreferences.setMockInitialValues({
+      'abts_shelf': jsonEncode([
+        if (oldFavorite)
+          ShelfBook(book: resource('old-favorite', ContentMode.music),
+              lastListenedAt: 1).toJson(),
+      ]),
+      'abts_recent_progress': jsonEncode([
+        for (var i = 0; i < 100; i++)
+          ShelfBook(book: resource('heard-$i', ContentMode.music),
+              lastListenedAt: 1000 + i).toJson(),
+      ]),
+    });
+    await shelf.load();
+  }
+
+  test('removing an old heard favorite preserves the latest 100 uncollected listens', () async {
+    await fillRecent(oldFavorite: true);
+    await shelf.remove('old-favorite');
+    await shelf.load();
+    expect(shelf.recentBooks, hasLength(100));
+    expect(shelf.progressByBvid('old-favorite'), isNull);
+    expect(shelf.progressByBvid('heard-99'), isNotNull);
+    expect(shelf.progressByBvid('heard-0'), isNotNull);
+  });
+
+  test('nonlistening progress updates do not protect old records from eviction', () async {
+    await fillRecent();
+    await shelf.updateProgress('heard-0', cid: 10, chapterIndex: 0,
+        positionMs: 0, chapterDurationMs: 180000, listened: false);
+    await savePosition(resource('latest', ContentMode.music));
+    await shelf.load();
+    expect(shelf.recentBooks, hasLength(100));
+    expect(shelf.progressByBvid('heard-0'), isNull);
+    expect(shelf.progressByBvid('heard-99'), isNotNull);
+    expect(shelf.progressByBvid('latest'), isNotNull);
+  });
+
+  test('a new listen receives its timestamp before the retention limit is applied', () async {
+    await fillRecent();
+    await savePosition(resource('latest', ContentMode.music));
+    await shelf.load();
+    expect(shelf.progressByBvid('latest'), isNotNull);
+    expect(shelf.progressByBvid('heard-0'), isNull);
+    expect(shelf.progressByBvid('heard-99'), isNotNull);
   });
 
 }
