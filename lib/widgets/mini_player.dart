@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/storage/shelf_store.dart';
+import '../core/nav/home_tabs.dart';
+import '../models/book.dart';
+import '../utils/format.dart';
 import '../pages/player_page.dart';
 import '../player/book_player.dart';
 import '../widgets/book_cover.dart';
@@ -38,22 +42,45 @@ class _MiniPlayerState extends State<MiniPlayer>
   @override
   Widget build(BuildContext context) {
     final player = context.watch<BookPlayer>();
-    if (!player.loaded || player.book == null) {
-      _spin.stop();
-      return const SizedBox.shrink();
-    }
-
+    final recent = context.watch<ShelfStore>().recentBooks;
+    final preview = player.book == null && recent.isNotEmpty
+        ? recent.first
+        : null;
+    final book = player.book ?? preview?.book;
     final chapter = player.currentChapter;
-    final playing = player.isPlaying;
-    _syncSpin(playing && !MediaQuery.disableAnimationsOf(context) &&
-        !MediaQuery.accessibleNavigationOf(context));
+    final playing = player.loaded && player.isPlaying;
+    _syncSpin(
+      playing &&
+          !player.loading &&
+          !player.buffering &&
+          player.error == null &&
+          !MediaQuery.disableAnimationsOf(context) &&
+          !MediaQuery.accessibleNavigationOf(context),
+    );
+    if (book == null) {
+      return Material(
+        color: AppTheme.surface,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              const Expanded(child: Text('还没有收听内容')),
+              TextButton(
+                onPressed: () => HomeTabs.switchTo(1),
+                child: const Text('去发现'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Material(
       color: AppTheme.surface,
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PlayerPage()),
+            MaterialPageRoute(builder: (_) => PlayerPage(preview: preview)),
           );
         },
         child: Container(
@@ -63,7 +90,7 @@ class _MiniPlayerState extends State<MiniPlayer>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              _buildDisc(player, playing),
+              _buildDisc(book),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -71,7 +98,7 @@ class _MiniPlayerState extends State<MiniPlayer>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      player.book!.cleanTitle,
+                      book.cleanTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -80,18 +107,40 @@ class _MiniPlayerState extends State<MiniPlayer>
                         color: AppTheme.textMain,
                       ),
                     ),
-                    if (player.error != null || chapter != null)
-                      Text(
-                        player.error != null ? '播放失败，可重试' :
-                        '第 ${chapter!.page} ${player.book!.contentMode.unitLabel} · ${chapter.part}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, color: AppTheme.textSub),
-                      ),
+                    if (player.error != null ||
+                        chapter != null ||
+                        preview != null)
+                      if (chapter != null &&
+                          preview == null &&
+                          player.error == null)
+                        ValueListenableBuilder<Duration>(
+                          valueListenable: player.positionTick,
+                          builder: (_, position, _) => Text(
+                            '第 ${chapter.page} ${book.contentMode.unitLabel} · ${Fmt.duration(position)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textSub,
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
+                          player.error != null
+                              ? '播放失败，可重试'
+                              : '第 ${preview!.lastChapterIndex + 1} ${book.contentMode.unitLabel} · ${preview.positionText}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textSub,
+                          ),
+                        ),
                   ],
                 ),
               ),
-              _buildButton(player),
+              _buildButton(player, preview),
             ],
           ),
         ),
@@ -99,44 +148,28 @@ class _MiniPlayerState extends State<MiniPlayer>
     );
   }
 
-  /// 左侧旋转唱片：播放时持续旋转，暂停时停在当前角度并叠加播放图标
-  Widget _buildDisc(BookPlayer player, bool playing) {
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ExcludeSemantics(child: RotationTransition(
-            turns: _spin,
-            child: ClipOval(
-              child: BookCover(
-                url: player.book!.pic,
-                width: 44,
-                height: 44,
-                borderRadius: BorderRadius.circular(22),
-              ),
-            ),
-          )),
-          if (!playing)
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.onPrimary.withValues(alpha: 0.75),
-              ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: AppTheme.accent,
-                size: 22,
-              ),
-            ),
-        ],
+  /// 封面只负责进入播放页，播放操作由右侧独立按钮承担。
+  Widget _buildDisc(Book book) => SizedBox(
+    width: 48,
+    height: 48,
+    child: ExcludeSemantics(
+      child: RotationTransition(
+        key: const ValueKey('mini-player-disc'),
+        turns: _spin,
+        child: ClipOval(
+          child: BookCover(
+            url: book.pic,
+            width: 48,
+            height: 48,
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
       ),
-    );
-  }
+    ),
+  );
 
-  Widget _buildButton(BookPlayer player) {
-    if (player.loading) {
+  Widget _buildButton(BookPlayer player, ShelfBook? preview) {
+    if (player.loading || (player.buffering && player.error == null)) {
       return const SizedBox(
         width: 48,
         height: 48,
@@ -152,14 +185,23 @@ class _MiniPlayerState extends State<MiniPlayer>
         ),
       );
     }
-    final enabled = player.loaded;
+    final enabled = player.book != null || preview != null;
     return IconButton.filled(
       style: IconButton.styleFrom(backgroundColor: AppTheme.accent),
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-      onPressed: enabled ? (player.error != null ? player.retryPlayback : player.togglePlay) : null,
+      onPressed: !enabled
+          ? null
+          : preview != null
+          ? () => player.resumeShelf(preview)
+          : player.error != null
+          ? player.retryPlayback
+          : player.togglePlay,
       icon: Icon(
-        player.error != null ? Icons.refresh_rounded :
-        (player.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
+        player.error != null
+            ? Icons.refresh_rounded
+            : (player.isPlaying
+                  ? Icons.pause_rounded
+                  : Icons.play_arrow_rounded),
         color: enabled ? AppTheme.onPrimary : AppTheme.textHint,
         size: 32,
       ),

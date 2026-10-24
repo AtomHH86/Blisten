@@ -20,7 +20,9 @@ import 'cache_sheet.dart';
 
 /// 全屏播放页：封面、进度与主要收听控制
 class PlayerPage extends StatefulWidget {
-  const PlayerPage({super.key});
+  const PlayerPage({super.key, this.preview});
+
+  final ShelfBook? preview;
 
   @override
   State<PlayerPage> createState() => _PlayerPageState();
@@ -54,6 +56,33 @@ class _PlayerPageState extends State<PlayerPage> {
   @override
   Widget build(BuildContext context) {
     final player = context.watch<BookPlayer>();
+
+    final recent = context.watch<ShelfStore>().recentBooks;
+    final preview = player.book == null && widget.preview != null
+        ? recent.where((row) => row.book.bvid == widget.preview!.book.bvid).firstOrNull
+        : null;
+    if (preview != null) {
+      return Scaffold(
+        backgroundColor: AppTheme.bg,
+        appBar: AppBar(title: const Text('上次收听')),
+        body: SafeArea(child: SingleChildScrollView(child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(children: [
+            SizedBox(height: 240, child: _buildCover(preview.book)),
+            const SizedBox(height: 24),
+            Text(preview.book.cleanTitle, textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, color: AppTheme.textMain)),
+            const SizedBox(height: 12),
+            Text('第 ${preview.lastChapterIndex + 1} ${preview.book.contentMode.unitLabel} · ${preview.positionText}'),
+            const SizedBox(height: 24),
+            IconButton.filled(
+              tooltip: '播放', iconSize: 48,
+              onPressed: () => player.resumeShelf(preview),
+              icon: const Icon(Icons.play_arrow_rounded)),
+          ]),
+        ))),
+      );
+    }
 
     if (player.book == null || !player.loaded) {
       return Scaffold(

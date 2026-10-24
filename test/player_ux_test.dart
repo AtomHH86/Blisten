@@ -127,6 +127,7 @@ void main() {
         book: _book,
         lastCid: 11,
         positionMs: 42000,
+        lastListenedAt: 1,
         doneCids: [11],
       ),
     );

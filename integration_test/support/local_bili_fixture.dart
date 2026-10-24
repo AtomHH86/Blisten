@@ -45,6 +45,7 @@ class LocalBiliFixture extends HttpOverrides {
   int audioGeneration = 0;
   int minimumAudioGeneration = 0;
   final playUrlRequests = <int>[];
+  final mediaRequests = <String>[];
   final _pageListGates = <String, FixtureRequestGate>{};
   final _playUrlGates = <int, FixtureRequestGate>{};
   final _gates = <FixtureRequestGate>[];
@@ -204,6 +205,7 @@ class LocalBiliFixture extends HttpOverrides {
     final path = request.uri.path;
     final query = request.uri.queryParameters;
     if (path.startsWith('/audio/')) {
+      mediaRequests.add('${request.method} ${request.uri} ${request.headers.value(HttpHeaders.rangeHeader) ?? ''}');
       try {
         final generation = int.tryParse(query['generation'] ?? '') ?? 0;
         if (!mediaAvailable || generation < minimumAudioGeneration) {

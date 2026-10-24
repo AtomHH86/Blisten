@@ -128,6 +128,7 @@ void main() {
         await tester.pumpWidget(_host(const HomeShell(), player, dark: dark));
         await tester.pump(const Duration(seconds: 1));
         await capture(tester, '$tone-empty-collection');
+        expect(find.text('还没有收听内容'), findsOneWidget);
         final import = find.text('粘贴链接 / BV号');
         await tester.ensureVisible(import);
         await tester.tap(import);
@@ -154,6 +155,14 @@ void main() {
           'native decode',
         );
         await capture(tester, '$tone-collection-playing');
+        for (final view in LibraryView.values) {
+          final tab = find.byKey(ValueKey('library-tab-${view.name}'));
+          await tester.ensureVisible(tab);
+          await tester.tap(tab);
+          await capture(tester, '$tone-library-${view.name}-playing');
+        }
+        HomeTabs.openLibrary(LibraryView.favorites);
+        await tester.pump(const Duration(milliseconds: 250));
         final position = player.currentPosition;
         await tester.tap(find.byType(MiniPlayer));
         await tester.pump(const Duration(milliseconds: 450));
@@ -247,6 +256,22 @@ void main() {
             anyOf(PermissionStatus.denied, PermissionStatus.permanentlyDenied),
           );
         }
+        await _until(
+          tester,
+          () => shelf.recentBooks.isNotEmpty,
+          'actual recent preview',
+        );
+        await player.stop();
+        await tester.pumpWidget(_host(const HomeShell(), player, dark: !dark));
+        await capture(tester, '$tone-local-preview');
+        final requests = fixture.playUrlRequests.length;
+        final mediaRequests = fixture.mediaRequests.length;
+        await tester.tap(find.byType(MiniPlayer));
+        await tester.pump(const Duration(milliseconds: 450));
+        await capture(tester, '$tone-silent-preview-page');
+        expect(player.loaded, isFalse);
+        expect(fixture.playUrlRequests.length, requests);
+        expect(fixture.mediaRequests.length, mediaRequests);
         await tester.pumpWidget(const SizedBox.shrink());
       },
     );
@@ -279,6 +304,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.widgetWithText(NavigationDestination, '我的'));
       await capture(tester, '$tone-large-my');
+      for (final view in LibraryView.values) {
+        HomeTabs.openLibrary(view);
+        await capture(tester, '$tone-320dp-200-${view.name}-paused');
+      }
       await tester.tap(find.widgetWithText(NavigationDestination, '发现'));
       await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.text('听歌').first);
@@ -316,26 +345,36 @@ Widget _host(
   BookPlayer player, {
   required bool dark,
   double scale = 1,
-}) => MultiProvider(
-  providers: [
-    ChangeNotifierProvider.value(value: ShelfStore.instance),
-    ChangeNotifierProvider.value(value: player),
-    ChangeNotifierProvider.value(value: CacheStore.instance),
-    ChangeNotifierProvider.value(value: SearchHistoryStore.instance),
-    ChangeNotifierProvider.value(value: FollowStore.instance),
-    ChangeNotifierProvider.value(value: LoginStore.instance),
-    ChangeNotifierProvider.value(value: ThemeController.instance),
-  ],
-  child: MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: dark ? AppTheme.dark() : AppTheme.light(),
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(scale), disableAnimations: true),
-      child: child!,
+}) => Center(
+  child: SizedBox(
+    width: scale > 1 ? 320 : double.infinity,
+    height: scale > 1 ? 640 : double.infinity,
+    child: MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: ShelfStore.instance),
+        ChangeNotifierProvider.value(value: player),
+        ChangeNotifierProvider.value(value: CacheStore.instance),
+        ChangeNotifierProvider.value(value: SearchHistoryStore.instance),
+        ChangeNotifierProvider.value(value: FollowStore.instance),
+        ChangeNotifierProvider.value(value: LoginStore.instance),
+        ChangeNotifierProvider.value(value: ThemeController.instance),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: dark ? AppTheme.dark() : AppTheme.light(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: scale > 1
+                ? const Size(320, 640)
+                : MediaQuery.of(context).size,
+            textScaler: TextScaler.linear(scale),
+            disableAnimations: true,
+          ),
+          child: child!,
+        ),
+        home: KeyedSubtree(key: ValueKey('$dark-$scale'), child: child),
+      ),
     ),
-    home: KeyedSubtree(key: ValueKey('$dark-$scale'), child: child),
   ),
 );
 

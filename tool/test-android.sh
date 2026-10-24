@@ -119,6 +119,11 @@ if [ "$suite" != unit ] && [ "$suite" != lint ]; then
     run_integration integration_test/retry_playback_test.dart
     run_integration integration_test/playback_reliability_test.dart
     run_integration integration_test/playback_lifecycle_race_test.dart
+    run_integration integration_test/library_manual_collection_test.dart
+    for preview_mode in music audiobook; do
+      run_integration integration_test/library_preview_restart_test.dart --dart-define=ABTS_RESTART_PHASE=seed --dart-define=ABTS_PREVIEW_MODE="$preview_mode"
+      run_integration integration_test/library_preview_restart_test.dart --dart-define=ABTS_RESTART_PHASE=verify --dart-define=ABTS_PREVIEW_MODE="$preview_mode"
+    done
     run_integration integration_test/continuous_restart_test.dart --dart-define=ABTS_RESTART_PHASE=seed
     run_integration integration_test/continuous_restart_test.dart --dart-define=ABTS_RESTART_PHASE=verify
     run_integration integration_test/restart_test.dart --dart-define=ABTS_RESTART_PHASE=seed
