@@ -20,12 +20,12 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - 搜索提供“听书 / 听歌 / 听现场 / 儿童 / UP 主”五个并列入口；UP 搜索支持分页，进入主页后可切换收听模式。
 - 支持粘贴 BV 号、视频链接、分享文本和 `b23.tv` 短链接，选择类型后添加；显式分 P 链接可打开对应章节。
 - 保留分 P 连播、暂停/恢复、倍速、睡眠定时、后台播放、锁屏媒体控制、收藏和离线缓存。
-- 旧收藏、缓存和进度默认按听书读取。暂停后继续播放与主动重新选择歌曲是不同操作。
+- 缺少模式字段的历史收藏、缓存和进度默认按听书读取；已有模式保持不变。暂停后继续播放与主动重新选择歌曲是不同操作。
 - 儿童内容仅收听声音，动画不显示视频；搜索结果来自 B 站，不代表已经过年龄审核。儿童统一断点续播，仍需手动收藏。
 - 从 1.1 起，进入首页后后台检查更新，成功检查间隔 24 小时；无更新或失败不弹窗。也可随时进入“我的 → 检查更新”；下载由浏览器完成，安装需 Android 确认。旧版 1.0 需手动检查才能发现 1.1。
 - 音频来自 B 站视频；不提供独立歌曲库。不含跨视频歌单、随机/循环播放或整场演唱会自动分曲。
 
-以下为 B听 v1 在 Android 模拟器中的实测画面，使用固定测试数据；不代表线上资源可用性。更多深浅主题、大字和启动截图见[视觉与交互验收记录](docs/testing/2026-10-24-bting-design.md)。
+以下为 B听 1.0 在 Android 模拟器中的历史实测画面，使用固定测试数据；不代表线上资源可用性。更多深浅主题、大字和启动截图见[视觉与交互验收记录](docs/testing/2026-10-24-bting-design.md)。
 
 <img src="docs/screenshots/bting-v1/light-empty-collection.png" width="220" alt="B听浅色收藏空态" /> <img src="docs/screenshots/bting-v1/dark-player.png" width="220" alt="B听深色播放器" /> <img src="docs/screenshots/bting-v1/light-import.png" width="220" alt="B听三模式资源导入" />
 
@@ -34,7 +34,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - 工程/仓库：Blisten；应用显示名：B听；口号：闭上眼听 B 站。
 - 正式包：`com.bting.audio`；调试包：`com.bting.audio.debug`（B听·测试）。
 - Dart 包：`blisten`；独立版本：`1.1.0+2`；继续使用 B听正式签名，兼容覆盖升级。
-- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移旧收藏、进度、缓存或登录状态。
+- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移阿B听书的收藏、进度、缓存或登录状态；B听 1.0 可直接覆盖升级并保留本地数据。
 - 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场 / 儿童。
 - 原作者统计 SDK 已移除；仓库、问题反馈和自动/手动检查更新均指向 Blisten，独立官网暂未设置。上游链接仅用于来源致谢，不检查上游 Release。
 - 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.2](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
@@ -58,7 +58,7 @@ tool/test-android.sh online        # 可选的真实 B 站联网搜索与播放
 tool/android-emulator.sh stop      # 测试结束后关闭模拟器
 ```
 
-全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。审查基线的问题保留原始证据；后续搜索分类、UP 分页与模式选择的改动见[搜索调整验收](docs/testing/2026-10-24-search-categories.md)，质量修复结果见[修复验收](docs/testing/2026-10-24-quality-repairs.md)，发布包验证见[APK 验收记录](docs/testing/2026-10-24-apk-release.md)。
+全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。审查基线的问题保留原始证据；后续搜索分类、UP 分页与模式选择的改动见[搜索调整验收](docs/testing/2026-10-24-search-categories.md)，质量修复结果见[修复验收](docs/testing/2026-10-24-quality-repairs.md)，1.1 的儿童、更新和发布包验证见[本版验收记录](docs/testing/2026-10-24-v1.1-release.md)。
 
 完整操作和测试边界见 [电脑 Android 测试教程](docs/testing/android-desktop-guide.md)。测试仅使用专用模拟器，会重置其中的测试应用数据；无需连接手机。日志保存在 `build/desktop-tests/`。
 
@@ -79,10 +79,10 @@ GitHub Actions 使用固定 Flutter 版本执行同样的快速检查。实际�
 
 | 安装包 | 实际体积（MB，十进制） | 适用设备 |
 | --- | ---: | --- |
-| `Blisten-v1.1.0-arm64-v8a.apk` | 构建后记录 | 大多数现代安卓手机、ARM64 Android 模拟器 |
-| `Blisten-v1.1.0-armeabi-v7a.apk` | 构建后记录 | 支持 32 位 ARM 应用且满足最低系统版本的设备 |
-| `Blisten-v1.1.0-x86_64.apk` | 构建后记录 | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
-| `Blisten-v1.1.0-universal.apk` | 构建后记录 | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
+| `Blisten-v1.1.0-arm64-v8a.apk` | 27.99 | 大多数现代安卓手机、ARM64 Android 模拟器 |
+| `Blisten-v1.1.0-armeabi-v7a.apk` | 24.85 | 支持 32 位 ARM 应用且满足最低系统版本的设备 |
+| `Blisten-v1.1.0-x86_64.apk` | 30.27 | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
+| `Blisten-v1.1.0-universal.apk` | 77.05 | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
 
 先构建并准备三个 ABI 的原生库，再配置自己的 `android/key.properties` 和签名证书后运行：
 
