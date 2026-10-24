@@ -2,8 +2,8 @@
 
 当前基线：[视觉与交互规范 v1.2](bting-design-system-v1.md)（2026-10-24）。B「闭眼听友」及整体 UI 方向已获用户认可，正式视觉实施与测试状态见规范及对应记录。以下新需求的整理或出图不代表已修改应用。
 
-- [本轮完整需求：四频道、专属分类、手动收藏与最近收听](../superpowers/specs/2026-10-24-channels-favorites-recent-design.md)：统一改造范围、完整分类清单和验收标准；业务方向已确认，快捷入口视觉待确认，尚未实施。
-- [最近收听快捷入口图稿](recent-listening-shortcut/README.md)：同一方案的浅色、深色和空收藏状态，只负责该入口的视觉确认。
+- [本轮完整需求：四频道分类、收藏页内容切换与常驻迷你播放器](../superpowers/specs/2026-10-24-channels-favorites-recent-design.md)：保留完整分类、手动收藏、移动归属与历史规则；新增收藏／在听／缓存／关注紧凑切换、移除右上角续播角标、三主页面底部常驻播放器。业务方向和常驻范围已确认，新图稿待确认，尚未实施。
+- [收藏页四视图与播放器图稿说明](recent-listening-shortcut/README.md)及[当前图稿 v3](recent-listening-shortcut/review-board-v3.png)：同一方案的浅色收藏、深色在听、首次使用空态；确认紧凑切换栏和常驻迷你播放器的占位及样式。原单独最近收听快捷行的 v2 保留为已替代历史稿，不是本轮实施依据。
 - [视觉与交互规范](bting-design-system-v1.md)：品牌、颜色、字体、组件、页面流程、异常、播放/数据约定、验收与扩展。
 - [新增功能设计单](new-feature-design-template.md)：以后加功能时复用的简短模板。
 - [概念图和生成提示词](bting-v1/README.md)：已选 B 及三方向探索记录；概念图不是运行截图。
