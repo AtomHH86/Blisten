@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/storage/shelf_store.dart';
+import '../models/content_mode.dart';
 import '../core/theme/app_theme.dart';
 import '../player/book_player.dart';
 import '../widgets/book_cover.dart';
@@ -10,34 +11,81 @@ import 'book_detail_page.dart';
 import 'player_page.dart';
 
 /// 最近收听：按最近收听时间排序的在听列表
-class RecentPage extends StatelessWidget {
-  const RecentPage({super.key});
+class RecentPage extends StatefulWidget {
+  final bool embedded;
+  const RecentPage({super.key, this.embedded = false});
+  @override
+  State<RecentPage> createState() => _RecentPageState();
+}
+
+class _RecentPageState extends State<RecentPage> {
+  ContentMode? _mode;
 
   @override
   Widget build(BuildContext context) {
     final shelf = context.watch<ShelfStore>();
-    final items = shelf.recentBooks.where((b) => b.hasProgress).toList();
+    final items = shelf.recentBooks
+        .where((b) => _mode == null || b.book.contentMode == _mode)
+        .toList();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('最近收听')),
-      body: items.isEmpty
-          ? const EmptyShelfView(
-              icon: Icons.headphones_outlined,
-              title: '还没有收听记录',
-              subtitle: '听书、歌曲、演唱会和儿童内容的本机进度会显示在这里，无需先收藏；仅保留最近记录。',
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              itemCount: items.length,
-              separatorBuilder: (_, _) => Divider(
-                height: 20,
-                thickness: 0.5,
-                color: AppTheme.divider,
-              ),
-              itemBuilder: (context, i) => _RecentTile(
-                  key: ValueKey(items[i].book.bvid), sb: items[i]),
+    final body = Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '最近收听 · ${items.length} 项收听记录',
+              style: TextStyle(color: AppTheme.textSub),
             ),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final mode in <ContentMode?>[null, ...ContentMode.values])
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(mode?.label ?? '全部'),
+                    selected: _mode == mode,
+                    onSelected: (_) => setState(() => _mode = mode),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: items.isEmpty
+              ? const EmptyShelfView(
+                  icon: Icons.headphones_outlined,
+                  title: '还没有收听记录',
+                  subtitle: '听书、歌曲、演唱会和儿童内容的本机进度会显示在这里，无需先收藏；仅保留最近记录。',
+                )
+              : ListView.separated(
+                  key: PageStorageKey('recent-${_mode?.name ?? 'all'}'),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => Divider(
+                    height: 20,
+                    thickness: 0.5,
+                    color: AppTheme.divider,
+                  ),
+                  itemBuilder: (context, i) => _RecentTile(
+                    key: ValueKey(items[i].book.bvid),
+                    sb: items[i],
+                  ),
+                ),
+        ),
+      ],
     );
+    return widget.embedded
+        ? body
+        : Scaffold(
+            appBar: AppBar(title: const Text('最近收听')),
+            body: body,
+          );
   }
 }
 
@@ -57,19 +105,25 @@ class _RecentTileState extends State<_RecentTile> {
   @override
   Widget build(BuildContext context) {
     final player = context.watch<BookPlayer>();
-    final isCurrent = player.book?.bvid == sb.book.bvid &&
+    final isCurrent =
+        player.book?.bvid == sb.book.bvid &&
         player.book?.contentMode == sb.book.contentMode;
     final chapter = sb.lastChapterIndex + 1;
 
     return InkWell(
       borderRadius: BorderRadius.circular(10),
-      onTap: _opening ? null : () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => BookDetailPage(bvid: sb.book.bvid, contentMode: sb.book.contentMode),
-          ),
-        );
-      },
+      onTap: _opening
+          ? null
+          : () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BookDetailPage(
+                    bvid: sb.book.bvid,
+                    contentMode: sb.book.contentMode,
+                  ),
+                ),
+              );
+            },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
@@ -94,7 +148,7 @@ class _RecentTileState extends State<_RecentTile> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '第 $chapter ${sb.book.contentMode.unitLabel} · ${sb.progressText}',
+                    '${sb.book.contentMode.label} · 第 $chapter ${sb.book.contentMode.unitLabel} · ${sb.progressText}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12, color: AppTheme.textSub),
@@ -106,8 +160,9 @@ class _RecentTileState extends State<_RecentTile> {
                       value: sb.percent,
                       minHeight: 4,
                       backgroundColor: AppTheme.surfaceHigh,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.actionText),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.actionText,
+                      ),
                     ),
                   ),
                 ],
@@ -122,10 +177,14 @@ class _RecentTileState extends State<_RecentTile> {
             IconButton(
               tooltip: !sb.book.contentMode.resumesPosition
                   ? '从头播放'
-                  : isCurrent ? '打开播放页' : '继续收听',
+                  : isCurrent
+                  ? '打开播放页'
+                  : '继续收听',
               onPressed: _opening ? null : () => _resume(player),
               icon: Icon(
-                _opening ? Icons.hourglass_top_rounded : isCurrent && player.isPlaying
+                _opening
+                    ? Icons.hourglass_top_rounded
+                    : isCurrent && player.isPlaying
                     ? Icons.equalizer_rounded
                     : Icons.play_circle_fill_rounded,
                 size: 36,
@@ -143,11 +202,19 @@ class _RecentTileState extends State<_RecentTile> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('清除收听记录'),
-        content: Text('清除《${sb.book.cleanTitle}》的收听进度和已听标记？'
-            '\n如果它正在播放或加载，将停止该作品。收藏和离线缓存会保留。'),
+        content: Text(
+          '清除《${sb.book.cleanTitle}》的收听进度和已听标记？'
+          '\n如果它正在播放或加载，将停止该作品。收藏和离线缓存会保留。',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('清除')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('清除'),
+          ),
         ],
       ),
     );
@@ -158,12 +225,18 @@ class _RecentTileState extends State<_RecentTile> {
     try {
       await player.clearListeningRecord(sb.book.bvid);
       if (!context.mounted || route?.isCurrent != true) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清除收听记录')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已清除收听记录')));
     } catch (_) {
       if (!context.mounted || route?.isCurrent != true) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('清除失败，请重试')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('清除失败，请重试')));
     } finally {
-      if (mounted && operationId == _operationId) setState(() => _opening = false);
+      if (mounted && operationId == _operationId) {
+        setState(() => _opening = false);
+      }
     }
   }
 
@@ -174,31 +247,43 @@ class _RecentTileState extends State<_RecentTile> {
     final target = sb;
     setState(() => _opening = true);
     try {
-      final alreadyLoaded = player.book?.bvid == target.book.bvid &&
+      final alreadyLoaded =
+          player.book?.bvid == target.book.bvid &&
           player.book?.contentMode == target.book.contentMode &&
-          player.loaded && target.book.contentMode.resumesPosition;
+          player.loaded &&
+          target.book.contentMode.resumesPosition;
       if (!alreadyLoaded) {
         player.flushProgress();
         final ok = await player.resumeShelf(target);
-        if (!mounted || operationId != _operationId || route?.isCurrent != true) return;
+        if (!mounted ||
+            operationId != _operationId ||
+            route?.isCurrent != true) {
+          return;
+        }
         if (!ok) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('播放失败，请检查网络后重试')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('播放失败，请检查网络后重试')));
           return;
         }
       }
-      if (!mounted || operationId != _operationId || route?.isCurrent != true) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const PlayerPage()),
-      );
+      if (!mounted || operationId != _operationId || route?.isCurrent != true) {
+        return;
+      }
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const PlayerPage()));
     } catch (_) {
-      if (!mounted || operationId != _operationId || route?.isCurrent != true) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('播放失败，请检查网络后重试')),
-      );
+      if (!mounted || operationId != _operationId || route?.isCurrent != true) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('播放失败，请检查网络后重试')));
     } finally {
-      if (mounted && operationId == _operationId) setState(() => _opening = false);
+      if (mounted && operationId == _operationId) {
+        setState(() => _opening = false);
+      }
     }
   }
 }

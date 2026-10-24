@@ -11,7 +11,8 @@ import 'player_page.dart';
 
 /// 离线缓存管理：按书分组，点开看已缓存章节，可单个/批量删除、可直接播放
 class CachePage extends StatelessWidget {
-  const CachePage({super.key});
+  final bool embedded;
+  const CachePage({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
@@ -28,30 +29,56 @@ class CachePage extends StatelessWidget {
       grouped.putIfAbsent(e.bvid, () => []).add(e);
     }
     final books = grouped.keys.toList()
-      ..sort((a, b) => grouped[b]!.first.cachedAt
-          .compareTo(grouped[a]!.first.cachedAt));
+      ..sort(
+        (a, b) =>
+            grouped[b]!.first.cachedAt.compareTo(grouped[a]!.first.cachedAt),
+      );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('离线缓存'),
-        actions: [
-          if (all.isNotEmpty || caching || showFail || cache.clearing)
-            TextButton(
-              onPressed: cache.clearing ? null : () => _confirmClearAll(context, cache),
-              child: Text(
-                cache.clearing ? '清理中…' : '清空',
-                style: TextStyle(color: AppTheme.actionText, fontSize: 16),
-              ),
+      appBar: embedded
+          ? null
+          : AppBar(
+              title: const Text('离线缓存'),
+              actions: [
+                if (all.isNotEmpty || caching || showFail || cache.clearing)
+                  TextButton(
+                    onPressed: cache.clearing
+                        ? null
+                        : () => _confirmClearAll(context, cache),
+                    child: Text(
+                      cache.clearing ? '清理中…' : '清空',
+                      style: TextStyle(
+                        color: AppTheme.actionText,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
       body: all.isEmpty && !caching && !showFail
           ? const _CacheEmpty()
           : ListView.builder(
               padding: const EdgeInsets.only(bottom: 24),
-              itemCount: books.length + 1 + (caching ? 1 : 0) + (showFail ? 1 : 0),
+              itemCount:
+                  books.length + 1 + (caching ? 1 : 0) + (showFail ? 1 : 0),
               itemBuilder: (context, i) {
-                if (i == 0) return _buildSummary(context, cache, all.length);
+                if (i == 0) {
+                  return Column(
+                    children: [
+                      if (embedded)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: cache.clearing
+                                ? null
+                                : () => _confirmClearAll(context, cache),
+                            child: const Text('清空'),
+                          ),
+                        ),
+                      _buildSummary(context, cache, all.length),
+                    ],
+                  );
+                }
                 var idx = i - 1;
                 if (caching && idx == 0) {
                   return _buildProgressCard(context, cache, tasks);
@@ -70,7 +97,10 @@ class CachePage extends StatelessWidget {
 
   /// 后台缓存进度卡片
   Widget _buildProgressCard(
-      BuildContext context, CacheStore cache, List<CacheTask> tasks) {
+    BuildContext context,
+    CacheStore cache,
+    List<CacheTask> tasks,
+  ) {
     final pct = (cache.queueProgress * 100).round();
     final cur = tasks.isEmpty ? null : tasks.first;
     return Container(
@@ -122,19 +152,16 @@ class CachePage extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 6),
-          Text(
-            () {
-              final stat = cache.batchStat;
-              if (stat.total > 0) {
-                return '本批共 ${stat.total} 项，已完成 ${stat.done} 项'
-                    '${stat.failed > 0 ? ' · 失败 ${stat.failed} 项' : ''}'
-                    '${cache.queueLength > 0 ? ' · 排队 ${cache.queueLength} 项' : ''}'
-                    ' · 可离开本页';
-              }
-              return '排队 ${cache.queueLength} 项 · 可离开本页';
-            }(),
-            style: TextStyle(fontSize: 12, color: AppTheme.textHint),
-          ),
+          Text(() {
+            final stat = cache.batchStat;
+            if (stat.total > 0) {
+              return '本批共 ${stat.total} 项，已完成 ${stat.done} 项'
+                  '${stat.failed > 0 ? ' · 失败 ${stat.failed} 项' : ''}'
+                  '${cache.queueLength > 0 ? ' · 排队 ${cache.queueLength} 项' : ''}'
+                  ' · 可离开本页';
+            }
+            return '排队 ${cache.queueLength} 项 · 可离开本页';
+          }(), style: TextStyle(fontSize: 12, color: AppTheme.textHint)),
         ],
       ),
     );
@@ -143,14 +170,19 @@ class CachePage extends StatelessWidget {
   /// 失败清单：早期失败缺少界面反馈，用户只看到「少了一集」，
   /// 这里把原因亮出来并支持一键重试。
   Widget _buildFailureCard(
-      BuildContext context, CacheStore cache, List<CacheFailure> failures) {
+    BuildContext context,
+    CacheStore cache,
+    List<CacheFailure> failures,
+  ) {
     final player = context.read<BookPlayer>();
     final danger = Theme.of(context).colorScheme.error;
     // 失败项同样按作品原顺序展示
     final sorted = failures.toList()
-      ..sort((a, b) => a.order == b.order
-          ? a.cid.compareTo(b.cid)
-          : a.order.compareTo(b.order));
+      ..sort(
+        (a, b) => a.order == b.order
+            ? a.cid.compareTo(b.cid)
+            : a.order.compareTo(b.order),
+      );
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       padding: const EdgeInsets.all(14),
@@ -198,7 +230,9 @@ class CachePage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          ...sorted.take(5).map(
+          ...sorted
+              .take(5)
+              .map(
                 (f) => Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
@@ -244,12 +278,14 @@ class CachePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '已缓存 $count 项',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textMain,
+                UsableCacheCount(
+                  builder: (count) => Text(
+                    count == null ? '正在核验缓存…' : '已缓存 $count 条音频',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMain,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -266,7 +302,11 @@ class CachePage extends StatelessWidget {
   }
 
   Widget _buildBookCard(
-      BuildContext context, CacheStore cache, String bvid, List<CacheEntry> list) {
+    BuildContext context,
+    CacheStore cache,
+    String bvid,
+    List<CacheEntry> list,
+  ) {
     final first = list.first;
     final size = list.fold<int>(0, (s, e) => s + e.sizeBytes);
     return Padding(
@@ -309,28 +349,34 @@ class CachePage extends StatelessWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 2),
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppTheme.accent.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '已缓存 ${list.length} ${list.first.contentMode.unitLabel}',
+                              '${context.watch<ShelfStore>().progressByBvid(bvid)?.book.contentMode.label ?? list.first.contentMode.label} · 已缓存 ${list.length} ${context.watch<ShelfStore>().progressByBvid(bvid)?.book.contentMode.unitLabel ?? list.first.contentMode.unitLabel}',
                               style: TextStyle(
-                                  fontSize: 12, color: AppTheme.actionText),
+                                fontSize: 12,
+                                color: AppTheme.actionText,
+                              ),
                             ),
                           ),
                           Text(
                             sizeText(size),
                             style: TextStyle(
-                                fontSize: 12, color: AppTheme.textHint),
+                              fontSize: 12,
+                              color: AppTheme.textHint,
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
+                Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
               ],
             ),
           ),
@@ -340,8 +386,12 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
   }
 
   /// 弹窗：这本书已缓存了哪些集，可播放/单删/全删
-  Future<void> _showBookChapters(BuildContext context, CacheStore cache,
-      String bvid, List<CacheEntry> initial) async {
+  Future<void> _showBookChapters(
+    BuildContext context,
+    CacheStore cache,
+    String bvid,
+    List<CacheEntry> initial,
+  ) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -368,9 +418,11 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: const Text('清空缓存'),
-        content: Text('删除全部 ${cache.entries.length} 项离线缓存，并取消正在下载和排队中的任务？'
-            '\n收藏和收听进度会保留。此操作不可撤销。',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 16)),
+        content: Text(
+          '删除全部 ${cache.entries.length} 项离线缓存，并取消正在下载和排队中的任务？'
+          '\n收藏和收听进度会保留。此操作不可撤销。',
+          style: TextStyle(color: AppTheme.textMain, fontSize: 16),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -387,10 +439,14 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
     try {
       await cache.clearAll();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清空全部缓存和下载任务')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('已清空全部缓存和下载任务')));
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('部分缓存未能清除，请重试')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('部分缓存未能清除，请重试')));
     }
   }
 }
@@ -415,7 +471,14 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
   String? _playError;
   String get bvid => widget.bvid;
   String get title => widget.title;
-  String get unitLabel => widget.unitLabel;
+  String get unitLabel =>
+      context
+          .watch<ShelfStore>()
+          .progressByBvid(bvid)
+          ?.book
+          .contentMode
+          .unitLabel ??
+      widget.unitLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -449,8 +512,7 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
                       const SizedBox(height: 2),
                       Text(
                         '已缓存 ${list.length} $unitLabel · ${CachePage.sizeText(size)}',
-                        style:
-                            TextStyle(fontSize: 14, color: AppTheme.textSub),
+                        style: TextStyle(fontSize: 14, color: AppTheme.textSub),
                       ),
                     ],
                   ),
@@ -458,8 +520,10 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
                 if (list.isNotEmpty)
                   TextButton(
                     onPressed: () => _confirmDeleteAll(context, cache, list),
-                    child: Text('删除全部',
-                        style: TextStyle(color: AppTheme.textSub, fontSize: 14)),
+                    child: Text(
+                      '删除全部',
+                      style: TextStyle(color: AppTheme.textSub, fontSize: 14),
+                    ),
                   ),
               ],
             ),
@@ -471,15 +535,19 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
               liveRegion: true,
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(_playError!, style: TextStyle(color: AppTheme.error)),
+                child: Text(
+                  _playError!,
+                  style: TextStyle(color: AppTheme.error),
+                ),
               ),
             ),
           Expanded(
             child: list.isEmpty
                 ? Center(
-                    child: Text('缓存已被清空',
-                        style:
-                            TextStyle(fontSize: 14, color: AppTheme.textHint)),
+                    child: Text(
+                      '缓存已被清空',
+                      style: TextStyle(fontSize: 14, color: AppTheme.textHint),
+                    ),
                   )
                 : ListView.builder(
                     itemCount: list.length,
@@ -493,7 +561,9 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
                               ? Icons.check_circle_rounded
                               : Icons.offline_pin_rounded,
                           size: 20,
-                          color: st.done ? AppTheme.textHint : AppTheme.actionText,
+                          color: st.done
+                              ? AppTheme.textHint
+                              : AppTheme.actionText,
                         ),
                         title: Text(
                           e.chapterTitle,
@@ -501,19 +571,23 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 16,
-                            color:
-                                st.done ? AppTheme.textHint : AppTheme.textMain,
+                            color: st.done
+                                ? AppTheme.textHint
+                                : AppTheme.textMain,
                           ),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              [e.durationText, e.sizeText]
-                                  .where((s) => s.isNotEmpty)
-                                  .join(' · '),
+                              [
+                                e.durationText,
+                                e.sizeText,
+                              ].where((s) => s.isNotEmpty).join(' · '),
                               style: TextStyle(
-                                  fontSize: 12, color: AppTheme.textHint),
+                                fontSize: 12,
+                                color: AppTheme.textHint,
+                              ),
                             ),
                             if (st.text.isNotEmpty)
                               Padding(
@@ -546,8 +620,10 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
                               ),
                             if (!st.done && st.progress > 0)
                               Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 4, right: 8),
+                                padding: const EdgeInsets.only(
+                                  top: 4,
+                                  right: 8,
+                                ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(3),
                                   child: LinearProgressIndicator(
@@ -560,19 +636,33 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
                               ),
                           ],
                         ),
-                        onTap: _opening ? null : () => _playEntry(context, cache, e),
+                        onTap: _opening
+                            ? null
+                            : () => _playEntry(context, cache, e),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
                               tooltip: '重新缓存',
-                              icon: Icon(Icons.refresh_rounded, size: 20, color: AppTheme.textSub),
-                              onPressed: cache.clearing ? null : () => _confirmRecache(context, cache, e),
+                              icon: Icon(
+                                Icons.refresh_rounded,
+                                size: 20,
+                                color: AppTheme.textSub,
+                              ),
+                              onPressed: cache.clearing
+                                  ? null
+                                  : () => _confirmRecache(context, cache, e),
                             ),
                             IconButton(
                               tooltip: '删除',
-                              icon: Icon(Icons.delete_outline, size: 20, color: AppTheme.textSub),
-                              onPressed: cache.clearing ? null : () => _confirmDeleteOne(context, cache, e),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: AppTheme.textSub,
+                              ),
+                              onPressed: cache.clearing
+                                  ? null
+                                  : () => _confirmDeleteOne(context, cache, e),
                             ),
                           ],
                         ),
@@ -587,7 +677,9 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
 
   /// 这一集的收听状态：是否听完 / 听到哪了
   ({bool done, String text, double progress}) _statusOf(
-      BuildContext context, CacheEntry e) {
+    BuildContext context,
+    CacheEntry e,
+  ) {
     final shelf = context.watch<ShelfStore>().byBvid(e.bvid);
     if (shelf == null) return (done: false, text: '未听', progress: 0);
     // 播放器已标记听完
@@ -627,37 +719,60 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
   }
 
   /// 删除单集缓存前的二次确认
-  Future<void> _confirmRecache(BuildContext context, CacheStore cache, CacheEntry entry) async {
+  Future<void> _confirmRecache(
+    BuildContext context,
+    CacheStore cache,
+    CacheEntry entry,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('重新缓存'),
-        content: Text('删除「${entry.chapterTitle}」的当前缓存并重新下载？'
-            '\n重新下载完成前，这一项将无法离线收听。'),
+        content: Text(
+          '删除「${entry.chapterTitle}」的当前缓存并重新下载？'
+          '\n重新下载完成前，这一项将无法离线收听。',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('重新缓存')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('重新缓存'),
+          ),
         ],
       ),
     );
     if (confirmed != true || !context.mounted) return;
     final player = context.read<BookPlayer>();
     try {
-      await cache.recache(entry, resolveUrl: player.resolveUrlFor, headers: player.downloadHeaders);
+      await cache.recache(
+        entry,
+        resolveUrl: player.resolveUrlFor,
+        headers: player.downloadHeaders,
+      );
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('未能重新缓存，请重试')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('未能重新缓存，请重试')));
     }
   }
 
   /// 删除单集缓存前的二次确认
   Future<void> _confirmDeleteOne(
-      BuildContext context, CacheStore cache, CacheEntry e) async {
+    BuildContext context,
+    CacheStore cache,
+    CacheEntry e,
+  ) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
-        title: Text('删除这一${e.contentMode.unitLabel}的缓存'),
+        title: Text(
+          '删除这一${context.read<ShelfStore>().progressByBvid(e.bvid)?.book.contentMode.unitLabel ?? e.contentMode.unitLabel}的缓存',
+        ),
         content: Text(
           '「${e.chapterTitle}」${e.sizeText.isEmpty ? '' : '（${e.sizeText}）'}\n'
           '删除后需要重新缓存才能离线收听。',
@@ -670,8 +785,10 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('删除',
-                style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+            child: Text(
+              '删除',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
           ),
         ],
       ),
@@ -681,15 +798,18 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
       await cache.remove(e.bvid, e.cid);
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('缓存未能删除，请重试')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('缓存未能删除，请重试')));
     }
   }
 
   /// 直接播放这一集（离线）
   Future<void> _playEntry(
-      BuildContext context, CacheStore cache, CacheEntry e) async {
+    BuildContext context,
+    CacheStore cache,
+    CacheEntry e,
+  ) async {
     final route = ModalRoute.of(context);
     if (_opening || route?.isCurrent != true) return;
     final navigator = Navigator.of(context);
@@ -700,7 +820,9 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
       aid: 0,
       title: e.bookTitle,
       pic: e.cover,
-      contentMode: e.contentMode,
+      contentMode:
+          context.read<ShelfStore>().progressByBvid(e.bvid)?.book.contentMode ??
+          e.contentMode,
     );
     setState(() {
       _opening = true;
@@ -709,20 +831,25 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
     try {
       final result = await player.playCachedEntry(e.bvid, e.cid, book);
       if (!mounted || route?.isCurrent != true) return;
-      if (result == CachePlayOutcome.fileMissing || result == CachePlayOutcome.failed) {
-        setState(() => _playError = result == CachePlayOutcome.fileMissing
-            ? '缓存文件已丢失，请重新缓存'
-            : '播放失败，请检查网络后点选章节重试');
+      if (result == CachePlayOutcome.fileMissing ||
+          result == CachePlayOutcome.failed) {
+        setState(
+          () => _playError = result == CachePlayOutcome.fileMissing
+              ? '缓存文件已丢失，请重新缓存'
+              : '播放失败，请检查网络后点选章节重试',
+        );
         return;
       }
       // 此时只有请求所属的当前弹层可以关闭，不能 pop 后来打开的页面。
       navigator.pop();
       navigator.push(MaterialPageRoute(builder: (_) => const PlayerPage()));
       if (result == CachePlayOutcome.okOnline) {
-        messenger.showSnackBar(const SnackBar(
-          content: Text('离线播放失败，已改为在线播放（缓存仍保留）'),
-          duration: Duration(seconds: 3),
-        ));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('离线播放失败，已改为在线播放（缓存仍保留）'),
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (_) {
       if (!mounted || route?.isCurrent != true) return;
@@ -733,14 +860,19 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
   }
 
   Future<void> _confirmDeleteAll(
-      BuildContext context, CacheStore cache, List<CacheEntry> list) async {
+    BuildContext context,
+    CacheStore cache,
+    List<CacheEntry> list,
+  ) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: const Text('删除缓存'),
-        content: Text('删除这 ${list.length} $unitLabel离线缓存？',
-            style: TextStyle(color: AppTheme.textMain, fontSize: 16)),
+        content: Text(
+          '删除这 ${list.length} $unitLabel离线缓存？',
+          style: TextStyle(color: AppTheme.textMain, fontSize: 16),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -758,9 +890,9 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
       await cache.removeBook(bvid);
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('部分缓存未能删除，请重试')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('部分缓存未能删除，请重试')));
     }
   }
 }
@@ -776,8 +908,11 @@ class _CacheEmpty extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.download_for_offline_outlined,
-                size: 52, color: AppTheme.textHint),
+            Icon(
+              Icons.download_for_offline_outlined,
+              size: 52,
+              color: AppTheme.textHint,
+            ),
             const SizedBox(height: 14),
             Text(
               '还没有缓存任何内容',
@@ -791,6 +926,52 @@ class _CacheEmpty extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 核验真实文件，未知时保留加载态，不将索引数量当成可用音频数量。
+class UsableCacheCount extends StatefulWidget {
+  final Widget Function(int? count) builder;
+  const UsableCacheCount({super.key, required this.builder});
+  @override
+  State<UsableCacheCount> createState() => _UsableCacheCountState();
+}
+
+class _UsableCacheCountState extends State<UsableCacheCount> {
+  String? _signature;
+  Future<int>? _future;
+  @override
+  Widget build(BuildContext context) {
+    final cache = context.watch<CacheStore>();
+    final entries = cache.entries;
+    final active = cache.tasks
+        .where((t) => !t.done)
+        .map((t) => '${t.bvid}/${t.cid}')
+        .toSet();
+    active.addAll(cache.failures.map((f) => '${f.bvid}/${f.cid}'));
+    final signature =
+        '${entries.map((e) => '${e.bvid}/${e.cid}/${e.cachedAt}').join(',')}|${active.join(',')}';
+    if (_signature != signature) {
+      _signature = signature;
+      _future = Future.wait(
+        entries.where((e) => !active.contains('${e.bvid}/${e.cid}')).map((
+          e,
+        ) async {
+          try {
+            final file = await cache.fileOf(e);
+            return await file.exists() && await file.length() > 0;
+          } catch (_) {
+            return false;
+          }
+        }),
+      ).then((usable) => usable.where((ok) => ok).length);
+    }
+    return FutureBuilder<int>(
+      future: _future,
+      builder: (_, snapshot) => widget.builder(
+        snapshot.connectionState == ConnectionState.done ? snapshot.data : null,
       ),
     );
   }

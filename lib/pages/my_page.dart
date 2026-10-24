@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/app_meta.dart';
+import '../core/nav/home_tabs.dart';
 import '../core/storage/cache_store.dart';
 import '../core/storage/follow_store.dart';
 import '../core/storage/shelf_store.dart';
@@ -10,14 +11,9 @@ import '../core/theme/theme_controller.dart';
 import '../player/book_player.dart';
 import '../services/app_update.dart';
 import '../services/auth_store.dart';
-import '../widgets/book_cover.dart';
 import '../widgets/app_update_prompt.dart';
 import 'about_page.dart';
 import 'cache_page.dart';
-import 'favorites_page.dart';
-import 'follow_page.dart';
-import 'player_page.dart';
-import 'recent_page.dart';
 import 'settings_page.dart';
 import 'sleep_timer_page.dart';
 import 'theme_page.dart';
@@ -33,10 +29,10 @@ class MyPage extends StatelessWidget {
     final auth = context.watch<LoginStore>();
     final follows = context.watch<FollowStore>().length;
     final cache = context.watch<CacheStore>();
-    final cacheCount = cache.entries.length;
+
     final cacheSize = cache.totalSizeText;
     final books = shelf.books;
-    final reading = books.where((b) => b.positionMs > 0).toList();
+    final reading = shelf.recentBooks;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,8 +53,6 @@ class MyPage extends StatelessWidget {
         children: [
           _buildHeader(context, shelf, auth),
           const SizedBox(height: 4),
-          _statRow(books, reading, cacheCount, follows, context),
-          if (reading.isNotEmpty) _buildContinueReading(context, reading),
           _groupLabel('收听'),
           _menuTile(
             context,
@@ -66,7 +60,7 @@ class MyPage extends StatelessWidget {
             color: AppTheme.actionText,
             title: '我的收藏',
             subtitle: books.isEmpty ? '还没有收藏' : '${books.length} 项 · 点击选择收听',
-            onTap: () => _push(context, const FavoritesPage()),
+            onTap: () => HomeTabs.openLibrary(LibraryView.favorites),
           ),
           _menuTile(
             context,
@@ -76,7 +70,7 @@ class MyPage extends StatelessWidget {
             subtitle: reading.isEmpty
                 ? '去发现找想听的内容'
                 : '共 ${reading.length} 项收听记录',
-            onTap: () => _push(context, const RecentPage()),
+            onTap: () => HomeTabs.openLibrary(LibraryView.recent),
           ),
           _menuTile(
             context,
@@ -87,25 +81,27 @@ class MyPage extends StatelessWidget {
             onTap: () => _push(context, const SleepTimerPage()),
           ),
           _groupLabel('离线与关注'),
-          _menuTile(
-            context,
-            icon: Icons.download_for_offline_outlined,
-            color: AppTheme.toneIce,
-            title: '离线缓存',
-            subtitle: cacheCount == 0
-                ? '详情页可选择缓存内容，无网也能听'
-                : '已缓存 $cacheCount 项 · $cacheSize',
-            onTap: () => _push(context, const CachePage()),
+          UsableCacheCount(
+            builder: (cacheCount) => _menuTile(
+              context,
+              icon: Icons.download_for_offline_outlined,
+              color: AppTheme.toneIce,
+              title: '离线缓存',
+              subtitle: cacheCount == null
+                  ? '正在核验缓存…'
+                  : cacheCount == 0
+                  ? '详情页可选择缓存内容，无网也能听'
+                  : '已缓存 $cacheCount 条音频 · $cacheSize',
+              onTap: () => HomeTabs.openLibrary(LibraryView.cache),
+            ),
           ),
           _menuTile(
             context,
             icon: Icons.person_search_rounded,
             color: AppTheme.toneCyan,
             title: '关注的 UP 主',
-            subtitle: follows == 0
-                ? '搜索主播并关注，只听 TA 的内容'
-                : '已关注 $follows 位',
-            onTap: () => _push(context, const FollowPage()),
+            subtitle: follows == 0 ? '搜索主播并关注，只听 TA 的内容' : '已关注 $follows 位',
+            onTap: () => HomeTabs.openLibrary(LibraryView.following),
           ),
           _groupLabel('设置与关于'),
           _menuTile(
@@ -194,7 +190,11 @@ class MyPage extends StatelessWidget {
                     : null,
               ),
               child: auth.userFace.isEmpty
-                  ? Icon(Icons.person_rounded, size: 36, color: AppTheme.actionText)
+                  ? Icon(
+                      Icons.person_rounded,
+                      size: 36,
+                      color: AppTheme.actionText,
+                    )
                   : null,
             ),
             const SizedBox(width: 14),
@@ -205,11 +205,13 @@ class MyPage extends StatelessWidget {
                   Text(
                     auth.isLogin && auth.userName.isNotEmpty
                         ? auth.userName
-                        : (auth.isLogin ? 'B 站用户' : switch (auth.status) {
-                            LoginStatus.expired => '登录已失效',
-                            LoginStatus.unverified => '登录待验证',
-                            _ => '未登录',
-                          }),
+                        : (auth.isLogin
+                              ? 'B 站用户'
+                              : switch (auth.status) {
+                                  LoginStatus.expired => '登录已失效',
+                                  LoginStatus.unverified => '登录待验证',
+                                  _ => '未登录',
+                                }),
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -234,178 +236,6 @@ class MyPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _statRow(List<ShelfBook> books, List<ShelfBook> reading,
-      int cacheCount, int follows, BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.divider),
-        ),
-        child: Row(
-          children: [
-            // 统计项可点击直达对应页面
-            _statCell('${books.length}', '收藏',
-                Icons.collections_bookmark_outlined,
-                onTap: () => _push(context, const FavoritesPage())),
-            _divider(),
-            _statCell(
-                '${reading.length}', '在听', Icons.headset_rounded,
-                onTap: () => _push(context, const RecentPage())),
-            _divider(),
-            _statCell('$cacheCount', '已缓存',
-                Icons.download_for_offline_outlined,
-                onTap: () => _push(context, const CachePage())),
-            _divider(),
-            _statCell('$follows', '关注', Icons.person_rounded,
-                onTap: () => _push(context, const FollowPage())),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _divider() {
-    return Container(width: 1, height: 36, color: AppTheme.divider);
-  }
-
-  Widget _statCell(String value, String label, IconData icon,
-      {VoidCallback? onTap}) {
-    final content = Column(
-      children: [
-        Icon(icon, size: 18, color: AppTheme.actionText),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textMain,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: AppTheme.textSub),
-        ),
-      ],
-    );
-    if (onTap == null) return Expanded(child: content);
-    // 可点击即可，不加箭头图标，保持干净
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: content,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContinueReading(BuildContext context, List<ShelfBook> reading) {
-    const lineHeight = 1.5;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-          child: Row(
-            children: [
-              Icon(Icons.play_circle_outline_rounded,
-                  size: 18, color: AppTheme.actionText),
-              const SizedBox(width: 6),
-              Text(
-                '最近收听',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textMain,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 88 + MediaQuery.textScalerOf(context).scale(14) * lineHeight
-              + MediaQuery.textScalerOf(context).scale(12) * lineHeight,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: reading.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, i) {
-              final sb = reading[i];
-              return InkWell(
-                onTap: () async {
-                  final player = context.read<BookPlayer>();
-                  await player.resumeShelf(sb);
-                  if (!context.mounted) return;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const PlayerPage()),
-                  );
-                },
-                child: SizedBox(
-                  width: 110,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Stack(
-                        children: [
-                          BookCover(url: sb.book.pic, width: 110, height: 76),
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accent,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${(sb.percent * 100).round()}%',
-                                style: const TextStyle(
-                                    fontSize: 12, color: AppTheme.onPrimary),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        sb.book.cleanTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: lineHeight,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textMain,
-                        ),
-                      ),
-                      Text(
-                        '第 ${sb.lastChapterIndex + 1} ${sb.book.contentMode.unitLabel} · ${sb.positionText}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            TextStyle(fontSize: 12, height: lineHeight, color: AppTheme.textSub),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 
@@ -469,12 +299,11 @@ class MyPage extends StatelessWidget {
   }
 
   String _themeSubtitle() => switch (ThemeController.instance.mode) {
-        ThemeMode.light => '浅色',
-        ThemeMode.dark => '深色',
-        ThemeMode.system => '跟随系统',
-      };
+    ThemeMode.light => '浅色',
+    ThemeMode.dark => '深色',
+    ThemeMode.system => '跟随系统',
+  };
 
   String _updateSubtitle() =>
       AppUpdate.configured ? '当前 ${AppMeta.version}' : '暂未配置更新源';
-
 }
