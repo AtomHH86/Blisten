@@ -27,6 +27,30 @@ class AudioTrack {
         quality: int.tryParse('${m['id'] ?? 0}') ?? 0,
       );
 
+  /// 仅接收有主机且不含凭据的 HTTP(S) 地址；保留 CDN 签名的原始字符。
+  List<String> get httpsCandidates {
+    final candidates = <String>[];
+    final invalidCharacters = RegExp(r'[\x00-\x20\x7f\\<>"{}|^`]');
+    final invalidEscape = RegExp(r'%(?![0-9a-fA-F]{2})');
+    final httpAuthority = RegExp(r'^https?://([^/?#]*)', caseSensitive: false);
+    for (final url in [baseUrl, ...backupUrls]) {
+      if (url.isEmpty || invalidCharacters.hasMatch(url) ||
+          invalidEscape.hasMatch(url)) {
+        continue;
+      }
+      final uri = Uri.tryParse(url);
+      final authority = httpAuthority.firstMatch(url)?.group(1);
+      if (uri == null || !uri.hasAuthority || uri.host.isEmpty ||
+          (uri.scheme != 'http' && uri.scheme != 'https') ||
+          uri.userInfo.isNotEmpty || authority == null || authority.contains('@')) {
+        continue;
+      }
+      // Do not rebuild the URI: doing so may normalize a signed path or query.
+      candidates.add('https${url.substring(url.indexOf(':'))}');
+    }
+    return candidates;
+  }
+
   String get qualityLabel {
     final q = id;
     if (q >= 30280) return '192K';

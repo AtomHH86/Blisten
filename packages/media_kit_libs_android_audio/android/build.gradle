@@ -1,0 +1,108 @@
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+group 'com.alexmercerind.media_kit_libs_android_audio'
+version '1.0'
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.11.1'
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.alexmercerind.media_kit_libs_android_audio'
+    compileSdkVersion 36
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    defaultConfig {
+        minSdkVersion 24
+    }
+}
+
+// The app owns ABI packaging filters. This task only verifies its requested inputs.
+def verifyNativeAudio = tasks.register('verifyNativeAudio') {
+    doLast {
+        def platformAbis = ['android-arm': 'armeabi-v7a', 'android-arm64': 'arm64-v8a', 'android-x64': 'x86_64']
+        def explicitAbis = project.findProperty('blistenTargetAbis')
+        def requestedAbis = explicitAbis ? explicitAbis.toString().split(',').collect { it.trim() } :
+            (project.findProperty('target-platform') ?: 'android-arm,android-arm64,android-x64').toString().split(',').collect {
+                platformAbis[it.trim()]
+            }
+        if (!requestedAbis || requestedAbis.any { !platformAbis.containsValue(it) }) {
+            throw new GradleException('Unsupported native audio target ABI')
+        }
+        def instruction = 'Run python3 tool/native-audio/build.py <ABI|all>, then python3 tool/prepare-native-audio.py <ABI|all> from the Blisten root.'
+        def assets = file('src/main/assets/native-audio')
+        def parser = new JsonSlurper()
+        def checkHash = { File artifact, Object expected ->
+            if (!artifact.isFile() || !(expected instanceof String) || !(expected ==~ /[0-9a-f]{64}/) ||
+                MessageDigest.getInstance('SHA-256').digest(artifact.bytes).encodeHex().toString() != expected) {
+                throw new GradleException("Missing or changed native audio input: ${artifact.name}. ${instruction}")
+            }
+        }
+        def recipe = rootProject.file('../tool/native-audio')
+        def buildInputs = ['build.py', 'sources.lock.json', 'ffmpeg-options.txt'].collectEntries {
+            [(it): new File(recipe, it)]
+        }
+        fileTree(new File(recipe, 'patches')).matching { include '**/*.patch' }.files.each {
+            buildInputs[recipe.toPath().relativize(it.toPath()).toString().replace(File.separator, '/')] = it
+        }
+        requestedAbis.each { abi ->
+            def manifest = new File(assets, "manifests/${abi}.json")
+            if (!manifest.isFile()) {
+                throw new GradleException("Native audio for ${abi} has not been prepared. ${instruction}")
+            }
+            def record = parser.parse(manifest)
+            def required = ['libmpv.so', 'libmediakitandroidhelper.so']
+            def allowed = required + ['libc++_shared.so']
+            if (record.abi != abi || record.api != 24 || !(record.artifacts instanceof Map) ||
+                !record.artifacts.keySet().containsAll(required) || record.artifacts.keySet().any { !allowed.contains(it) }) {
+                throw new GradleException("Invalid native audio manifest for ${abi}. ${instruction}")
+            }
+            checkHash(new File(recipe, 'sources.lock.json'), record.sources_lock_sha256)
+            if (!(record.build_inputs instanceof Map) || record.build_inputs.keySet() != buildInputs.keySet()) {
+                throw new GradleException("Native audio build_inputs do not match the current recipe and patch set for ${abi}. ${instruction}")
+            }
+            buildInputs.each { name, input ->
+                checkHash(input, record.build_inputs[name])
+            }
+            def nativeDirectory = file("src/main/jniLibs/${abi}")
+            def actualLibraries = fileTree(nativeDirectory).matching { include '**/*.so' }.files.collect {
+                nativeDirectory.toPath().relativize(it.toPath()).toString().replace(File.separator, '/')
+            }.toSet()
+            if (actualLibraries != record.artifacts.keySet()) {
+                throw new GradleException("Native audio library set differs from manifest for ${abi}: ${actualLibraries}. ${instruction}")
+            }
+            record.artifacts.each { name, hash ->
+                checkHash(new File(nativeDirectory, name), hash)
+            }
+        }
+        def licenseManifest = new File(assets, 'licenses.json')
+        if (!licenseManifest.isFile()) {
+            throw new GradleException("Native audio license notices have not been prepared. ${instruction}")
+        }
+        def licenses = parser.parse(licenseManifest)
+        if (!(licenses instanceof Map) || licenses.isEmpty()) {
+            throw new GradleException("Native audio license notices are missing. ${instruction}")
+        }
+        licenses.each { name, hash ->
+            if (!(name instanceof String) || name.startsWith('/') || name.tokenize('/').contains('..')) {
+                throw new GradleException('Invalid native audio license path')
+            }
+            checkHash(new File(assets, "licenses/${name}"), hash)
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn(verifyNativeAudio)
+}

@@ -109,6 +109,7 @@ if [ "$suite" != unit ] && [ "$suite" != lint ]; then
     run_integration integration_test/bili_live_test.dart
   else
     run_integration integration_test/credential_storage_test.dart
+    run_integration integration_test/native_tls_test.dart
     run_integration integration_test/audio_modes_test.dart
     run_integration integration_test/retry_playback_test.dart
     run_integration integration_test/playback_reliability_test.dart

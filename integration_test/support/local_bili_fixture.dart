@@ -37,7 +37,9 @@ class LocalBiliFixture extends HttpOverrides {
   final _wav = _silenceWav();
   final unexpectedRequests = <String>[];
   bool mediaAvailable = true;
+  bool allowTlsRejection = false;
   bool apiAvailable = true;
+  String? audioUrlOverride;
   int audioGeneration = 0;
   int minimumAudioGeneration = 0;
   final playUrlRequests = <int>[];
@@ -117,6 +119,8 @@ class LocalBiliFixture extends HttpOverrides {
   }
 
   void _serverError(Object error, StackTrace stack) {
+    // Only negative certificate tests opt into expected peer TLS rejections.
+    if (allowTlsRejection && error is HandshakeException) return;
     // Rapid native seek/open can close a TLS connection before it becomes an
     // HttpRequest. Catch those same peer-abort errors at the server boundary.
     if (error is SocketException &&
@@ -128,8 +132,8 @@ class LocalBiliFixture extends HttpOverrides {
     _serverErrors.add((error, stack));
   }
 
-  String audioUrl(int cid) =>
-      'https://127.0.0.1:${_mediaServer.port}/audio/$cid.wav?generation=$audioGeneration';
+  String audioUrl(int cid) => audioUrlOverride ??
+      'https://localhost:${_mediaServer.port}/audio/$cid.wav?generation=$audioGeneration';
 
   static int cid(String bvid, int page) => (ids.indexOf(bvid) + 1) * 100 + page;
 
@@ -180,7 +184,7 @@ class LocalBiliFixture extends HttpOverrides {
 
   Uri redirect(Uri uri) {
     if (uri.host == '127.0.0.1' && uri.port == _server.port) return uri;
-    if (uri.host == '127.0.0.1' &&
+    if (uri.host == 'localhost' &&
         uri.port == _mediaServer.port &&
         uri.scheme == 'https') {
       return uri;

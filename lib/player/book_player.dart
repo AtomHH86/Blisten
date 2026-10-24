@@ -17,6 +17,7 @@ import '../models/content_mode.dart';
 import '../services/audio_focus.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
+import 'native_audio_tls.dart';
 import 'playback_preferences.dart';
 import 'sleep_timer_schedule.dart';
 
@@ -38,6 +39,7 @@ class BookPlayer extends ChangeNotifier {
   static final BookPlayer instance = BookPlayer._();
 
   final Player _player = Player();
+  Future<void>? _nativeTlsSetup;
   final BiliApi _api = BiliApi.instance;
   final ShelfStore _shelf = ShelfStore.instance;
   final CacheStore _cache = CacheStore.instance;
@@ -437,6 +439,8 @@ class BookPlayer extends ChangeNotifier {
       var opened = false;
       for (final url in candidates) {
         try {
+          await _ensureNativeTls();
+          if (!stillCurrent()) return false;
           final nativeError = _beginNativeLoad(generation);
           await _player.open(Media(url, httpHeaders: _streamHeaders()), play: false);
           if (!stillCurrent()) return false;
@@ -920,6 +924,8 @@ class BookPlayer extends ChangeNotifier {
         for (var i = 0; i < candidates.length; i++) {
           final url = candidates[i];
           try {
+            await _ensureNativeTls();
+            if (!stillCurrent()) return false;
             // 有续播位置时先打开再精确跳转，保证落点准确到秒
             await _player.setRate(rate);
             if (!stillCurrent()) return false;
@@ -1073,7 +1079,22 @@ class BookPlayer extends ChangeNotifier {
         'Referer': BiliEndpoints.home,
       };
 
-  /// 候选音频地址列表：AAC 优先（稳定），flac/dolby 兜底；百度 http 转 https
+  Future<void> _ensureNativeTls() async {
+    if (!Platform.isAndroid) return;
+    final native = _player.platform! as NativePlayer;
+    final setup = _nativeTlsSetup ??= NativeAudioTls.configure(
+      setProperty: native.setProperty,
+      getProperty: native.getProperty,
+    );
+    try {
+      await setup;
+    } catch (_) {
+      if (identical(_nativeTlsSetup, setup)) _nativeTlsSetup = null;
+      rethrow;
+    }
+  }
+
+  /// 候选音频地址列表：AAC 优先（稳定），flac/dolby 兜底；仅使用校验后的 HTTPS 地址
   Future<({List<String> urls, BookAudio? audio})> _fetchStreamCandidates(int cid, {
     required String bvid, bool Function()? stillCurrent,
   }) async {
@@ -1090,13 +1111,7 @@ class BookPlayer extends ChangeNotifier {
 
     final list = <String>[];
     void add(AudioTrack? t) {
-      if (t == null) return;
-      String toHttps(String u) =>
-          u.startsWith('http://') ? 'https://${u.substring(7)}' : u;
-      if (t.baseUrl.isNotEmpty) list.add(toHttps(t.baseUrl));
-      for (final b in t.backupUrls) {
-        if (b.isNotEmpty) list.add(toHttps(b));
-      }
+      if (t != null) list.addAll(t.httpsCandidates);
     }
 
     final aac = [...audio.tracks]..sort((a, b) => b.bandwidth.compareTo(a.bandwidth));
@@ -1532,14 +1547,8 @@ class BookPlayer extends ChangeNotifier {
       }
       final audio = await _api.playUrl(bvid, cid);
       final urls = <String>[];
-      String toHttps(String u) =>
-          u.startsWith('http://') ? 'https://${u.substring(7)}' : u;
       void add(AudioTrack? t) {
-        if (t == null) return;
-        if (t.baseUrl.isNotEmpty) urls.add(toHttps(t.baseUrl));
-        for (final b in t.backupUrls) {
-          if (b.isNotEmpty) urls.add(toHttps(b));
-        }
+        if (t != null) urls.addAll(t.httpsCandidates);
       }
 
       final aac = [...audio.tracks]..sort((a, b) => b.bandwidth.compareTo(a.bandwidth));

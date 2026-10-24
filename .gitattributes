@@ -1,0 +1,4 @@
+# Preserve byte-for-byte upstream patches and notices used by the native recipe.
+tool/native-audio/patches/** -text -whitespace
+tool/native-audio/licenses/** -text -whitespace
+packages/media_kit_libs_android_audio/LICENSE -text -whitespace

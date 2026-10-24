@@ -49,6 +49,10 @@ dependencies:
   qr_flutter: ^4.1.0
   path_provider: ^2.1.6
 
+dependency_overrides:
+  media_kit_libs_android_audio:
+    path: packages/media_kit_libs_android_audio
+
 dev_dependencies:
   integration_test:
     sdk: flutter

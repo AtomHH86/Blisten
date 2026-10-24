@@ -74,3 +74,8 @@ key.properties
 !.env.template
 *.p12
 *.pfx
+
+# Verified local native audio outputs (prepared from pinned sources)
+/packages/media_kit_libs_android_audio/android/src/main/jniLibs/
+/packages/media_kit_libs_android_audio/android/src/main/assets/native-audio/
+/packages/media_kit_libs_android_audio/android/src/main/.native-audio-*/

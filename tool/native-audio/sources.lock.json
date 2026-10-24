@@ -1,0 +1,50 @@
+[
+  {
+    "name": "mpv",
+    "repository": "https://github.com/mpv-player/mpv",
+    "commit": "140ec21c89d671d392877a7f3b91d67e7d7b9239",
+    "url": "https://codeload.github.com/mpv-player/mpv/tar.gz/140ec21c89d671d392877a7f3b91d67e7d7b9239",
+    "sha256": "0b543029e212b8ed7379ab59eca784b81dfdc266f12598549f79bc7b490ea6e5",
+    "archive": "mpv-140ec21c89d671d392877a7f3b91d67e7d7b9239.tar.gz"
+  },
+  {
+    "name": "ffmpeg",
+    "repository": "https://github.com/FFmpeg/FFmpeg",
+    "commit": "f1e3a2bf7a2f2cde936d1ed97f09a26853d20125",
+    "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/f1e3a2bf7a2f2cde936d1ed97f09a26853d20125",
+    "sha256": "a6812d1f3d955450b8b8a4897551b93e4f7d26b173b5d39949893f578f318859",
+    "archive": "ffmpeg-f1e3a2bf7a2f2cde936d1ed97f09a26853d20125.tar.gz"
+  },
+  {
+    "name": "mbedtls",
+    "repository": "https://github.com/Mbed-TLS/mbedtls",
+    "commit": "068ff080b369adfac81509f9b57b2afabaf82dc5",
+    "url": "https://codeload.github.com/Mbed-TLS/mbedtls/tar.gz/068ff080b369adfac81509f9b57b2afabaf82dc5",
+    "sha256": "ca6bd316bbec49ef20088f39b8755fcaec0b7e45781506de55b17cd191ae6937",
+    "archive": "mbedtls-068ff080b369adfac81509f9b57b2afabaf82dc5.tar.gz"
+  },
+  {
+    "name": "helper",
+    "repository": "https://github.com/media-kit/media-kit-android-helper",
+    "commit": "42054e5d479f39ccbb0ae604862e2bcaf59b74c2",
+    "url": "https://codeload.github.com/media-kit/media-kit-android-helper/tar.gz/42054e5d479f39ccbb0ae604862e2bcaf59b74c2",
+    "sha256": "53ea71476d1cbc9a5d63d4898c6b027af4ccb6525800c7b42e267e6128652423",
+    "archive": "helper-42054e5d479f39ccbb0ae604862e2bcaf59b74c2.tar.gz"
+  },
+  {
+    "name": "mbedtls-framework",
+    "repository": "https://github.com/Mbed-TLS/mbedtls-framework",
+    "commit": "dde0c4a0e448a0552f18817dcea633bb851fd288",
+    "url": "https://codeload.github.com/Mbed-TLS/mbedtls-framework/tar.gz/dde0c4a0e448a0552f18817dcea633bb851fd288",
+    "archive": "mbedtls-framework-dde0c4a0e448a0552f18817dcea633bb851fd288.tar.gz",
+    "destination": "mbedtls/framework",
+    "sha256": "3b0d4864fa877dc9165b90ff3d5b68505c6176c0b22d317d99fe8c89a993e9fd"
+  },
+  {
+    "name": "waf",
+    "version": "2.0.24",
+    "url": "https://waf.io/waf-2.0.24",
+    "archive": "waf-2.0.24",
+    "sha256": "93909bca823a675f9f40af7c65b24887c3a3c0efdf411ff1978ba827194bdeb0"
+  }
+]
