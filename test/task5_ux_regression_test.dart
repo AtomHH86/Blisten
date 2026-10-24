@@ -16,6 +16,7 @@ import 'package:blisten/pages/sleep_timer_page.dart';
 import 'package:blisten/pages/recent_page.dart';
 import 'package:blisten/player/book_player.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -541,5 +542,50 @@ void main() {
         });
       }
     }
+  }
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('focused custom timer label has readable rendered contrast in ${mode.name}', (tester) async {
+      final player = _Player()..activeBook = _book;
+      await tester.pumpWidget(_host(const SleepTimerPage(), player, mode: mode));
+      await tester.pumpAndSettle();
+      await _customDialog(tester);
+      final label = find.text('分钟数');
+      expect(label, findsOneWidget);
+      final field = tester.widget<InputDecorator>(find.descendant(
+        of: find.byType(TextField), matching: find.byType(InputDecorator)));
+      expect(field.isFocused, isTrue);
+      final paragraph = tester.renderObject<RenderParagraph>(find.descendant(
+        of: label, matching: find.byType(RichText)));
+      final style = paragraph.text.style!;
+      final foreground = style.foreground?.color ?? style.color;
+      expect(foreground, isNotNull);
+      Color? surface;
+      tester.element(label).visitAncestorElements((element) {
+        final widget = element.widget;
+        if (widget is Material && widget.color != null) {
+          surface = widget.color;
+          return false;
+        }
+        return true;
+      });
+      expect(surface, isNotNull, reason: 'Read the painted dialog material, not a palette constant.');
+      final defaults = Theme.of(tester.element(label)).inputDecorationTheme;
+      final decoration = field.decoration.applyDefaults(defaults);
+      final fill = decoration.filled == true
+          ? Color.alphaBlend(decoration.fillColor ?? Colors.transparent, surface!)
+          : surface!;
+      // An outline's floating label straddles surface and field fill. Both
+      // backgrounds must remain readable after inherited/focused style resolves.
+      for (final background in [surface!, fill]) {
+        final ink = Color.alphaBlend(foreground!, background);
+        final a = ink.computeLuminance();
+        final b = background.computeLuminance();
+        final ratio = ((a > b ? a : b) + 0.05) / ((a > b ? b : a) + 0.05);
+        expect(ratio, greaterThanOrEqualTo(4.5),
+          reason: 'Actual focused label ink must contrast against its painted background.');
+      }
+      expect(tester.takeException(), isNull);
+    });
   }
 }

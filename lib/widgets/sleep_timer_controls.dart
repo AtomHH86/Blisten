@@ -146,7 +146,13 @@ class _CustomSleepTimerDialogState extends State<_CustomSleepTimerDialog> {
           controller: _controller,
           autofocus: true,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: '分钟数', suffixText: '分钟', helperText: '1 ~ 720 分钟'),
+          decoration: InputDecoration(
+            labelText: '分钟数',
+            labelStyle: TextStyle(color: AppTheme.textSub),
+            floatingLabelStyle: TextStyle(color: AppTheme.actionText),
+            suffixText: '分钟',
+            helperText: '1 ~ 720 分钟',
+          ),
           validator: (value) {
             final minutes = int.tryParse(value?.trim() ?? '');
             return minutes == null || minutes < 1 || minutes > 720
