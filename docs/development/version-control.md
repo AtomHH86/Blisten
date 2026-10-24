@@ -5,10 +5,11 @@
 文中的 `/path/to/workspace` 是示例工作区，请替换为自己的目录；公开文档不保留开发者本机用户名。
 ## 最新发布与恢复点（2026-10-25）
 
-- 正式版本 `v1.2.0`，标签解引用到 `bc5413e02b970d793dc50e3c46f1d581d9aa4797`；四 APK、原签名升级、公开下载与更新识别的范围见[本版验收](../testing/2026-10-24-v1.2-release.md)。
+- 正式版本 `v1.2.1`，标签解引用到 `831832bf17e3be8ed2872e182ba49e6470480f0b`；四 APK、原签名升级、公开下载与旧版更新识别的范围见[本版验收](../testing/2026-10-25-v1.2.1-release.md)。已发布标签及附件保持固定。
 - `origin` 为 [AtomHH86/Blisten](https://github.com/AtomHH86/Blisten)，`upstream` 仍为原项目且推送禁用。发布后只补充交付文档，不移动已发布标签。
-- 本轮离线备份目录为 `/path/to/workspace/Blisten-backups/2026-10-25-v1.2.0/`，源码 bundle 为 `Blisten-v1.2.0.bundle`。验证结果与最终文档提交写入该目录的 `verification.json`；`release/` 单独保存13个发布附件及其校验和。签名私钥不放入 Git bundle 或公开附件。
-- 安全查看旧版：先确认工作区干净，再用一个尚未存在的恢复分支从 `v1.2.0` 创建；不执行强制重置或覆盖标签。源码回退不等于已安装 APK 和应用数据降级。
+- 跨平台 A0 工程预览独立于 Android 发布标签；运行与构建验证的源码为 `6d44db9018942cfc173452007b9fde27a8340bd4`，文档交付检查点为 `checkpoint/cross-platform-a0-2026-10-25`。能力限制见[预览验收](../testing/2026-10-25-cross-platform-foundation.md)，不能将其当作三个平台均可正式收听。
+- 本轮离线备份目录为 `/path/to/workspace/Blisten-backups/2026-10-25-v1.2.1-a0/`，源码 bundle 为 `Blisten-v1.2.1-a0.bundle`。验证结果与最终提交写入该目录的 `verification.json`；`release/` 单独保存13个发布附件，`web-preview/` 保存本机网页预览包。原 `2026-10-25-v1.2.0/` 备份保留。签名私钥不放入 Git bundle 或公开附件。
+- 安全查看正式版：先确认工作区干净，再用一个尚未存在的恢复分支从 `v1.2.1` 创建；不执行强制重置或覆盖标签。源码回退不等于已安装 APK 或应用数据降级。
 
 ## 最初保护状态（历史记录）
 

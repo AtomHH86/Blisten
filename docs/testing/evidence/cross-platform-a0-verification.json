@@ -1,0 +1,477 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-24T19:21:52.239348+00:00",
+  "source_commit": "6d44db9018942cfc173452007b9fde27a8340bd4",
+  "status": "engineering_preview_accepted_with_documented_limits",
+  "ci": [
+    {
+      "conclusion": "success",
+      "databaseId": 40124144824,
+      "headSha": "6d44db9018942cfc173452007b9fde27a8340bd4",
+      "jobs": [
+        {
+          "completedAt": "2026-10-24T19:13:22Z",
+          "conclusion": "success",
+          "databaseId": 120961841746,
+          "name": "web",
+          "startedAt": "2026-10-24T19:11:21Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-24T19:11:23Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-24T19:11:22Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:11:25Z",
+              "conclusion": "success",
+              "name": "Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+              "number": 2,
+              "startedAt": "2026-10-24T19:11:23Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:11:30Z",
+              "conclusion": "success",
+              "name": "Install pinned Flutter",
+              "number": 3,
+              "startedAt": "2026-10-24T19:11:25Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:11:54Z",
+              "conclusion": "success",
+              "name": "Run flutter pub get --enforce-lockfile",
+              "number": 4,
+              "startedAt": "2026-10-24T19:11:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:23Z",
+              "conclusion": "success",
+              "name": "Browser platform tests",
+              "number": 5,
+              "startedAt": "2026-10-24T19:11:54Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:54Z",
+              "conclusion": "success",
+              "name": "Compile shared Web application",
+              "number": 6,
+              "startedAt": "2026-10-24T19:12:23Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:13:20Z",
+              "conclusion": "success",
+              "name": "Compile generated audio probe without removing app assets",
+              "number": 7,
+              "startedAt": "2026-10-24T19:12:54Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:13:20Z",
+              "conclusion": "success",
+              "name": "Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+              "number": 14,
+              "startedAt": "2026-10-24T19:13:20Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:13:20Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 15,
+              "startedAt": "2026-10-24T19:13:20Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144824/job/120961841746"
+        }
+      ],
+      "name": "Web preview checks",
+      "status": "completed",
+      "updatedAt": "2026-10-24T19:13:23Z",
+      "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144824"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 40124144911,
+      "headSha": "6d44db9018942cfc173452007b9fde27a8340bd4",
+      "jobs": [
+        {
+          "completedAt": "2026-10-24T19:16:34Z",
+          "conclusion": "success",
+          "databaseId": 120962023553,
+          "name": "Simulator debug and device release",
+          "startedAt": "2026-10-24T19:12:12Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-24T19:12:13Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-24T19:12:13Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:16Z",
+              "conclusion": "success",
+              "name": "Check out source",
+              "number": 2,
+              "startedAt": "2026-10-24T19:12:13Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:22Z",
+              "conclusion": "success",
+              "name": "Install pinned Flutter SDK",
+              "number": 3,
+              "startedAt": "2026-10-24T19:12:16Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:13:31Z",
+              "conclusion": "success",
+              "name": "Record toolchain and resolve dependencies",
+              "number": 4,
+              "startedAt": "2026-10-24T19:12:22Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:15:06Z",
+              "conclusion": "success",
+              "name": "Compile unsigned simulator debug app",
+              "number": 5,
+              "startedAt": "2026-10-24T19:13:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:16:29Z",
+              "conclusion": "success",
+              "name": "Compile unsigned device release app",
+              "number": 6,
+              "startedAt": "2026-10-24T19:15:06Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:16:30Z",
+              "conclusion": "success",
+              "name": "Save compile evidence",
+              "number": 7,
+              "startedAt": "2026-10-24T19:16:29Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:16:30Z",
+              "conclusion": "success",
+              "name": "Post Check out source",
+              "number": 14,
+              "startedAt": "2026-10-24T19:16:30Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:16:32Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 15,
+              "startedAt": "2026-10-24T19:16:30Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144911/job/120962023553"
+        }
+      ],
+      "name": "iOS unsigned compile",
+      "status": "completed",
+      "updatedAt": "2026-10-24T19:16:34Z",
+      "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144911"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 40124144878,
+      "headSha": "6d44db9018942cfc173452007b9fde27a8340bd4",
+      "jobs": [
+        {
+          "completedAt": "2026-10-24T19:20:38Z",
+          "conclusion": "success",
+          "databaseId": 120961993854,
+          "name": "Android build and lint",
+          "startedAt": "2026-10-24T19:12:02Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-24T19:12:05Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-24T19:12:04Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:06Z",
+              "conclusion": "success",
+              "name": "Check out source",
+              "number": 2,
+              "startedAt": "2026-10-24T19:12:05Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:12Z",
+              "conclusion": "success",
+              "name": "Install pinned Flutter SDK",
+              "number": 3,
+              "startedAt": "2026-10-24T19:12:06Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:46Z",
+              "conclusion": "success",
+              "name": "Configure Android toolchain",
+              "number": 4,
+              "startedAt": "2026-10-24T19:12:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:46Z",
+              "conclusion": "success",
+              "name": "Set up Python for pinned Waf",
+              "number": 5,
+              "startedAt": "2026-10-24T19:12:46Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:13:20Z",
+              "conclusion": "success",
+              "name": "Install native audio build tools",
+              "number": 6,
+              "startedAt": "2026-10-24T19:12:46Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:14:45Z",
+              "conclusion": "success",
+              "name": "Build pinned Android audio libraries",
+              "number": 7,
+              "startedAt": "2026-10-24T19:13:20Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:19:24Z",
+              "conclusion": "success",
+              "name": "Build debug application",
+              "number": 8,
+              "startedAt": "2026-10-24T19:14:45Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:20:34Z",
+              "conclusion": "success",
+              "name": "Android native lint",
+              "number": 9,
+              "startedAt": "2026-10-24T19:19:24Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:20:34Z",
+              "conclusion": "success",
+              "name": "Post Set up Python for pinned Waf",
+              "number": 17,
+              "startedAt": "2026-10-24T19:20:34Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:20:34Z",
+              "conclusion": "success",
+              "name": "Post Check out source",
+              "number": 18,
+              "startedAt": "2026-10-24T19:20:34Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:20:34Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 19,
+              "startedAt": "2026-10-24T19:20:34Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144878/job/120961993854"
+        },
+        {
+          "completedAt": "2026-10-24T19:14:04Z",
+          "conclusion": "success",
+          "databaseId": 120961994002,
+          "name": "Analyze and test",
+          "startedAt": "2026-10-24T19:12:02Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-10-24T19:12:04Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-10-24T19:12:03Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:06Z",
+              "conclusion": "success",
+              "name": "Check out source",
+              "number": 2,
+              "startedAt": "2026-10-24T19:12:04Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:12Z",
+              "conclusion": "success",
+              "name": "Install pinned Flutter SDK",
+              "number": 3,
+              "startedAt": "2026-10-24T19:12:06Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:40Z",
+              "conclusion": "success",
+              "name": "Resolve dependencies",
+              "number": 4,
+              "startedAt": "2026-10-24T19:12:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:12:56Z",
+              "conclusion": "success",
+              "name": "Analyze",
+              "number": 5,
+              "startedAt": "2026-10-24T19:12:40Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:13:52Z",
+              "conclusion": "success",
+              "name": "Unit and widget tests",
+              "number": 6,
+              "startedAt": "2026-10-24T19:12:56Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:14:01Z",
+              "conclusion": "success",
+              "name": "Packaging and runner guard tests",
+              "number": 7,
+              "startedAt": "2026-10-24T19:13:52Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:14:01Z",
+              "conclusion": "success",
+              "name": "Post Check out source",
+              "number": 14,
+              "startedAt": "2026-10-24T19:14:01Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-10-24T19:14:02Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 15,
+              "startedAt": "2026-10-24T19:14:01Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144878/job/120961994002"
+        }
+      ],
+      "name": "Checks",
+      "status": "completed",
+      "updatedAt": "2026-10-24T19:20:38Z",
+      "url": "https://github.com/AtomHH86/Blisten/actions/runs/40124144878"
+    }
+  ],
+  "local_tests": {
+    "flutter_passed": 417,
+    "flutter_skipped": 3,
+    "python_passed": 102,
+    "analysis_issues": 0,
+    "android_native_suites_passed": [
+      "credential_storage",
+      "native_tls",
+      "audio_modes",
+      "cache_cleanup_playback",
+      "audio_focus_playback"
+    ],
+    "device": "Dedicated API35 x86_64 Android emulator; no physical phone used"
+  },
+  "web_runtime": {
+    "browser": "Local Chromium",
+    "audio_source": "60 second generated same-origin WAV",
+    "passed": [
+      "user-initiated play and position advancement",
+      "pause",
+      "seek to 30000 ms with HTTP Range 206",
+      "rate 1.5",
+      "persisted probe position and no autoplay on reload",
+      "390px channel labels and icons",
+      "dark theme persistence",
+      "unsupported audio cache notice"
+    ],
+    "real_bilibili": "Not passed: nav HTTP403 and MissingAllowOriginHeader; search fetch failed"
+  },
+  "ios": {
+    "unsigned_simulator_compile": "passed",
+    "unsigned_device_release_compile": "passed",
+    "xcode": "26.2",
+    "podfile_lock_matches_committed": true,
+    "runtime": "not verified",
+    "online_audio": "explicitly unavailable until native TLS trust validation"
+  },
+  "preview_package": {
+    "status": "engineering_preview_not_public_deployment",
+    "source_commit": "6d44db9018942cfc173452007b9fde27a8340bd4",
+    "file": "Blisten-web-preview-6d44db9.zip",
+    "size_bytes": 11676689,
+    "sha256": "b34a8e394ec111336836e5fe10bb32bcd549259938d6d70b1d45c86e1eefa546",
+    "site_files": 33,
+    "limits": [
+      "Bilibili browser requests fail with HTTP403 and CORS",
+      "No account login or audio cache",
+      "Safari and long background playback not verified",
+      "No offline startup or service worker"
+    ]
+  },
+  "limits": [
+    "No public PWA deployment or offline startup",
+    "Bilibili browser search and audio not accepted",
+    "No Safari or long background playback acceptance",
+    "No iOS runtime, signing, TestFlight or App Store release"
+  ],
+  "local_log_sha256": {
+    "final-unit-accepted.txt": "2b35498a6603457e81116bbda67161c16efb07a274c7f36fed4ec3176055394c",
+    "native-regression.txt": "4aa1ab2f789edb7a20846078d6bdd890f2eade3260d35d25549834598dfe97f4",
+    "native-source-commit.txt": "dbc35c64696bb62b19316ca66afcd293ba7d4ede35b2d0808e319e1c3add302e",
+    "native-credential_storage_test.txt": "d258b91081633036f60c610118bae9ad2b1e528ed6dddf759352f7ef006a950a",
+    "native-native_tls_test.txt": "ef380b61dee9aa87c6212881cf1d8a4b401e71d1a53b0482d08b9a789088fab5",
+    "native-audio_modes_test.txt": "4c4c18442294b6aa24f4639ddf92840bf8f8059d227ca4d2f69076b8c6bfdf81",
+    "native-cache_cleanup_playback_test.txt": "496e7c0d39526ed4a34ee7b76118575032ef9aaf2f098057786cb0b85d8577ab",
+    "native-audio_focus_playback_test.txt": "a6f6ab88460b74f7d87130045bc994a6288a2afeb91a8dab9132c372ce22c06f",
+    "web-complete-final-build.txt": "02fcc4447e8e061a1d59ff36896a76fb5511abe5857ac5cd4dcf97c1d6ff955f",
+    "probe-complete-final-build.txt": "735d2ee5164173493133fb6ad11927ceaea0051615a348c2376d1f07e5a231d8",
+    "web-output-integrity.json": "541a2ec0edfacc9c43f523d67b58b9a06757a8ad9913ddbea276d38a2f2bf6d9",
+    "probe-complete-final-smoke.txt": "98853bffd73ed0e707f317c3791e764b5ccf80d757244c705d3b15a8dbd76483",
+    "probe-playing.json": "008dd2f4a9f61c6655033f67e5eb9a3deb3a82fca25d92cd1dbba7e653160407",
+    "probe-controls.json": "b2b18f554c502f9408a0e1a4a8a9b6230acbb3bcd0ae8f13c8bbfc5b3e262b15",
+    "probe-reload.json": "38565a32b5e1bc7bb0cef640cb1f43c5aebbda8a2a96a1289dd4b987369e9669",
+    "web-source-fetch.json": "d2d11a7cadd64e71b09829ddb6efc58634f5f647e663cae215e97180e31de034",
+    "web-source-network-events.json": "b5eecbd5f19a64dee9c0c43874cdbd54ce92ea170568588e7a824478c0ab049d",
+    "web-complete-mobile.png": "84509864e487892e4ee4df1decb880d36bde11779626f4d268d9bbf4da7b1618",
+    "web-my-dark-final.png": "8caa4223ea56fa57d58924f836bca66c6ccb4d2ac72c41a9533cb640cc0a470b",
+    "web-theme-persisted.txt": "a7ddc941f6bb11b9004d4a6938ae6a6d6a17d8f7f00dfab84f95d2c3a2a63fb3",
+    "web-cache-snapshot.txt": "fbc86d090b9066378127062b1439a4c0b100fe71aa3152db38953d5c40a02d58"
+  }
+}
