@@ -181,7 +181,20 @@ void main() {
         expect(player.isPlaying, isTrue, reason: 'Back does not pause audio.');
         await tester.tap(find.widgetWithText(NavigationDestination, '发现'));
         await tester.pump(const Duration(seconds: 1));
+        final audiobookChannel = find.byKey(
+          const ValueKey('discover-channel-audiobook'),
+        );
+        await tester.ensureVisible(audiobookChannel);
+        await tester.tap(audiobookChannel);
+        await _until(
+          tester,
+          () =>
+              tester.widget<ChoiceChip>(audiobookChannel).selected &&
+              find.text('本地有声小说测试').evaluate().isNotEmpty,
+          'explicit audiobook discovery before content search',
+        );
         await capture(tester, '$tone-discover');
+        await tester.ensureVisible(find.text('更多'));
         await tester.tap(find.text('更多'));
         await _until(
           tester,
@@ -317,12 +330,17 @@ void main() {
       }
       await tester.tap(find.widgetWithText(NavigationDestination, '发现'));
       await tester.pump(const Duration(seconds: 1));
-      await tester.tap(find.text('听歌').first);
+      final musicChannel = find.byKey(const ValueKey('discover-channel-music'));
+      await tester.ensureVisible(musicChannel);
+      await tester.tap(musicChannel);
       await _until(
         tester,
-        () => find.text('本地三分钟歌曲').evaluate().isNotEmpty,
+        () =>
+            tester.widget<ChoiceChip>(musicChannel).selected &&
+            find.text('本地三分钟歌曲').evaluate().isNotEmpty,
         'large text music discovery',
       );
+      await tester.ensureVisible(find.text('更多'));
       await tester.tap(find.text('更多'));
       await _until(
         tester,
