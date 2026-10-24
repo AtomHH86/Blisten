@@ -355,7 +355,7 @@ void main() {
   for (final recent in [false, true]) {
     testWidgets('${recent ? 'recent resume' : 'detail play'} completion cannot cover a newly opened route', (tester) async {
       if (recent) {
-        await ShelfStore.instance.add(_book, withProgress: ShelfBook(book: _book, lastCid: 11, positionMs: 42000, chapterDurationMs: 180000));
+        await ShelfStore.instance.add(_book, withProgress: ShelfBook(book: _book, lastListenedAt: 123456, lastCid: 11, positionMs: 42000, chapterDurationMs: 180000));
       }
       final player = _Player()..pendingPlay = Completer<bool>();
       final navigator = GlobalKey<NavigatorState>();
@@ -376,7 +376,7 @@ void main() {
   }
 
   testWidgets('recent duplicate resume makes one call and one player route', (tester) async {
-    await ShelfStore.instance.add(_book, withProgress: ShelfBook(book: _book, lastCid: 11, positionMs: 42000, chapterDurationMs: 180000));
+    await ShelfStore.instance.add(_book, withProgress: ShelfBook(book: _book, lastListenedAt: 123456, lastCid: 11, positionMs: 42000, chapterDurationMs: 180000));
     final player = _Player()..pendingPlay = Completer<bool>();
     final observer = _Routes();
     await tester.pumpWidget(_host(const RecentPage(), player, observer: observer));
@@ -444,7 +444,7 @@ void main() {
   });
 
   testWidgets('recent false result stays on recent and offers retry', (tester) async {
-    await ShelfStore.instance.add(_book, withProgress: ShelfBook(book: _book, lastCid: 11, positionMs: 42000, chapterDurationMs: 180000));
+    await ShelfStore.instance.add(_book, withProgress: ShelfBook(book: _book, lastListenedAt: 123456, lastCid: 11, positionMs: 42000, chapterDurationMs: 180000));
     final player = _Player();
     await tester.pumpWidget(_host(const RecentPage(), player));
     await tester.pumpAndSettle();

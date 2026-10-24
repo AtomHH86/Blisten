@@ -185,6 +185,110 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'empty pushed channel retains its mode and exits to matching discover',
+    (tester) async {
+      final shelf = ShelfStore.instance;
+      await shelf.add(
+        Book(
+          bvid: 'last-song',
+          aid: 1,
+          title: '最后收藏',
+          pic: '',
+          contentMode: ContentMode.music,
+        ),
+      );
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: shelf,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const FavoritesPage(mode: ContentMode.music),
+                    ),
+                  ),
+                  child: const Text('进入完整频道'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('进入完整频道'));
+      await tester.pumpAndSettle();
+      await shelf.remove('last-song');
+      await tester.pumpAndSettle();
+      expect(find.text('去发现听歌'), findsOneWidget);
+      expect(find.text('听歌 · 0 项收藏'), findsOneWidget);
+      await tester.tap(find.text('去发现听歌'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FavoritesPage), findsNothing);
+      expect(HomeTabs.index.value, 1);
+      expect(HomeTabs.discoverMode.value, ContentMode.music);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'populated 320dp 200 percent group and move dialog fit; selected final tab scrolls into view',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final shelf = ShelfStore.instance;
+      await shelf.add(
+        Book(
+          bvid: 'large',
+          aid: 1,
+          title: '大字频道收藏',
+          pic: '',
+          contentMode: ContentMode.concert,
+        ),
+      );
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: shelf),
+            ChangeNotifierProvider.value(value: FollowStore.instance),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            builder: (_, child) => MediaQuery(
+              data: const MediaQueryData(
+                size: Size(320, 640),
+                textScaler: TextScaler.linear(2),
+              ),
+              child: child!,
+            ),
+            home: const BookshelfPage(),
+          ),
+        ),
+      );
+      expect(find.text('听现场 · 1 项收藏'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.longPress(find.text('大字频道收藏'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('移动到其他频道'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('听歌：再次选择时从头播放'));
+      expect(find.text('听歌：再次选择时从头播放').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('听歌：再次选择时从头播放'));
+      await tester.pumpAndSettle();
+      HomeTabs.openLibrary(LibraryView.following);
+      await tester.pumpAndSettle();
+      final rect = tester.getRect(
+        find.byKey(const ValueKey('library-tab-following')),
+      );
+      expect(rect.left, greaterThanOrEqualTo(0));
+      expect(rect.right, lessThanOrEqualTo(320));
+      expect(tester.takeException(), isNull);
+    },
+  );
   test('secondary navigation selects the requested library view', () {
     HomeTabs.index.value = 2;
     HomeTabs.openLibrary(LibraryView.recent);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:blisten/core/storage/cache_store.dart';
+import 'package:blisten/core/nav/home_tabs.dart';
 import 'package:blisten/core/storage/follow_store.dart';
 import 'package:blisten/core/storage/shelf_store.dart';
 import 'package:blisten/core/theme/app_theme.dart';
@@ -200,6 +201,7 @@ void main() {
       withProgress: ShelfBook(
         book: _book,
         lastCid: 11,
+        lastListenedAt: 123456,
         positionMs: 42000,
         chapterDurationMs: 180000,
       ),
@@ -336,14 +338,24 @@ void main() {
     );
 
     testWidgets(
-      'My recent cards and final menu action fit 320dp 200% in ${mode.name}',
+      'My shared recent entry and final menu action fit 320dp 200% in ${mode.name}',
       (tester) async {
         _narrowScreen(tester);
         await tester.pumpWidget(
           _host(const MyPage(), _Player(), mode, scale: 2),
         );
         await tester.pumpAndSettle();
-        expect(find.text(_book.cleanTitle), findsOneWidget);
+        // Removing a favorite retains genuine heard history in the shared entry.
+        await ShelfStore.instance.remove(_book.bvid);
+        await tester.pumpAndSettle();
+        await _reachable(tester, find.text('最近收听'));
+        expect(find.text('共 1 项收听记录'), findsOneWidget);
+        HomeTabs.index.value = 2;
+        await tester.tap(find.text('最近收听'));
+        await tester.pumpAndSettle();
+        expect(HomeTabs.index.value, 0);
+        expect(HomeTabs.libraryView.value, LibraryView.recent);
+        expect(find.byType(MyPage), findsOneWidget);
         expect(tester.takeException(), isNull);
         await _reachable(tester, find.text('关于我们'));
         await tester.tap(find.text('关于我们'));

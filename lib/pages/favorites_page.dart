@@ -47,7 +47,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       onTap: () => playFromShelf(context, sb),
       onLongPress: () => _manage(context, sb),
     );
-    final body = books.isEmpty
+    final body = books.isEmpty && widget.mode == null
         ? const EmptyShelfView(
             showImport: true,
             showMascot: true,
@@ -99,7 +99,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     children: [
                       const Expanded(child: Text('还没有收藏')),
                       TextButton(
-                        onPressed: () => HomeTabs.openDiscover(mode),
+                        onPressed: () => _discover(context, mode),
                         child: Text('去发现${mode.label}'),
                       ),
                     ],
@@ -127,6 +127,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
             ),
             body: body,
           );
+  }
+
+  void _discover(BuildContext context, ContentMode mode) {
+    if (!widget.embedded && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+    HomeTabs.openDiscover(mode);
   }
 
   Future<void> _manage(BuildContext context, ShelfBook book) async {
