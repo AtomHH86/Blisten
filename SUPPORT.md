@@ -1,6 +1,6 @@
 # 获取帮助
 
-先查看 [README](README.md) 和[电脑测试指南](docs/testing/android-desktop-guide.md)。当前交付是本地独立仓库；GitHub 远程地址与在线支持入口尚未配置。公开仓库建立后，可使用该仓库的 Issue 模板报告问题或提出建议。
+先查看 [README](README.md) 和[电脑测试指南](docs/testing/android-desktop-guide.md)。问题反馈与功能建议请提交至 [AtomHH86/Blisten Issues](https://github.com/AtomHH86/Blisten/issues)，并选择对应的 Issue 模板。
 
 报告问题时提供应用版本与构建号、设备或模拟器型号、Android 版本、所用模式、复现步骤和预期结果。资源相关问题可附可公开访问的 BV 号或链接，并说明是否使用缓存。日志只需保留与故障相关的片段，分享前删除账号信息、Cookie、Token 和本机敏感路径。
 
