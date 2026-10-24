@@ -11,6 +11,7 @@ import 'package:blisten/pages/player_page.dart';
 import 'package:blisten/player/book_player.dart';
 import 'package:blisten/services/bili_api.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:media_kit/media_kit.dart';
@@ -57,6 +58,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull, reason: name);
+    if (name.endsWith('custom-dialog-keyboard-closed')) {
+      expect(MediaQuery.viewInsetsOf(tester.element(find.byType(AlertDialog))).bottom, 0,
+        reason: 'Full-form screenshot must have a settled, closed native keyboard.');
+    }
     // One APK/process exercises both widths; representative 320dp screenshots
     // cover both themes without rebuilding every theme/panel combination.
     if (width == 320) await binding.takeScreenshot(name);
@@ -127,7 +132,27 @@ void main() {
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.byType(AlertDialog), findsOneWidget);
         expect(find.text('自定义睡眠定时'), findsOneWidget);
-        await capture(tester, '$prefix-custom-dialog-open', width);
+        // Flutter surface screenshots omit the native IME. Do not capture a
+        // keyboard-constrained layout while labelling it a full-form screenshot.
+        FocusManager.instance.primaryFocus?.unfocus();
+        await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+        await until(tester, () => MediaQuery.viewInsetsOf(
+          tester.element(find.byType(AlertDialog))).bottom == 0, 'custom dialog keyboard closed');
+        // Supply frames for Dialog's inset animation after native metrics settle.
+        for (var frame = 0; frame < 5; frame++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        final helper = find.text('1 ~ 720 分钟');
+        await tester.ensureVisible(helper);
+        await tester.pump();
+        final formBounds = tester.getRect(find.byType(TextFormField));
+        final cancelBounds = tester.getRect(find.text('取消'));
+        expect(formBounds.top, greaterThanOrEqualTo(tester.getRect(find.byType(AlertDialog)).top),
+          reason: 'The complete input must remain inside the dialog bounds.');
+        expect(formBounds.bottom, lessThanOrEqualTo(cancelBounds.top),
+          reason: 'The complete field and helper must be above dialog actions.');
+        expect(helper.hitTestable(), findsOneWidget);
+        await capture(tester, '$prefix-custom-dialog-keyboard-closed', width);
         await tester.tap(find.text('取消'));
         await tester.pump(const Duration(milliseconds: 400));
         await closePanel(tester);

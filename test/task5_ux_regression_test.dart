@@ -175,6 +175,8 @@ class _Routes extends NavigatorObserver {
 Future<void> _customDialog(WidgetTester tester) async {
   final custom = find.text('自定义时长');
   await tester.scrollUntilVisible(custom, 180);
+  await tester.ensureVisible(custom);
+  await tester.pumpAndSettle();
   await tester.tap(custom);
   await tester.pumpAndSettle();
   expect(find.byType(AlertDialog), findsOneWidget);
@@ -545,6 +547,35 @@ void main() {
   }
 
   for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('custom timer form and actions remain reachable with 280dp keyboard at 320dp 200% ${mode.name}', (tester) async {
+      _screen(tester, const Size(320, 640));
+      final player = _Player()..activeBook = _book;
+      await tester.pumpWidget(_host(const SleepTimerPage(), player, mode: mode, scale: 2));
+      await tester.pumpAndSettle();
+      await _customDialog(tester);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      // AlertDialog deliberately scrolls its title and form together when the
+      // keyboard reduces available height; a user can reveal the whole input.
+      final helper = find.text('1 ~ 720 分钟');
+      await tester.ensureVisible(helper);
+      await tester.pumpAndSettle();
+      final field = find.byType(TextFormField);
+      final viewport = find.ancestor(of: field, matching: find.byType(SingleChildScrollView)).first;
+      final fieldBounds = tester.getRect(field);
+      final viewportBounds = tester.getRect(viewport);
+      expect(fieldBounds.top, greaterThanOrEqualTo(viewportBounds.top - .01));
+      expect(fieldBounds.bottom, lessThanOrEqualTo(viewportBounds.bottom + .01));
+      expect(helper.hitTestable(), findsOneWidget);
+      expect(find.text('设置定时').hitTestable(), findsOneWidget);
+      await tester.enterText(field, '40');
+      await tester.tap(find.text('设置定时'));
+      await tester.pumpAndSettle();
+      expect(player.sleepRemaining, const Duration(minutes: 40));
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
     testWidgets('focused custom timer label has readable rendered contrast in ${mode.name}', (tester) async {
       final player = _Player()..activeBook = _book;
       await tester.pumpWidget(_host(const SleepTimerPage(), player, mode: mode));
