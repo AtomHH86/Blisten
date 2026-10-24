@@ -108,36 +108,46 @@ void main() {
   );
 
   testWidgets(
-    'successful automatic check is limited to 24 hours but manual check remains available',
+    'cold start one minute after a successful check prompts for a new release',
     (tester) async {
       var checks = 0;
+      var available = const UpdateResult(
+        configured: true,
+        latestVersion: AppMeta.version,
+      );
       Future<UpdateResult> check() async {
         checks++;
-        return const UpdateResult(
-          configured: true,
-          latestVersion: AppMeta.version,
-        );
+        return available;
       }
 
       await tester.pumpWidget(_host(check));
       await tester.pumpAndSettle();
       expect(checks, 1);
+      expect(find.byType(AlertDialog), findsNothing);
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getInt('blisten_update_last_success_ms'),
+        _now.millisecondsSinceEpoch,
+      );
       await tester.pumpWidget(const SizedBox());
+      available = _newer;
       await tester.pumpWidget(
-        _host(check, now: _now.add(const Duration(hours: 23))),
+        _host(check, now: _now.add(const Duration(minutes: 1))),
       );
       await tester.pumpAndSettle();
-      expect(checks, 1);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.textContaining('最新 9.0.0'), findsOneWidget);
+      expect(checks, 2);
+      await tester.tap(find.text('稍后'));
+      await tester.pumpAndSettle();
+      available = const UpdateResult(
+        configured: true,
+        latestVersion: AppMeta.version,
+      );
       await tester.tap(find.text('检查更新'));
       await tester.pumpAndSettle();
-      expect(checks, 2);
-      expect(find.text('已是最新版本 ${AppMeta.version}'), findsOneWidget);
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpWidget(
-        _host(check, now: _now.add(const Duration(hours: 48))),
-      );
-      await tester.pumpAndSettle();
       expect(checks, 3);
+      expect(find.text('已是最新版本 ${AppMeta.version}'), findsOneWidget);
     },
   );
 

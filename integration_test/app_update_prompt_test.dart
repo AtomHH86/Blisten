@@ -49,7 +49,9 @@ void main() {
             'name': 'B听更新测试 $version',
             'draft': false,
             'prerelease': false,
-            'body': '本地测试数据：验证自动提醒与手动检查，不对应公开版本。',
+            'body':
+                '## 新增功能\n- 本地测试功能\n## 问题修复\n- 本地测试修复\n'
+                '## 开发记录\n不应出现在更新弹窗中的技术内容',
             'html_url':
                 'https://github.com/AtomHH86/Blisten/releases/tag/v$version',
             'assets': [
@@ -183,8 +185,13 @@ void main() {
   }
 
   testWidgets(
-    'Android real HTTP automatic prompt and manual recheck share the update flow',
+    'Android recent successful check still allows automatic prompt and manual recheck',
     (tester) async {
+      final recentSuccess = DateTime.now()
+          .subtract(const Duration(minutes: 1))
+          .millisecondsSinceEpoch;
+      await prefs.setInt('blisten_update_last_success_ms', recentSuccess);
+      expect(prefs.getInt('blisten_update_last_success_ms'), recentSuccess);
       await tester.pumpWidget(host());
       await waitFor(
         tester,
@@ -193,7 +200,13 @@ void main() {
       expect(requests, 1);
       expect(find.textContaining('最新 9.0.0'), findsOneWidget);
       expect(find.text('下载更新'), findsOneWidget);
-      expect(prefs.getInt('blisten_update_last_success_ms'), isNotNull);
+      expect(find.textContaining('本地测试功能'), findsOneWidget);
+      expect(find.textContaining('本地测试修复'), findsOneWidget);
+      expect(find.textContaining('技术内容'), findsNothing);
+      expect(
+        prefs.getInt('blisten_update_last_success_ms'),
+        greaterThan(recentSuccess),
+      );
       if (const bool.fromEnvironment('BLISTEN_CAPTURE_UPDATES')) {
         // The live Android surface can still contain the previous frame after
         // the widget tree settles. Draw two frames before capturing pixels.

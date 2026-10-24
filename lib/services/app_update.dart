@@ -51,6 +51,34 @@ List<int>? _stableVersion(String value) {
   return numbers.contains(null) ? null : numbers.cast<int>();
 }
 
+/// Only explicitly user-facing sections belong in the update prompt.
+String _userChangelog(String body) {
+  final sections = <String>[];
+  final lines = <String>[];
+  String? title;
+  void finishSection() {
+    final content = lines.join('\n').trim();
+    if (title != null && content.isNotEmpty) {
+      sections.add('$title\n$content');
+    }
+    lines.clear();
+  }
+
+  final heading = RegExp(r'^#{1,6}\s+(.+?)(?:\s+#+)?\s*$');
+  for (final line in body.replaceAll('\r\n', '\n').split('\n')) {
+    final match = heading.firstMatch(line.trim());
+    if (match != null) {
+      finishSection();
+      final name = match.group(1)!.trim();
+      title = name == '新增功能' || name == '问题修复' ? name : null;
+    } else if (title != null) {
+      lines.add(line.trimRight());
+    }
+  }
+  finishSection();
+  return sections.isEmpty ? '新版本已发布，欢迎更新体验。' : sections.join('\n\n');
+}
+
 class AppUpdate {
   AppUpdate._();
 
@@ -161,7 +189,7 @@ class AppUpdate {
       configured: true,
       latestVersion: tag.replaceFirst(RegExp(r'^v'), ''),
       latestName: '${data['name'] ?? ''}',
-      changelog: '${data['body'] ?? ''}'.trim(),
+      changelog: _userChangelog('${data['body'] ?? ''}'),
       htmlUrl:
           releasePage(data['html_url']) ??
           releasePage(fallbackUrl) ??

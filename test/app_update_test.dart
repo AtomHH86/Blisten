@@ -22,7 +22,7 @@ Map<String, Object?> _asset(String abi, {String? url}) => {
 Map<String, Object?> _release(List<Map<String, Object?>> assets) => {
   'tag_name': 'v1.0.1',
   'name': 'B听 1.0.1',
-  'body': '  修复播放问题  ',
+  'body': '  ## 问题修复\n- 修复播放问题  ',
   'html_url': _releaseUrl,
   'assets': assets,
 };
@@ -310,8 +310,55 @@ void main() {
     expect(result.error, isNull);
     expect(result.latestVersion, '1.0.1');
     expect(result.latestName, 'B听 1.0.1');
-    expect(result.changelog, '修复播放问题');
+    expect(result.changelog, '问题修复\n- 修复播放问题');
   });
+
+  test('release notes include only user features and fixes', () {
+    final result = AppUpdate.parseRelease({
+      ..._release([]),
+      'body': '''开发前言 secret-intro
+## 新增功能
+- A
+## 发布验证
+secret-between
+## 问题修复
+- B
+## 开发记录
+secret-after''',
+    });
+
+    expect(result.changelog, '新增功能\n- A\n\n问题修复\n- B');
+    expect(result.changelog, isNot(contains('secret')));
+  });
+
+  test('release note section boundaries apply at every heading level', () {
+    final result = AppUpdate.parseRelease({
+      ..._release([]),
+      'body':
+          '# 新增功能\r\n- A\r\n### 开发记录\r\nsecret\r\n'
+          '## 问题修复 ##\r\n- B',
+    });
+
+    expect(result.changelog, '新增功能\n- A\n\n问题修复\n- B');
+  });
+
+  for (final body in [
+    null,
+    '',
+    'legacy secret build/signing/CI details',
+    '## 开发记录\nsecret',
+    '## 新增功能\n\n## 开发记录\nsecret',
+  ]) {
+    test(
+      'release notes without user sections use a generic summary: $body',
+      () {
+        final result = AppUpdate.parseRelease({..._release([]), 'body': body});
+
+        expect(result.changelog, '新版本已发布，欢迎更新体验。');
+        expect(result.changelog, isNot(contains('secret')));
+      },
+    );
+  }
 
   test(
     'missing release URL falls back to the independent Blisten repository',

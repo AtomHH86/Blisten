@@ -74,18 +74,6 @@ class _AppUpdatePromptState extends State<AppUpdatePrompt>
   }
 
   Future<void> _checkAutomatically() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final last = prefs.getInt(_lastSuccessKey);
-      if (last != null) {
-        final elapsed = _now.difference(
-          DateTime.fromMillisecondsSinceEpoch(last),
-        );
-        if (!elapsed.isNegative && elapsed < const Duration(hours: 24)) return;
-      }
-    } catch (_) {
-      // A settings read failure must not prevent a bounded update check.
-    }
     if (mounted) await _check(manual: false);
   }
 
