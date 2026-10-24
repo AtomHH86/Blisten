@@ -166,6 +166,14 @@ void main() {
         () => player.currentPosition.inSeconds >= 11,
         'offline P3 seek',
       );
+      final sought = player.currentPosition;
+      await _until(
+        tester,
+        () =>
+            player.isPlaying && !player.buffering &&
+            player.currentPosition > sought + const Duration(seconds: 1),
+        'offline P3 actually advances before saving',
+      );
       await player.pause();
       await _until(
         tester,

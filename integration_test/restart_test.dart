@@ -137,6 +137,14 @@ void main() {
             () => player.currentPosition.inSeconds >= sample.seconds - 1,
             'seed position for ${sample.mode.name}',
           );
+          // A seek establishes an offset, not heard history.
+          final sought = player.currentPosition;
+          await _until(
+            tester,
+            () => player.isPlaying && !player.buffering &&
+                player.currentPosition > sought + const Duration(seconds: 1),
+            'real seed playback for ${sample.mode.name}',
+          );
           await player.pause();
           await _until(tester, () {
             final rows =

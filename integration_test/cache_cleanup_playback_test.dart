@@ -92,6 +92,10 @@ void main() {
     expect(player.chapters, hasLength(1));
     await player.seek(const Duration(seconds: 12));
     await _until(tester, () => player.currentPosition.inMilliseconds >= 11500, 'native seek position');
+    final sought = player.currentPosition;
+    await _until(tester, () => player.isPlaying && !player.buffering &&
+        player.currentPosition > sought + const Duration(seconds: 1),
+        'offline playback advances before saving history');
     await player.pause();
     await _until(tester, () {
       final saved = jsonDecode(prefs.getString('abts_recent_progress') ?? '[]') as List;
@@ -254,6 +258,11 @@ void main() {
           pic: '', contentMode: ContentMode.concert);
       expect(await player.playBook(active), isTrue);
       await player.seek(const Duration(seconds: 12));
+      // RecentPage can only clear an active item that was actually heard.
+      final sought = player.currentPosition;
+      await _until(tester, () => player.isPlaying && !player.buffering &&
+          player.currentPosition > sought + const Duration(seconds: 1),
+          'active playback establishes the record to clear');
       player.flushProgress();
       await shelf.updateProgress(loading.bvid, book: loading,
           cid: LocalBiliFixture.cid(loading.bvid, 1), chapterIndex: 0,

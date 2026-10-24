@@ -193,6 +193,14 @@ void main() {
         mode: ContentMode.music,
       );
       expect(await player.playBook(first, resumeMs: 26000), isTrue);
+      final restored = player.currentPosition;
+      await _until(
+        tester,
+        () =>
+            player.isPlaying && !player.buffering &&
+            player.currentPosition > restored + const Duration(seconds: 1),
+        'first resource advances before switching',
+      );
       expect(await player.playBook(second), isTrue);
       await prefs.reload();
       final rows =
@@ -213,6 +221,14 @@ void main() {
         mode: ContentMode.concert,
       );
       expect(await player.playBook(book, resumeMs: 20000), isTrue);
+      final restored = player.currentPosition;
+      await _until(
+        tester,
+        () =>
+            player.isPlaying && !player.buffering &&
+            player.currentPosition > restored + const Duration(seconds: 1),
+        'real playback before saving stop checkpoint',
+      );
       await player.pause();
       await _until(
         tester,
