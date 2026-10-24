@@ -10,6 +10,7 @@ import '../models/content_mode.dart';
 import '../models/chapter.dart';
 import '../models/up_user.dart';
 import '../player/book_player.dart';
+import '../player/native_audio_tls.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
 import '../utils/format.dart';
@@ -417,6 +418,8 @@ Text(
   /// 本书正在播放：底部显示当前播放迷你条（点击回到播放页）
   Widget _buildNowPlaying(BookPlayer player, Book book) {
     final chapter = player.currentChapter;
+    final platformMessage = const AudioPlatformUnavailable().message;
+    final platformUnavailable = player.error == platformMessage;
     return Material(
       color: AppTheme.surfaceHigh,
       borderRadius: BorderRadius.circular(12),
@@ -435,6 +438,7 @@ Text(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
+                      platformUnavailable ? platformMessage :
                       player.error != null ? '暂时无法播放' : (player.isPlaying ? '正在播放' : '已暂停'),
                       style: TextStyle(
                         fontSize: 11,
@@ -465,7 +469,7 @@ Text(
                         strokeWidth: 2, color: AppTheme.actionText),
                   ),
                 )
-              else
+              else if (!platformUnavailable)
                 IconButton(
                   tooltip: player.error != null ? '重试播放' : (player.isPlaying ? '暂停' : '播放'),
                   constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -577,6 +581,12 @@ Text(
     final book = _effectiveBook;
     if (book == null) return;
     final cache = context.read<CacheStore>();
+    if (!cache.supported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(cache.unsupportedReason ?? '当前平台暂不支持离线音频缓存')),
+      );
+      return;
+    }
     if (cache.isCached(book.bvid, c.cid)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -665,8 +675,11 @@ Text(
   }
 
   void _showPlayFailure() {
+    final platformMessage = const AudioPlatformUnavailable().message;
+    final error = context.read<BookPlayer>().error;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('播放失败，请检查网络后重试')),
+      SnackBar(content: Text(error == platformMessage
+          ? platformMessage : '播放失败，请检查网络后重试')),
     );
   }
 }
@@ -827,7 +840,9 @@ class _CacheButton extends StatelessWidget {
     }
 
     return Tooltip(
-      message: cached ? '本分 P 已缓存' : '缓存本分 P',
+      message: !cache.supported
+          ? (cache.unsupportedReason ?? '当前平台暂不支持离线音频缓存')
+          : cached ? '本分 P 已缓存' : '缓存本分 P',
       child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),

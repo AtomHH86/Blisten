@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -87,7 +88,9 @@ class MyPage extends StatelessWidget {
               icon: Icons.download_for_offline_outlined,
               color: AppTheme.toneIce,
               title: '离线缓存',
-              subtitle: cacheCount == null
+              subtitle: !cache.supported
+                  ? cache.unsupportedReason!
+                  : cacheCount == null
                   ? '正在核验缓存…'
                   : cacheCount == 0
                   ? '详情页可选择缓存内容，无网也能听'
@@ -117,9 +120,10 @@ class MyPage extends StatelessWidget {
             icon: Icons.settings_outlined,
             color: AppTheme.toneIce,
             title: '系统设置',
-            subtitle: '后台留存保护 · 播放',
+            subtitle: kIsWeb ? '网页版使用说明' : '播放与后台',
             onTap: () => _push(context, const SettingsPage()),
           ),
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
           _menuTile(
             context,
             icon: Icons.system_update_alt_rounded,
@@ -203,7 +207,7 @@ class MyPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    auth.isLogin && auth.userName.isNotEmpty
+                    kIsWeb ? '匿名收听' : auth.isLogin && auth.userName.isNotEmpty
                         ? auth.userName
                         : (auth.isLogin
                               ? 'B 站用户'
@@ -220,7 +224,8 @@ class MyPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    auth.isLogin
+                    kIsWeb ? '网页版预览 · 收藏与进度保存在此浏览器'
+                        : auth.isLogin
                         ? '已登录 · 已收藏 ${shelf.books.length} 项'
                         : switch (auth.status) {
                             LoginStatus.expired => '请重新扫码登录',

@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 
 class _EmptyCache extends ChangeNotifier implements CacheStore {
   @override
+  bool get supported => true;
+  @override
   List<CacheEntry> get entries => [];
   @override
   List<CacheTask> get tasks => [];

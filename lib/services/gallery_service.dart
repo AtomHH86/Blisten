@@ -1,5 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
+
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,14 +16,14 @@ class GalleryService {
 
   /// Android API 等级（仅 Android 有意义）
   static Future<int> sdkInt() async {
-    if (!Platform.isAndroid) return 0;
+    if (!(!kIsWeb && Platform.isAndroid)) return 0;
     _sdkInt ??= await _channel.invokeMethod<int>('sdkInt') ?? 0;
     return _sdkInt!;
   }
 
   /// 保存 PNG 字节到相册；成功返回 true
   static Future<bool> savePng(Uint8List bytes, {required String name}) async {
-    if (!Platform.isAndroid) return false;
+    if (!(!kIsWeb && Platform.isAndroid)) return false;
     try {
       final sdk = await sdkInt();
       if (sdk <= 0) return false;

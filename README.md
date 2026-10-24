@@ -10,6 +10,8 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 
 ## 功能
 
+以下功能以 Android 正式版为准；PWA / iOS 处于独立开发预览阶段，见下方平台说明。
+
 | 模式 | 搜索 | 倍速 | 重新选择资源时 |
 | --- | --- | --- | --- |
 | 听书 | 沿用有声小说分类、筛选和补搜 | 独立记忆，兼容旧设置 | 恢复分 P 与进度 |
@@ -37,8 +39,8 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 
 - 工程/仓库：Blisten；应用显示名：B听；口号：闭上眼听 B 站。
 - 正式包：`com.bting.audio`；调试包：`com.bting.audio.debug`（B听·测试）。
-- Dart 包：`blisten`；独立版本：`1.2.0+3`；继续使用 B听正式签名，兼容覆盖升级。
-- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移阿B听书的收藏、进度、缓存或登录状态。本轮已在专用模拟器实测 B听 `1.1.0+2` 覆盖升级至本版 x86_64 正式包，收藏、收听进度、完成标记与主题保留；随后本版 universal 覆盖安装的数据保留与续播也通过。
+- Dart 包：`blisten`；独立版本：`1.2.1+4`；继续使用 B听正式签名，兼容覆盖升级。
+- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移阿B听书的收藏、进度、缓存或登录状态。1.2.0 验收中已在专用模拟器实测 B听 `1.1.0+2` 覆盖升级至 `1.2.0+3` x86_64 正式包，收藏、收听进度、完成标记与主题保留；随后本版 universal 覆盖安装的数据保留与续播也通过。
 - 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场 / 听故事。
 - 原作者统计 SDK 已移除；仓库、问题反馈和自动/手动检查更新均指向 Blisten，独立官网暂未设置。上游链接仅用于来源致谢，不检查上游 Release。
 - 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.3](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
@@ -64,7 +66,7 @@ tool/android-emulator.sh stop      # 测试结束后关闭模拟器
 
 全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。审查基线的问题保留原始证据；后续搜索分类、UP 分页与模式选择的改动见[搜索调整验收](docs/testing/2026-10-24-search-categories.md)，质量修复结果见[修复验收](docs/testing/2026-10-24-quality-repairs.md)，1.1 的历史验证见[记录](docs/testing/2026-10-24-v1.1-release.md)，1.2 的频道、收藏与迷你播放器验证见[本版验收记录](docs/testing/2026-10-24-v1.2-release.md)。
 
-PWA、微信小程序和 iOS 的后续可行性、必要适配及分阶段验证建议见 [跨平台评估](docs/reviews/2026-10-25-cross-platform-feasibility.md)。本轮只完成评估，尚未部署这些平台。
+PWA 与 iOS 共用本仓库的 Flutter 业务/UI，分别使用 `web/` 和 `ios/` 宿主，输出独立的站点文件、APK、iOS 构建。Web 预览已补匿名凭据与缓存能力隔离；iOS 已补宿主、Keychain 和音频会话。两端的实际编译/运行证据与未开放能力见 [跨平台开发说明](docs/development/cross-platform.md)，不会因为生成工程就成为 Android 正式发布内容。原始立项依据保留在 [跨平台评估](docs/reviews/2026-10-25-cross-platform-feasibility.md)。
 
 完整操作和测试边界见 [电脑 Android 测试教程](docs/testing/android-desktop-guide.md)。测试仅使用专用模拟器，会重置其中的测试应用数据；无需连接手机。日志保存在 `build/desktop-tests/`。
 

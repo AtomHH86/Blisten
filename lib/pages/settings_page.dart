@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -118,6 +119,7 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
           _buildAccountCard(auth),
           const SizedBox(height: 12),
           _sectionTitle('播放与后台'),
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) ...[
           SwitchListTile(
             value: _ignoring,
             onChanged: _loading || _requesting ? null : _toggle,
@@ -155,6 +157,14 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
               ),
             ),
           ),
+          ] else
+            ListTile(
+              leading: const Icon(Icons.headphones_rounded),
+              title: Text(kIsWeb ? '网页版预览' : 'iOS 预览版'),
+              subtitle: Text(kIsWeb
+                  ? '在线播放仍在验证。切换后台或锁屏后，播放可能受浏览器限制。暂不支持登录和音频离线缓存。'
+                  : '在线播放尚未开放。后台与锁屏收听将在 iPhone 真机测试通过后开放。'),
+            ),
         ],
       ),
     );
@@ -176,6 +186,13 @@ class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver
 
   /// 账号信息：未登录显示登录入口，已登录显示昵称头像与退出登录
   Widget _buildAccountCard(LoginStore auth) {
+    if (kIsWeb) {
+      return const ListTile(
+        leading: Icon(Icons.person_outline_rounded),
+        title: Text('匿名收听'),
+        subtitle: Text('网页版暂不支持 B 站账号登录。收藏与进度只保存在此浏览器，不会自动同步到其他设备。'),
+      );
+    }
     final logged = auth.isLogin;
     final action = (logged || auth.status == LoginStatus.unverified)
         ? OutlinedButton(

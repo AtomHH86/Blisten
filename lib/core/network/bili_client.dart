@@ -96,6 +96,14 @@ class BiliClient {
     _dio.interceptors.add(
       QueuedInterceptorsWrapper(
         onRequest: (options, handler) {
+          if (kIsWeb) {
+            // The browser owns these headers. Web is anonymous in this phase.
+            options.headers.removeWhere((key, _) => const {
+              'cookie', 'user-agent', 'referer', 'origin',
+            }.contains(key.toLowerCase()));
+            handler.next(options);
+            return;
+          }
           final cookie = _jar.buildHeader();
           if (cookie.isNotEmpty) {
             options.headers['Cookie'] = cookie;
@@ -150,7 +158,9 @@ class BiliClient {
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     final cookie = _jar.buildHeader();
-    await CredentialStore.instance.write(cookie.isEmpty ? null : cookie);
+    if (!kIsWeb) {
+      await CredentialStore.instance.write(cookie.isEmpty ? null : cookie);
+    }
     if (_imgUrl != null && _subUrl != null) {
       await prefs.setString(_prefWbi, '$_imgUrl|$_subUrl|$_wbiFetchedAt');
     }

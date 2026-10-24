@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
-/// 与后台媒体引擎同寿命的 Android 焦点通道；迟到事件按请求号隔离。
+/// 与后台媒体引擎同寿命的原生焦点通道；迟到事件按请求号隔离。
 class AudioFocus {
   AudioFocus._();
   static final AudioFocus instance = AudioFocus._();
@@ -23,12 +24,13 @@ class AudioFocus {
   void Function()? onFocusGained;
   void Function()? onNoisy;
 
-  bool get hasFocus => !Platform.isAndroid || _granted;
+  bool get _nativeFocus => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+  bool get hasFocus => !_nativeFocus || _granted;
   bool get waiting => _pending != null;
   bool get pausesOnDuck => _speech;
 
   void start() {
-    if (_sub != null || !Platform.isAndroid) return;
+    if (_sub != null || !_nativeFocus) return;
     _sub = _events.receiveBroadcastStream().listen((value) {
       if (value is! Map || value['requestId'] != _requestId) return;
       switch (value['event']) {
@@ -67,9 +69,9 @@ class AudioFocus {
     if (pending != null && !pending.isCompleted) pending.complete(granted);
   }
 
-  /// delayed 保持等待；只有真实 GAIN 才放行。取消和 Android 通道故障均不放行。
+  /// delayed 保持等待；只有真实 GAIN 才放行。取消和原生通道故障均不放行。
   Future<bool> request({bool speech = false}) async {
-    if (!Platform.isAndroid) return true;
+    if (!_nativeFocus) return true;
     start();
     if (_speech == speech) {
       if (_granted) return true;
@@ -105,7 +107,7 @@ class AudioFocus {
     ++_requestId;
     _granted = false;
     _finish(false);
-    if (!Platform.isAndroid) return;
+    if (!_nativeFocus) return;
     try {
       await _method.invokeMethod<void>('abandon', {'requestId': oldId});
     } catch (_) {}

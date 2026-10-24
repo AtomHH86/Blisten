@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -82,8 +83,10 @@ class AboutPage extends StatelessWidget {
 
   /// 一句话讲清它是干什么的
   Widget _buildIntro(BuildContext context) {
-    const points = [
+    final points = [
       '搜索有声书、歌曲、演唱会与儿童内容，也可粘贴 B 站链接或 BV 号添加内容',
+      kIsWeb ? '网页版预览：登录、音频缓存与后台播放尚未开放或验证' :
+      defaultTargetPlatform == TargetPlatform.iOS ? 'iOS 开发预览：在线播放与真机后台收听尚未开放' :
       '支持后台与熄屏播放、定时停止、分 P 连播和离线缓存',
       '儿童包含儿歌、动画与故事，仅收听声音；默认 1 倍速、断点续播，喜欢的内容可手动收藏',
       '听书、现场与儿童可续播；歌曲再次选择从头播放，四种模式独立记忆倍速',
@@ -254,6 +257,14 @@ class AboutPage extends StatelessWidget {
   }
 
   Widget _buildDisclaimer(BuildContext context) {
+    final storageNotice = kIsWeb
+        ? '3. 收藏、搜索历史、收听进度与设置保存在当前浏览器。网页版暂不支持登录和音频离线缓存；清理网站数据会删除这些本地记录。\n\n'
+        : '3. 收藏、搜索历史、收听进度及设置保存在本机，音频缓存保存在应用目录，可在离线缓存中删除。\n\n'
+          '4. 登录凭据保存在本机隔离存储，退出登录会清除凭据，收藏与进度保留。应用不提供内容二次分发。\n\n';
+    final updateNotice = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+        ? '每次打开应用进入首页后会自动检查更新，同一次打开不重复提示；手动检查可随时重试。检查访问 B听的 GitHub Releases。'
+        : kIsWeb ? '网页版通过重新打开网站获取已部署的新版本；当前预览不提供离线启动。'
+        : 'iOS 预览版暂不提供应用内更新，后续将通过 TestFlight 或 App Store 分发。';
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
@@ -284,16 +295,10 @@ class AboutPage extends StatelessWidget {
             '不代表、也不受哔哩哔哩官方授权或认可。\n\n'
             '2. 音频、封面与文字来自 B 站，版权归原作者及相关权利人所有。'
             '播放可用性受平台、账号权限与原视频状态影响，请尊重权利人的授权范围。\n\n'
-            '3. 收藏、搜索历史、收听进度及设置保存在本机。离线缓存会将音频'
-            '保存到本机应用目录，可在「我的 → 离线缓存」中删除；应用不提供内容二次分发。\n\n'
-            '4. 登录后凭据保存在本机，用于向 B 站请求账号及播放服务；'
-            '退出登录会清除本机登录凭据，收藏与收听进度保留。'
-            '系统备份可恢复收藏与设置，不包含登录凭据及离线音频。\n\n'
-            '5. B听未接入第三方行为统计，搜索与播放仍需向 B 站发起请求。'
-            '每次打开应用进入首页后会自动检查更新，同一次打开不重复提示；'
-            '手动检查更新可随时重试。自动与手动检查均访问 B听的 GitHub Releases，反馈入口指向本项目；'
-            '原项目链接仅用于来源致谢。\n\n'
-            '6. 喜欢某部作品时，请前往官方平台支持作者。',
+            '$storageNotice'
+            '${kIsWeb ? 4 : 5}. B听未接入第三方行为统计，搜索与播放仍需向 B 站发起请求。'
+            '$updateNotice 反馈入口指向本项目，原项目链接仅用于来源致谢。\n\n'
+            '${kIsWeb ? 5 : 6}. 喜欢某部作品时，请前往官方平台支持作者。',
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.textSub,

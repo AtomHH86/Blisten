@@ -17,6 +17,7 @@ import '../models/content_mode.dart';
 import '../services/audio_focus.dart';
 import '../services/bili_api.dart';
 import '../services/umeng_analytics.dart';
+import 'player_tls.dart';
 import 'native_audio_tls.dart';
 import 'playback_preferences.dart';
 import 'sleep_timer_schedule.dart';
@@ -571,7 +572,7 @@ class BookPlayer extends ChangeNotifier {
   /// 首次播放时按需申请通知权限（Android 13+ 媒体通知需要）。
   /// 放在播放动作里而不是启动时：弹窗有明确上下文，且不阻塞进入应用。
   void _ensureNotificationPermission() {
-    if (_notificationAsked || !Platform.isAndroid) return;
+    if (_notificationAsked || kIsWeb || !Platform.isAndroid) return;
     _notificationAsked = true;
     unawaited(() async {
       try {
@@ -944,6 +945,7 @@ class BookPlayer extends ChangeNotifier {
             _pausedByInterruption = false;
             break;
           } catch (e) {
+            if (e is AudioPlatformUnavailable) rethrow;
             debugPrint('[BookPlayer] 候选音轨 $i 打开失败: ${e.runtimeType}');
             if (!stillCurrent()) return false;
             if (i < candidates.length - 1) {
@@ -970,7 +972,8 @@ class BookPlayer extends ChangeNotifier {
       AppAnalytics.onEvent('play_start');
     } catch (e) {
       if (stillCurrent()) {
-        _error = '播放失败，请稍后重试';
+        _error = e is AudioPlatformUnavailable
+            ? e.message : '播放失败，请稍后重试';
         if (retryBook != null) {
           _failedTarget = (book: retryBook, chapters: retryChapters,
             index: index, positionMs: resumeMs,
@@ -1075,12 +1078,7 @@ class BookPlayer extends ChangeNotifier {
       };
 
   Future<void> _ensureNativeTls() async {
-    if (!Platform.isAndroid) return;
-    final native = _player.platform! as NativePlayer;
-    final setup = _nativeTlsSetup ??= NativeAudioTls.configure(
-      setProperty: native.setProperty,
-      getProperty: native.getProperty,
-    );
+    final setup = _nativeTlsSetup ??= configurePlayerTls(_player);
     try {
       await setup;
     } catch (_) {

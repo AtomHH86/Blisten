@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../core/storage/cache_store.dart';
@@ -14,7 +17,7 @@ class CacheNotifier {
 
   /// 把 CacheStore 的队列进度接到通知栏（App 启动时调用一次）
   static void wire(CacheStore store) {
-    if (_wired) return;
+    if (_wired || kIsWeb || !Platform.isAndroid) return;
     _wired = true;
 
     var lastPct = -1;

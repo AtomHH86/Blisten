@@ -1,28 +1,18 @@
-import 'dart:io';
+import 'browser_native.dart'
+    if (dart.library.js_interop) 'browser_web.dart' as platform;
 
-import 'package:flutter/services.dart';
-
-/// 打开外部链接（走原生 Intent，避免额外依赖 url_launcher）
+/// 打开外部网页；原生使用系统浏览器，Web 使用独立窗口。
 class Browser {
   Browser._();
 
-  static const _channel = MethodChannel('abts/browser');
-
-  /// 用系统浏览器打开；失败返回 false（调用方可提示复制链接）
+  /// 仅接受具有主机名的 HTTP(S) 地址，失败时由调用方提示复制链接。
   static Future<bool> open(String url) async {
-    if (url.trim().isEmpty) return false;
-    if (!Platform.isAndroid) {
-      // 非 Android 平台暂无通道，退化为复制到剪贴板由调用方提示
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        !uri.hasAuthority || uri.host.isEmpty) {
       return false;
     }
-    try {
-      final ok = await _channel.invokeMethod<bool>(
-        'open',
-        {'url': url},
-      );
-      return ok ?? false;
-    } catch (_) {
-      return false;
-    }
+    return platform.openBrowser(uri.toString());
   }
 }

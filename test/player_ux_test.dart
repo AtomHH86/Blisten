@@ -26,6 +26,7 @@ class _Player extends ChangeNotifier implements BookPlayer {
   int retries = 0;
   bool pending = false;
   bool failed = false;
+  String? failureReason;
   Book? activeBook;
   final retryResult = Completer<bool>();
 
@@ -61,13 +62,21 @@ class _Player extends ChangeNotifier implements BookPlayer {
   bool get loading => pending;
   @override
   String? get error =>
-      failed ? 'internal diagnostic must not be sole guidance' : null;
+      failed ? failureReason ?? 'internal diagnostic must not be sole guidance' : null;
   @override
   int get index => 0;
   @override
   bool get isPlaying => false;
   @override
   void flushProgress() {}
+
+  @override
+  Future<bool> playBook(Book book, {int resumeIndex = 0, int resumeMs = 0,
+      int? resumeCid, bool resume = true}) async {
+    failed = true;
+    notifyListeners();
+    return false;
+  }
 
   @override
   Future<bool> retryPlayback() async {
@@ -182,6 +191,62 @@ void main() {
       expect(player.error, isNull);
     },
   );
+
+  for (final loaded in [false, true]) {
+    testWidgets('platform limit is explained without retry in player loaded=$loaded',
+        (tester) async {
+      final player = _Player()
+        ..failed = true
+        ..failureReason = 'iOS 预览版暂未开放在线播放'
+        ..activeBook = loaded ? _book : null;
+      await tester.pumpWidget(_host(const PlayerPage(), player));
+      await tester.pumpAndSettle();
+      expect(find.text('iOS 预览版暂未开放在线播放'), findsOneWidget);
+      expect(find.text('重试'), findsNothing);
+      expect(find.byTooltip('重试播放'), findsNothing);
+      expect(find.text('请重试，或返回后选择其他内容。'), findsNothing);
+    });
+  }
+
+  testWidgets('platform limit reaches the detail playback failure message',
+      (tester) async {
+    final player = _Player()..failureReason = 'iOS 预览版暂未开放在线播放';
+    await tester.pumpWidget(
+      _host(BookDetailPage(bvid: _bvid, initialBook: _book), player),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('开始收听'));
+    await tester.pumpAndSettle();
+    expect(find.text('iOS 预览版暂未开放在线播放'), findsOneWidget);
+    expect(find.text('播放失败，请检查网络后重试'), findsNothing);
+  });
+
+  testWidgets('detail platform limit does not offer a retry for an existing session',
+      (tester) async {
+    final player = _Player()
+      ..activeBook = _book
+      ..failed = true
+      ..failureReason = 'iOS 预览版暂未开放在线播放';
+    await tester.pumpWidget(
+      _host(BookDetailPage(bvid: _bvid, initialBook: _book), player),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('iOS 预览版暂未开放在线播放'), findsOneWidget);
+    expect(find.byTooltip('重试播放'), findsNothing);
+  });
+
+  testWidgets('unrecognized detail playback errors keep safe generic guidance',
+      (tester) async {
+    final player = _Player()..failureReason = 'private diagnostic https://internal.invalid';
+    await tester.pumpWidget(
+      _host(BookDetailPage(bvid: _bvid, initialBook: _book), player),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('开始收听'));
+    await tester.pumpAndSettle();
+    expect(find.text('播放失败，请检查网络后重试'), findsOneWidget);
+    expect(find.textContaining('private diagnostic'), findsNothing);
+  });
 
   for (final mode in [ThemeMode.dark, ThemeMode.light]) {
     testWidgets(

@@ -1,5 +1,10 @@
 import 'package:flutter/services.dart';
 
+class AudioPlatformUnavailable implements Exception {
+  const AudioPlatformUnavailable();
+  String get message => 'iOS 预览版暂未开放在线播放';
+}
+
 /// Android's native decoder needs an explicit trust bundle and TLS verification.
 class NativeAudioTls {
   static const _channel = MethodChannel('blisten/native_tls');
@@ -19,7 +24,15 @@ class NativeAudioTls {
     if (await getProperty('tls-verify') != 'yes') {
       throw StateError('无法启用音频连接证书校验');
     }
-    final caFile = await _channel.invokeMethod<String>('trustedCaFile');
+    String? caFile;
+    try {
+      caFile = await _channel.invokeMethod<String>('trustedCaFile');
+    } on PlatformException catch (error) {
+      if (error.code == 'ios_tls_not_configured') {
+        throw const AudioPlatformUnavailable();
+      }
+      rethrow;
+    }
     if (caFile == null || caFile.trim().isEmpty) {
       throw StateError('无法加载系统信任证书');
     }

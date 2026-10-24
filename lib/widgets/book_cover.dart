@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/network/api_config.dart';
@@ -36,7 +37,7 @@ class BookCover extends StatelessWidget {
               width: width,
               height: height,
               fit: BoxFit.cover,
-              httpHeaders: const {
+              httpHeaders: kIsWeb ? const {} : const {
                 'User-Agent': BiliEndpoints.userAgent,
                 'Referer': BiliEndpoints.home,
               },

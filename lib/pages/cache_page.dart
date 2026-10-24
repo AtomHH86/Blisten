@@ -17,6 +17,14 @@ class CachePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cache = context.watch<CacheStore>();
+    if (!cache.supported) {
+      return Scaffold(
+        appBar: embedded ? null : AppBar(title: const Text('离线缓存')),
+        body: _CacheEmpty(
+          unsupportedReason: cache.unsupportedReason ?? '当前平台暂不支持离线音频缓存',
+        ),
+      );
+    }
     final all = cache.entries;
     final tasks = cache.tasks.where((t) => !t.done && !t.failed).toList();
     final failures = cache.failures;
@@ -898,7 +906,8 @@ class _BookChaptersSheetState extends State<_BookChaptersSheet> {
 }
 
 class _CacheEmpty extends StatelessWidget {
-  const _CacheEmpty();
+  final String? unsupportedReason;
+  const _CacheEmpty({this.unsupportedReason});
 
   @override
   Widget build(BuildContext context) {
@@ -916,12 +925,15 @@ class _CacheEmpty extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                '还没有缓存任何内容',
+                unsupportedReason ?? '还没有缓存任何内容',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: AppTheme.textMain),
               ),
               const SizedBox(height: 6),
               Text(
-                '在作品详情页点下载图标，\n或用「批量缓存」保存内容，无网也能听',
+                unsupportedReason == null
+                    ? '在作品详情页点下载图标，\n或用「批量缓存」保存内容，无网也能听'
+                    : '如需离线收听，请使用 Android 版。',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: AppTheme.textSub),
               ),
@@ -962,8 +974,7 @@ class _UsableCacheCountState extends State<UsableCacheCount> {
           e,
         ) async {
           try {
-            final file = await cache.fileOf(e);
-            return await file.exists() && await file.length() > 0;
+            return await cache.isUsable(e);
           } catch (_) {
             return false;
           }

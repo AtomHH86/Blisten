@@ -20,6 +20,13 @@ class CacheSheet extends StatefulWidget {
 
   static Future<void> show(BuildContext context,
       {Book? book, int? preselectIndex}) {
+    final cache = context.read<CacheStore>();
+    if (!cache.supported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(cache.unsupportedReason ?? '当前平台暂不支持离线音频缓存')),
+      );
+      return Future<void>.value();
+    }
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -60,13 +67,19 @@ class _CacheSheetState extends State<CacheSheet> {
 
   /// 加入后台缓存队列：立刻返回，下载在后台继续（可离开本页面）
   Future<void> _start() async {
+    final cache = context.read<CacheStore>();
+    if (!cache.supported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(cache.unsupportedReason ?? '当前平台暂不支持离线音频缓存')),
+      );
+      return;
+    }
     if (_running || _selected.isEmpty) return;
     final book = _book;
     final chapters = _chapters;
     if (book == null || chapters.isEmpty) return;
 
     final player = context.read<BookPlayer>();
-    final cache = context.read<CacheStore>();
     final list = _selected.toList()..sort();
 
     final items =
@@ -121,6 +134,17 @@ class _CacheSheetState extends State<CacheSheet> {
   @override
   Widget build(BuildContext context) {
     final cache = context.watch<CacheStore>();
+    if (!cache.supported) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            cache.unsupportedReason ?? '当前平台暂不支持离线音频缓存',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
     final book = _book;
     final chapters = _chapters;
 

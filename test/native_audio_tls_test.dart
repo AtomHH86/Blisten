@@ -68,6 +68,19 @@ void main() {
     expect(properties['tls-verify'], 'yes');
   });
 
+  test('unconfigured iOS trust reports a permanent preview limit', () async {
+    messenger.setMockMethodCallHandler(channel, (_) async {
+      throw PlatformException(code: 'ios_tls_not_configured');
+    });
+    await expectLater(
+      NativeAudioTls.configure(setProperty: set, getProperty: get),
+      throwsA(isA<AudioPlatformUnavailable>().having(
+        (error) => error.message, 'user message', 'iOS 预览版暂未开放在线播放')),
+    );
+    expect(properties['tls-verify'], 'yes');
+    expect(properties['tls-ca-file'], isEmpty);
+  });
+
   test('silently ignored verification setting aborts before requesting trust', () async {
     await expectLater(
       NativeAudioTls.configure(setProperty: (_, _) async {}, getProperty: get),

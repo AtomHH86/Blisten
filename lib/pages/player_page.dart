@@ -12,6 +12,7 @@ import '../core/theme/app_theme.dart';
 import '../models/book.dart';
 import '../models/chapter.dart';
 import '../player/book_player.dart';
+import '../player/native_audio_tls.dart';
 import '../utils/format.dart';
 import '../widgets/book_cover.dart';
 import '../widgets/sleep_timer_controls.dart';
@@ -165,6 +166,8 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Widget _buildPlaybackError(BookPlayer player) {
+    final platformMessage = const AudioPlatformUnavailable().message;
+    final platformUnavailable = player.error == platformMessage;
     return Semantics(
       liveRegion: true,
       child: Padding(
@@ -174,9 +177,10 @@ class _PlayerPageState extends State<PlayerPage> {
         children: [
           Icon(Icons.error_outline_rounded, size: 32, color: AppTheme.error),
           const SizedBox(height: 12),
-          Text('暂时无法播放',
+          Text(platformUnavailable ? platformMessage : '暂时无法播放',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600,
                   color: AppTheme.textMain)),
+          if (!platformUnavailable) ...[
           const SizedBox(height: 8),
           Text('请重试，或返回后选择其他内容。',
               textAlign: TextAlign.center,
@@ -187,6 +191,7 @@ class _PlayerPageState extends State<PlayerPage> {
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('重试'),
           ),
+          ],
         ],
       ),
       ),
@@ -505,6 +510,8 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Widget _buildControls(BookPlayer player) {
+    final platformUnavailable =
+        player.error == const AudioPlatformUnavailable().message;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -524,6 +531,7 @@ class _PlayerPageState extends State<PlayerPage> {
             onPressed: () => player.seekRelative(-15),
             icon: _Seek15Icon(forward: false, color: AppTheme.textSub),
           ),
+          if (!platformUnavailable)
           Semantics(
             button: true,
             label: player.error != null ? '重试播放' : (player.isPlaying ? '暂停' : '播放'),

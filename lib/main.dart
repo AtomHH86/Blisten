@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
@@ -148,6 +149,10 @@ class _BlistenAppState extends State<BlistenApp>
         animation: tc,
         builder: (context, _) {
           AppTheme.mode = tc.mode;
+          final home = KeyedSubtree(
+            key: ValueKey('theme-${tc.mode.name}'),
+            child: const HomeShell(),
+          );
           return MaterialApp(
             title: AppMeta.name,
             debugShowCheckedModeBanner: false,
@@ -155,12 +160,9 @@ class _BlistenAppState extends State<BlistenApp>
             darkTheme: AppTheme.dark(),
             themeMode: tc.mode,
             home: _ready
-                ? AppUpdatePrompt(
-                    child: KeyedSubtree(
-                      key: ValueKey('theme-${tc.mode.name}'),
-                      child: const HomeShell(),
-                    ),
-                  )
+                ? (!kIsWeb && defaultTargetPlatform == TargetPlatform.android
+                    ? AppUpdatePrompt(child: home)
+                    : home)
                 : const SplashScreen(),
           );
         },

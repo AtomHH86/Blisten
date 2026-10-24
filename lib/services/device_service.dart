@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/services.dart';
 
 /// 设备系统能力（走 MainActivity 原生通道）：
@@ -10,7 +12,7 @@ class DeviceService {
 
   static const _channel = MethodChannel('abts/battery');
 
-  bool get _isAndroid => Platform.isAndroid;
+  bool get _isAndroid => (!kIsWeb && Platform.isAndroid);
 
   /// 是否已豁免电池优化
   Future<bool> isIgnoringBatteryOptimizations() async {
