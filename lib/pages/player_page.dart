@@ -61,7 +61,9 @@ class _PlayerPageState extends State<PlayerPage> {
     final recent = context.watch<ShelfStore>().recentBooks;
     final hasSession = player.book != null &&
         (player.loaded || player.loading || player.error != null);
-    final preview = !hasSession && widget.preview != null
+    final platformUnavailable =
+        player.error == const AudioPlatformUnavailable().message;
+    final preview = !hasSession && !platformUnavailable && widget.preview != null
         ? recent.where((row) => row.book.bvid == widget.preview!.book.bvid).firstOrNull
         : null;
     if (preview != null) {

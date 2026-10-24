@@ -79,6 +79,9 @@ class _Player extends ChangeNotifier implements BookPlayer {
   }
 
   @override
+  Future<bool> resumeShelf(ShelfBook row) => playBook(row.book);
+
+  @override
   Future<bool> retryPlayback() async {
     retries++;
     pending = true;
@@ -207,6 +210,23 @@ void main() {
       expect(find.text('请重试，或返回后选择其他内容。'), findsNothing);
     });
   }
+
+  testWidgets('platform limit replaces the recent listening preview after failure',
+      (tester) async {
+    await ShelfStore.instance.updateProgress(
+      _bvid, cid: 11, chapterIndex: 0, positionMs: 42000,
+      chapterDurationMs: 180000, book: _book,
+    );
+    final recent = ShelfStore.instance.recentBooks.single;
+    final player = _Player()..failureReason = 'iOS 预览版暂未开放在线播放';
+    await tester.pumpWidget(_host(PlayerPage(preview: recent), player));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('播放'));
+    await tester.pumpAndSettle();
+    expect(find.text('iOS 预览版暂未开放在线播放'), findsOneWidget);
+    expect(find.byTooltip('播放'), findsNothing);
+    expect(find.text('重试'), findsNothing);
+  });
 
   testWidgets('platform limit reaches the detail playback failure message',
       (tester) async {
