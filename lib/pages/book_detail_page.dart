@@ -39,6 +39,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
   int _requestId = 0;
 
   Book? _book;
+  ContentMode get _contentMode => context.read<ShelfStore>()
+      .progressByBvid(widget.bvid)?.book.contentMode ?? widget.contentMode;
+  Book? get _effectiveBook => _book?.withContentMode(_contentMode);
   bool _loading = true;
   bool _playPending = false;
   String? _error;
@@ -50,7 +53,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   void initState() {
     super.initState();
     if (widget.initialBook != null) {
-      _book = widget.initialBook!.withContentMode(widget.contentMode);
+      _book = widget.initialBook!.withContentMode(_contentMode);
       _loading = false;
     } else {
       _load();
@@ -64,7 +67,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       _error = null;
     });
     try {
-      final book = await _bili.detail(widget.bvid, mode: widget.contentMode);
+      final book = await _bili.detail(widget.bvid, mode: _contentMode);
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _book = book;
@@ -81,8 +84,9 @@ class _BookDetailPageState extends State<BookDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ShelfStore>();
     return Scaffold(
-      appBar: AppBar(title: Text(switch (widget.contentMode) {
+      appBar: AppBar(title: Text(switch (_contentMode) {
         ContentMode.audiobook => '听书详情',
         ContentMode.music => '歌曲详情',
         ContentMode.concert => '演唱会详情',
@@ -115,7 +119,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   }
 
   Widget _buildContent() {
-    final book = _book!;
+    final book = _effectiveBook!;
     final player = context.watch<BookPlayer>();
     final shelf = context.watch<ShelfStore>();
     final onShelf = shelf.isOnShelf(book.bvid);
@@ -148,7 +152,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
               await _load();
               if (!mounted) return;
               // 刷新书架元数据
-              final fresh = _book;
+              final fresh = _effectiveBook;
               if (fresh != null && onShelf) {
                 await context
                     .read<ShelfStore>()
@@ -495,7 +499,7 @@ Text(
       if (saved != null) await confirmRemoveFromShelf(context, saved);
       return;
     } else {
-      await shelf.add(_book!);
+      await shelf.add(_effectiveBook!);
       AppAnalytics.onEvent('shelf_add_manual');
     }
     if (mounted) {
@@ -551,7 +555,7 @@ Text(
   }
 
   Future<void> _startPlay(bool hasProgress, int resumeIndex, int resumeMs) async {
-    final book = _book!;
+    final book = _effectiveBook!;
     final requestedIndex = (book.chapters ?? <Chapter>[])
         .indexWhere((chapter) => chapter.page == widget.initialPage);
     await _submitPlay((player) {
@@ -570,7 +574,7 @@ Text(
 
   /// 缓存单集到本地（供离线收听）
   Future<void> _cacheOne(Chapter c) async {
-    final book = _book;
+    final book = _effectiveBook;
     if (book == null) return;
     final cache = context.read<CacheStore>();
     if (cache.isCached(book.bvid, c.cid)) {
@@ -623,7 +627,7 @@ Text(
   }
 
   Future<void> _playFrom(int index) async {
-    final book = _book!;
+    final book = _effectiveBook!;
     await _submitPlay((player) => player.playBook(book, resumeIndex: index,
         resumeCid: book.chapters![index].cid), chapterIndex: index);
   }
@@ -633,7 +637,7 @@ Text(
     final route = ModalRoute.of(context);
     if (_playPending || route?.isCurrent != true) return;
     final player = context.read<BookPlayer>();
-    final book = _book!;
+    final book = _effectiveBook!;
     setState(() => _playPending = true);
     try {
       player.flushProgress();
