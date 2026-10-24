@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "status": "passed_with_documented_limits",
+  "release_version": "1.2.0+3",
+  "source_commit": "bc5413e02b970d793dc50e3c46f1d581d9aa4797",
+  "source_reports": [
+    "github-download-verification.json",
+    "remote-release-tag.json",
+    "public-update-verification.json"
+  ],
+  "release": {
+    "url": "https://github.com/AtomHH86/Blisten/releases/tag/v1.2.0",
+    "id": 422884075,
+    "published_at_utc": "2026-10-24T17:42:38Z",
+    "draft": false,
+    "prerelease": false,
+    "latest_matches_tag": true
+  },
+  "tag": {
+    "name": "v1.2.0",
+    "annotated_object_sha": "95e2d322f1195d67bcde9b55f4401230ccb87688",
+    "target_commit": "bc5413e02b970d793dc50e3c46f1d581d9aa4797"
+  },
+  "anonymous_downloads": {
+    "status": "passed",
+    "finished_at_utc": "2026-10-24T17:46:21.456178+00:00",
+    "asset_count": 13,
+    "assets": [
+      {
+        "file": "Blisten-v1.2.0-arm64-v8a.apk",
+        "size_bytes": 28052343,
+        "sha256": "bcfbad2a809614952f82b802a344a5b0ffd13009fe0ad77780a4d07e92678280",
+        "github_asset_id": 672894995,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "Blisten-v1.2.0-armeabi-v7a.apk",
+        "size_bytes": 24916715,
+        "sha256": "222098bbefb5b11584940d7756ce0972d543d8a541ac36839394c588b918c649",
+        "github_asset_id": 672895011,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "Blisten-v1.2.0-native-sources.tar.gz",
+        "size_bytes": 27017370,
+        "sha256": "bf2d36734cf334b0c3310708130be5dff4c879ec7dee700aaca16a55369a9e41",
+        "github_asset_id": 672894992,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "Blisten-v1.2.0-universal.apk",
+        "size_bytes": 77245579,
+        "sha256": "5911c1fb9144613bbd33304878c06005cade69fc4b36bf539ad4286046346d4c",
+        "github_asset_id": 672895008,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "Blisten-v1.2.0-x86_64.apk",
+        "size_bytes": 30337253,
+        "sha256": "45f4654eb6ae1c4608e09068813d9241b9a31825a031333d91040f432f674ccb",
+        "github_asset_id": 672895010,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "SHA256SUMS",
+        "size_bytes": 1129,
+        "sha256": "3d28f905a6598db486320808eef0faa4918ba442f1e79aa01091d6718087dc74",
+        "github_asset_id": 672896167,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "all-abis-verification.json",
+        "size_bytes": 2528,
+        "sha256": "a0abeef3946611c71ddd73b2dbc4011384c0e2e56fd51dc264435540bea87647",
+        "github_asset_id": 672896181,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "apk-native-verification.json",
+        "size_bytes": 19454,
+        "sha256": "1e8a5d94386f270f9c85fb686604822f3cc3ecb83741d3e0d25f011b792b703c",
+        "github_asset_id": 672896187,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "apk-runtime-verification.json",
+        "size_bytes": 4365,
+        "sha256": "e686dec3af4180b9aeec9b3395f03e67509f8474e76853aa4f33ffcf31f941e5",
+        "github_asset_id": 672896199,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "ci-verification.json",
+        "size_bytes": 787,
+        "sha256": "0c19d39d9ca206359451df3f32581270d3d8ab809f321bbc7c76ded1edfb6a64",
+        "github_asset_id": 672896206,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "manifest.json",
+        "size_bytes": 21912,
+        "sha256": "5b84b03b7f81d8c4fcedeb6b1ef4a204b43e9eefbaebfe9566f89f28ba18e7c1",
+        "github_asset_id": 672896226,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "source-archive-verification.json",
+        "size_bytes": 3356,
+        "sha256": "6e7398c28fe10125aa8f890b3cf3fa7ff85d0f68f9c9e88f7fd18bc2c2a86e90",
+        "github_asset_id": 672896228,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      },
+      {
+        "file": "source-input-verification.json",
+        "size_bytes": 788,
+        "sha256": "3754bc036346da16fc6cf319344849b3d8bef7bbcfe3ccc8423b496448ca7078",
+        "github_asset_id": 672896239,
+        "github_digest_verified": true,
+        "anonymous_download_verified": true,
+        "fresh_download": true
+      }
+    ]
+  },
+  "public_update": {
+    "status": "passed",
+    "old_version": "1.1.0+2",
+    "new_version": "1.2.0+3",
+    "automatic_prompt": true,
+    "manual_prompt": true,
+    "download_button_browser_url": "https://github.com/AtomHH86/Blisten/releases/download/v1.2.0/Blisten-v1.2.0-universal.apk",
+    "download_button_scope": "Browser URL and generic APK download confirmation observed; browser download cancelled; separately anonymously downloaded GitHub universal APK installed via ADB and installed bytes matched. Android installer UI was not exercised.",
+    "new_version_reports_latest": true,
+    "test_setup": "Restored dedicated 1.1 emulator snapshot; removed only successful-check cooldown field before real public network check; all other preferences unchanged.",
+    "transient_failures": "Anonymous API hit 60/hour quota, waited for reset; subsequent TLS EOF failed once; ordinary retry with certificate validation enabled passed."
+  },
+  "installed_public_universal": {
+    "artifact": "Blisten-v1.2.0-universal.apk",
+    "sha256": "5911c1fb9144613bbd33304878c06005cade69fc4b36bf539ad4286046346d4c",
+    "installed_package_matches": true
+  },
+  "coverage_limits": {
+    "environment": "Dedicated API35 x86_64 Android emulator",
+    "browser_download_cancelled": true,
+    "anonymous_apk_installed_via_adb": true,
+    "android_installer_ui_tested": false,
+    "arm_physical_device_tested": false,
+    "raw_preferences_or_account_data_included": false,
+    "latest_success_screenshot": "public-latest-frame-3.png",
+    "excluded_earlier_screenshot": "public-new-latest-visible.png captured only checking state"
+  },
+  "evidence_sha256": {
+    "public-old-auto-update.xml": "e24661cfdb38e797ec0220cb86c92fdc6954acae1dd6fcdba3ec3b262b351d27",
+    "public-old-manual-update.xml": "e24661cfdb38e797ec0220cb86c92fdc6954acae1dd6fcdba3ec3b262b351d27",
+    "public-browser-download.xml": "9c1400ef91c1b49567d81f26b0ffbdcf89f1eea805f75ddfe6221a68f1ec7f35",
+    "public-new-latest-feedback.xml": "8116c9afaa8f5be5fedfdce3b3dd3e81b86b461f7a34f2dd9595195af69223b7",
+    "public-old-auto-update.png": "27f7f4fa0f9a9f8766c34ae687ecac4f7357436450a9096d090928dcce707a8f",
+    "public-browser-download.png": "baa31e152f6bfab4454dd04ed8b95ed6f29a22673ce1aa8872ac9a1f51ebeded",
+    "public-latest-frame-3.png": "508544873408d7f49b5bc5bb380f0f63fe9320ab0dd638ed5b6fddb62b44e51a",
+    "github-download-verification.json": "2f42d6dbc9235247e4e83ce8da2061bb99b38fd3c9de4565576d584e6107aa95",
+    "remote-release-tag.json": "aaccbd9ad373b563d95e43e7adf26bfa816222d136f1bd7f5ad34ca9090684cc",
+    "installed-Blisten-v1.2.0-universal.json": "1a738a526b22379c96d97c0d7af64592dd70e646fda4501568d1b66f3e736228"
+  }
+}

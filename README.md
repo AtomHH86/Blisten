@@ -29,16 +29,16 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - 从 1.1 起，进入首页后后台检查更新，成功检查间隔 24 小时；无更新或失败不弹窗。也可随时进入“我的 → 检查更新”；下载由浏览器完成，安装需 Android 确认。旧版 1.0 需手动检查才能发现 1.1。
 - 音频来自 B 站视频；不提供独立歌曲库。不含跨视频歌单、随机/循环播放或整场演唱会自动分曲。
 
-以下为 B听 1.0 在 Android 模拟器中的历史实测画面，使用固定测试数据；不代表线上资源可用性。更多深浅主题、大字和启动截图见[视觉与交互验收记录](docs/testing/2026-10-24-bting-design.md)。
+以下为 B听 1.2 在 API35 x86_64 专用 Android 模拟器中实际渲染的代表画面，来自 debug 包与固定测试数据：发现四频道、320dp/200% 字号下的在听与收藏视图。它们用于展示布局与状态，不是 ARM 真机或线上内容可用性证据；正式签名包与实网运行范围见[本版验收记录](docs/testing/2026-10-24-v1.2-release.md)，截图来源见[说明](docs/screenshots/bting-v1.2/README.md)。
 
-<img src="docs/screenshots/bting-v1/light-empty-collection.png" width="220" alt="B听浅色收藏空态" /> <img src="docs/screenshots/bting-v1/dark-player.png" width="220" alt="B听深色播放器" /> <img src="docs/screenshots/bting-v1/light-import.png" width="220" alt="B听三模式资源导入" />
+<img src="docs/screenshots/bting-v1.2/light-discover.png" width="220" alt="B听1.2浅色发现页四频道，模拟器debug固定夹具" /> <img src="docs/screenshots/bting-v1.2/dark-320dp-200-recent-paused.png" width="220" alt="B听1.2深色在听视图，320dp与200%字号，模拟器debug固定夹具" /> <img src="docs/screenshots/bting-v1.2/light-320dp-200-favorites-paused.png" width="220" alt="B听1.2浅色收藏视图与迷你播放器，320dp与200%字号，模拟器debug固定夹具" />
 
 ## 当前应用身份
 
 - 工程/仓库：Blisten；应用显示名：B听；口号：闭上眼听 B 站。
 - 正式包：`com.bting.audio`；调试包：`com.bting.audio.debug`（B听·测试）。
 - Dart 包：`blisten`；独立版本：`1.2.0+3`；继续使用 B听正式签名，兼容覆盖升级。
-- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移阿B听书的收藏、进度、缓存或登录状态；B听 1.0 可直接覆盖升级并保留本地数据。
+- 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移阿B听书的收藏、进度、缓存或登录状态。本轮已在专用模拟器实测 B听 `1.1.0+2` 覆盖升级至本版 x86_64 正式包，收藏、收听进度、完成标记与主题保留；随后本版 universal 覆盖安装的数据保留与续播也通过。
 - 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场 / 听故事。
 - 原作者统计 SDK 已移除；仓库、问题反馈和自动/手动检查更新均指向 Blisten，独立官网暂未设置。上游链接仅用于来源致谢，不检查上游 Release。
 - 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.3](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
@@ -64,6 +64,8 @@ tool/android-emulator.sh stop      # 测试结束后关闭模拟器
 
 全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。审查基线的问题保留原始证据；后续搜索分类、UP 分页与模式选择的改动见[搜索调整验收](docs/testing/2026-10-24-search-categories.md)，质量修复结果见[修复验收](docs/testing/2026-10-24-quality-repairs.md)，1.1 的历史验证见[记录](docs/testing/2026-10-24-v1.1-release.md)，1.2 的频道、收藏与迷你播放器验证见[本版验收记录](docs/testing/2026-10-24-v1.2-release.md)。
 
+PWA、微信小程序和 iOS 的后续可行性、必要适配及分阶段验证建议见 [跨平台评估](docs/reviews/2026-10-25-cross-platform-feasibility.md)。本轮只完成评估，尚未部署这些平台。
+
 完整操作和测试边界见 [电脑 Android 测试教程](docs/testing/android-desktop-guide.md)。测试仅使用专用模拟器，会重置其中的测试应用数据；无需连接手机。日志保存在 `build/desktop-tests/`。
 
 在其他开发机上，先配置对应平台的 Flutter 和 Android 工具链；快速检查无需模拟器：
@@ -79,16 +81,16 @@ GitHub Actions 使用固定 Flutter 版本执行同样的快速检查。实际�
 
 ## 四种安装包
 
-从 [GitHub Releases](https://github.com/AtomHH86/Blisten/releases) 下载正式版本。多数现代手机选择 **arm64-v8a**；需要 Android 7.0 及以上。1.2 的实际验收和发布状态见[本版验收记录](docs/testing/2026-10-24-v1.2-release.md)，1.0 的历史结果保留在[原记录](docs/testing/2026-10-24-apk-release.md)。ARM 真机和 16KiB 系统尚未实测。
+从 [B听 1.2.0 Release](https://github.com/AtomHH86/Blisten/releases/tag/v1.2.0) 下载正式版本。多数现代手机选择 **arm64-v8a**；需要 Android 7.0 及以上。本版四包均已完成签名、版本、ABI 与原生来源静态检查，13 个发布附件已匿名重新下载并核对 SHA256；旧版公开自动/手动检查发现本版、新版显示已是最新均已实测。正式 x86_64 与 universal 包已在 API35 x86_64 专用模拟器完成覆盖安装、数据保留与播放检查；ARM 真机、其他 Android API 和实际 16 KiB 系统尚未实测。完整验收及浏览器/安装范围见[本版记录](docs/testing/2026-10-24-v1.2-release.md)，1.0 的历史结果保留在[原记录](docs/testing/2026-10-24-apk-release.md)。
 
-下表暂保留已发布的 1.1 安装包；1.2 打包验收后更新文件名和实测体积。
+下表体积按实际文件字节数换算，`1 MiB = 1,048,576 字节`。完整 SHA256 见 Release 的 `SHA256SUMS`。
 
-| 安装包 | 实际体积（MB，十进制） | 适用设备 |
+| 安装包 | 实际体积（MiB） | 适用设备 |
 | --- | ---: | --- |
-| `Blisten-v1.1.0-arm64-v8a.apk` | 27.99 | 大多数现代安卓手机、ARM64 Android 模拟器 |
-| `Blisten-v1.1.0-armeabi-v7a.apk` | 24.85 | 支持 32 位 ARM 应用且满足最低系统版本的设备 |
-| `Blisten-v1.1.0-x86_64.apk` | 30.27 | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
-| `Blisten-v1.1.0-universal.apk` | 77.05 | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
+| [Blisten-v1.2.0-arm64-v8a.apk](https://github.com/AtomHH86/Blisten/releases/download/v1.2.0/Blisten-v1.2.0-arm64-v8a.apk) | 26.75 | 大多数现代安卓手机、ARM64 Android 模拟器 |
+| [Blisten-v1.2.0-armeabi-v7a.apk](https://github.com/AtomHH86/Blisten/releases/download/v1.2.0/Blisten-v1.2.0-armeabi-v7a.apk) | 23.76 | 支持 32 位 ARM 应用且满足最低系统版本的设备 |
+| [Blisten-v1.2.0-x86_64.apk](https://github.com/AtomHH86/Blisten/releases/download/v1.2.0/Blisten-v1.2.0-x86_64.apk) | 28.93 | Intel / AMD 电脑上的 x86_64 Android 模拟器及对应设备 |
+| [Blisten-v1.2.0-universal.apk](https://github.com/AtomHH86/Blisten/releases/download/v1.2.0/Blisten-v1.2.0-universal.apk) | 73.67 | 包含上述三种 ABI，体积较大；不含 32 位 x86 或 RISC-V |
 
 先构建并准备三个 ABI 的原生库，再配置自己的 `android/key.properties` 和签名证书后运行：
 
