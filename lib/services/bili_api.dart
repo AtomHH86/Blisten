@@ -416,8 +416,9 @@ class BiliApi {
     // 第 1 页重新初始化，保证「刷新」拿到的确实是从头开始
     if (cursor == null || page == 1) {
       cursor = _UpCursor();
-      await _initUpCursor(up, cursor);
+      // 先登记本次游标，旧初始化晚返回不能覆盖刷新/切换模式后的分页状态。
       _upCursors[up.mid] = cursor;
+      await _initUpCursor(up, cursor);
     }
     if (cursor.preview.isEmpty && cursor.seasonIds.isEmpty) {
       throw StateError('该 UP 没有可用的公开合集');

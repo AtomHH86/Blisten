@@ -303,32 +303,52 @@ class LocalBiliFixture extends HttpOverrides {
         };
       }
     } else if (path == '/x/web-interface/wbi/search/type') {
-      final keyword = query['keyword'] ?? '';
-      final short = keyword.contains('歌曲');
-      data = {
-        'page': int.tryParse(query['page'] ?? '') ?? 1,
-        'pagesize': 20,
-        'numResults': 1,
-        'numPages': 1,
-        'result': [
-          {
-            'type': 'video',
-            'aid': short ? 2 : 1,
-            'bvid': short ? music : audiobook,
-            'title': short ? '本地三分钟歌曲' : '本地有声小说测试',
-            'pic': '',
-            'author': '本地测试',
-            'mid': 1,
-            'play': 123,
-            'duration': short ? '3:00' : '10:00',
-            'videos': 3,
-            'description': '',
-            'tag': '',
-            'typeid': short ? '130' : '195',
-            'pubdate': 1700000000,
-          },
-        ],
-      };
+      if (query['search_type'] == 'bili_user') {
+        data = {
+          'page': int.tryParse(query['page'] ?? '') ?? 1,
+          'pagesize': 20,
+          'numResults': 1,
+          'numPages': 1,
+          'result': [
+            {
+              'type': 'bili_user',
+              'mid': 1,
+              'uname': '本地测试 UP 主',
+              'upic': '',
+              'usign': '本地测试简介',
+              'fans': 123,
+              'videos': 3,
+            },
+          ],
+        };
+      } else {
+        final keyword = query['keyword'] ?? '';
+        final short = keyword.contains('歌曲');
+        data = {
+          'page': int.tryParse(query['page'] ?? '') ?? 1,
+          'pagesize': 20,
+          'numResults': 1,
+          'numPages': 1,
+          'result': [
+            {
+              'type': 'video',
+              'aid': short ? 2 : 1,
+              'bvid': short ? music : audiobook,
+              'title': short ? '本地三分钟歌曲' : '本地有声小说测试',
+              'pic': '',
+              'author': '本地测试',
+              'mid': 1,
+              'play': 123,
+              'duration': short ? '3:00' : '10:00',
+              'videos': 3,
+              'description': '',
+              'tag': '',
+              'typeid': short ? '130' : '195',
+              'pubdate': 1700000000,
+            },
+          ],
+        };
+      }
     } else if (path == '/' || path == '/x/internal/gaia-gateway/ExClimbWuzhi') {
       data = <String, Object>{};
     } else {

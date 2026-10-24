@@ -28,6 +28,7 @@ class UpHomePage extends StatefulWidget {
 
 class _UpHomePageState extends State<UpHomePage> {
   late final _bili = widget.api ?? BiliApi.instance;
+  late ContentMode _mode = widget.contentMode;
   int _requestId = 0;
   final _scroll = ScrollController();
 
@@ -60,6 +61,7 @@ class _UpHomePageState extends State<UpHomePage> {
 
   Future<void> _load() async {
     final requestId = ++_requestId;
+    final mode = _mode;
     setState(() {
       _loading = true;
       _loadingMore = false;
@@ -68,10 +70,10 @@ class _UpHomePageState extends State<UpHomePage> {
     });
     try {
       final res = await _bili.upAudios(widget.up,
-          page: 1, pageSize: _pageSize, mode: widget.contentMode);
+          page: 1, pageSize: _pageSize, mode: mode);
       if (!mounted || requestId != _requestId) return;
       setState(() {
-        _books = res.books.map((book) => book.withContentMode(widget.contentMode)).toList();
+        _books = res.books.map((book) => book.withContentMode(mode)).toList();
         _loading = false;
         _page = 1;
         // 是否还有更多由接口给出，不能按返回条数猜
@@ -87,9 +89,23 @@ class _UpHomePageState extends State<UpHomePage> {
     }
   }
 
+  void _switchMode(ContentMode mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _mode = mode;
+      _books = [];
+      _page = 1;
+      _noMore = false;
+    });
+    // _load 先更新请求代次，旧模式首屏或分页晚返回都不能混入新列表。
+    _load();
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+  }
+
   Future<void> _loadMore({bool retry = false}) async {
     if (_loading || _loadingMore || _noMore || (_moreError != null && !retry)) return;
     final requestId = _requestId;
+    final mode = _mode;
     setState(() {
       _loadingMore = true;
       _moreError = null;
@@ -97,7 +113,7 @@ class _UpHomePageState extends State<UpHomePage> {
     try {
       final next = _page + 1;
       final res =
-          await _bili.upAudios(widget.up, page: next, pageSize: _pageSize, mode: widget.contentMode);
+          await _bili.upAudios(widget.up, page: next, pageSize: _pageSize, mode: mode);
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _page = next;
@@ -105,7 +121,7 @@ class _UpHomePageState extends State<UpHomePage> {
         _books = [
           ..._books,
           ...res.books.where((b) => seen.add(b.bvid))
-              .map((book) => book.withContentMode(widget.contentMode)),
+              .map((book) => book.withContentMode(mode)),
         ];
         _loadingMore = false;
         if (res.books.isEmpty || !res.hasMore) _noMore = true;
@@ -162,6 +178,21 @@ class _UpHomePageState extends State<UpHomePage> {
       body: Column(
         children: [
           _buildHeader(following),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: ContentMode.values.map((mode) => ChoiceChip(
+                  label: Text(mode.label),
+                  selected: _mode == mode,
+                  onSelected: (_) => _switchMode(mode),
+                )).toList(),
+              ),
+            ),
+          ),
           const Divider(height: 1),
           Expanded(child: _buildBody()),
         ],
@@ -302,7 +333,7 @@ class _UpHomePageState extends State<UpHomePage> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SearchPage(
-                  initialKeyword: widget.up.name, autofocus: false, initialMode: widget.contentMode, api: _bili),
+                  initialKeyword: widget.up.name, autofocus: false, initialMode: _mode, api: _bili),
             ),
           );
         },
@@ -337,7 +368,7 @@ class _UpHomePageState extends State<UpHomePage> {
                       size: 16, color: AppTheme.actionText),
                   const SizedBox(width: 6),
                   Expanded(child: Text(
-                    '投稿内容 · ${widget.contentMode.label}',
+                    '投稿内容 · ${_mode.label}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,

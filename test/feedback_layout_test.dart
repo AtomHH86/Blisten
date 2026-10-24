@@ -61,7 +61,14 @@ class _LayoutApi implements BiliApi {
     String keyword, {
     int page = 1,
     int pageSize = 20,
-  }) async => [];
+  }) async => const [
+    UpUser(
+      mid: 17,
+      name: '很长很长的创作者名称以及工作室',
+      sign: '这是很长的个人简介与音乐创作故事',
+      fans: 123,
+    ),
+  ];
 
   @override
   Future<({String url, String qrKey})> qrGenerate() async {
@@ -155,8 +162,10 @@ void main() {
           _host(SearchPage(api: api, initialKeyword: '语义测试'), Brightness.dark),
         );
         await tester.pumpAndSettle();
-        final firstTab = find.byKey(const ValueKey('search-result-tab-0'));
-        final upTab = find.byKey(const ValueKey('search-result-tab-1'));
+        final firstTab = find.byKey(
+          const ValueKey('search-category-audiobook'),
+        );
+        final upTab = find.byKey(const ValueKey('search-category-up'));
         expect(
           tester.getSemantics(firstTab).flagsCollection.isSelected ==
               Tristate.isTrue,
@@ -261,14 +270,20 @@ void main() {
         await tester.enterText(find.byType(TextField), '修改后仍然保留的关键词');
         expect(find.text('修改后仍然保留的关键词'), findsOneWidget);
         expect(find.byType(TextField).hitTestable(), findsOneWidget);
-        for (final label in ['听书结果', 'UP主']) {
-          final tab = find.text(label);
-          expect(tab.hitTestable(), findsOneWidget);
-          final target = find
-              .ancestor(of: tab, matching: find.byType(GestureDetector))
-              .first;
+        for (final label in ['听书', '听歌', '听现场', 'UP 主']) {
+          final target = find.widgetWithText(ChoiceChip, label);
+          expect(target.hitTestable(), findsOneWidget);
           expect(tester.getSize(target).height, greaterThanOrEqualTo(48));
         }
+        expect(tester.takeException(), isNull);
+        tester.view.viewInsets = const FakeViewPadding();
+        await tester.tap(find.widgetWithText(ChoiceChip, 'UP 主'));
+        await tester.pumpAndSettle();
+        expect(find.text('很长很长的创作者名称以及工作室'), findsOneWidget);
+        await tester.tap(find.widgetWithText(FilledButton, '关注'));
+        await tester.pumpAndSettle();
+        expect(find.text('已关注'), findsOneWidget);
+        expect(find.byType(SearchPage), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

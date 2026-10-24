@@ -1,0 +1,131 @@
+{
+  "date": "2026-10-24",
+  "baseline": "c68d2d6",
+  "unit": {
+    "passed": 117,
+    "skipped": 1,
+    "packaging_passed": 10,
+    "run_directory": "build/desktop-tests/20261024-112258-79963"
+  },
+  "native": {
+    "modes_scenarios": 5,
+    "visual_scenarios": 4,
+    "screenshots": 32,
+    "search_screenshots_versioned": 8,
+    "device": "API35 x86_64 emulator, 720x1280, 320dpi",
+    "setup_teardown_excluded": true
+  },
+  "scope": "Only local fixtures, no phone, live Bilibili/account, full TalkBack or signed release validation this round.",
+  "files": [
+    {
+      "path": "lib/pages/search_page.dart",
+      "sha256": "d1e625feead1d4991915d62f8d1714639e07933477c22813f36371a09efb30bc",
+      "versioned": true
+    },
+    {
+      "path": "lib/pages/up_home_page.dart",
+      "sha256": "2d29c77d7f2e6401c80ff720214d46d078bcf139bf6fd3975abfa35da2c83c73",
+      "versioned": true
+    },
+    {
+      "path": "lib/services/bili_api.dart",
+      "sha256": "a5efbf25bf96955d451f96242d041e74a693e3ee0c6ced9056d035a9e8de9c2a",
+      "versioned": true
+    },
+    {
+      "path": "test/search_categories_test.dart",
+      "sha256": "a7cc2347d06c2da958e3257927be707be4663d8f797a44a60c0d6792a7141332",
+      "versioned": true
+    },
+    {
+      "path": "test/up_home_mode_test.dart",
+      "sha256": "ffa1223a4d5d40574d0cd76ad50b075b1800a4cf6b9b98f12a0859a62eb5c311",
+      "versioned": true
+    },
+    {
+      "path": "test/up_cursor_race_test.dart",
+      "sha256": "41a8a8a4caad2d23ff3ec69f7d930fc41e0a60767882e3304caf19bb42387f4f",
+      "versioned": true
+    },
+    {
+      "path": "integration_test/visual_design_test.dart",
+      "sha256": "92ab25d2709b52eb9622ff44ba8e968f2cf180eb463a8f8521be80c2b5ccdb62",
+      "versioned": true
+    },
+    {
+      "path": "build/search-categories/red.log",
+      "sha256": "9b0e5b936d2c48a2d117dd301fbb1b26c98a680907b42b0849eadae616897fc3",
+      "versioned": false
+    },
+    {
+      "path": "build/search-categories/cursor-red.log",
+      "sha256": "7e4713ad966d0fd14cc5ce096ee77b69c61898045578bf2c4a0b654ada204923",
+      "versioned": false
+    },
+    {
+      "path": "build/search-categories/cursor-green.log",
+      "sha256": "71a5f297f22b006833c189d3d3799593da81a009896bda022a79c406f8cf97de",
+      "versioned": false
+    },
+    {
+      "path": "build/search-categories/targeted.log",
+      "sha256": "a6efd2a306444b97de622f75fe2573925fdb00c53481f6045d8c9a98ef0bfbd0",
+      "versioned": false
+    },
+    {
+      "path": "build/search-categories/unit.log",
+      "sha256": "25acb270c6678f3609f211ff74c7dfe2318c6f329ba0ee957504db0e8290f052",
+      "versioned": false
+    },
+    {
+      "path": "build/search-categories/native-modes.log",
+      "sha256": "9566baa8146abe5a6b0f9ef4406fd736dac0d64ad0d2bc9142352f4a1cbd1220",
+      "versioned": false
+    },
+    {
+      "path": "build/search-categories/native-visual.log",
+      "sha256": "6049eca768f01e6a5dda27d29fb18081d2668890537e1e58215905ccc8975bda",
+      "versioned": false
+    },
+    {
+      "path": "docs/screenshots/search-categories/light-large-search-categories.png",
+      "sha256": "d098d681d4bfcfa7d57e809f951894b514136685d79b43492a3d7a1970554f93",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/dark-large-search-categories.png",
+      "sha256": "e49760f355493bf72010389a103c1ee352b25d62510c0a9d16912852393bbf9b",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/light-large-search-up.png",
+      "sha256": "686f0946ce04067632ac282eee1501ae288c1682c599a44efcc2628f5341d891",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/light-search-up.png",
+      "sha256": "66dd7282e3284324fe631ee52f9109f185336c027d1abd32787476d7c746f7d0",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/dark-large-search-up.png",
+      "sha256": "1ad495f3e45f19efccfdbc340e72c15d5a3bc3daf8ce49280a3fc83b653e9c88",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/dark-search-categories.png",
+      "sha256": "5eeb7f5e578746c71dbaf817f8f713f6bbf2be6a9073e280fde16449e839db6b",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/light-search-categories.png",
+      "sha256": "27228ed15b85db935668650203653865f1be7eeacc0581a41e77750ca819f64f",
+      "versioned": true
+    },
+    {
+      "path": "docs/screenshots/search-categories/dark-search-up.png",
+      "sha256": "8b0cd1280e9c43814f1580158cac909b65d671342fd942598e189a2ee43140f7",
+      "versioned": true
+    }
+  ]
+}

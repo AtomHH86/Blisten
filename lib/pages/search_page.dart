@@ -38,13 +38,14 @@ class _SearchPageState extends State<SearchPage> {
   int _requestId = 0;
   String _searchedKeyword = '';
 
-  /// 0 = 当前模式视频，1 = UP 主
-  int _tab = 0;
+  /// UP 主是独立搜索分类；_mode 保留最近选择的内容模式。
+  bool _searchUsers = false;
 
   List<Book> _results = [];
   List<UpUser> _ups = [];
   bool _loading = false;
   bool _loadingMore = false;
+  bool _moreFailed = false;
   bool _noMore = false;
   String? _error;
 
@@ -52,8 +53,6 @@ class _SearchPageState extends State<SearchPage> {
   int _total = 0;
   static const int _pageSize = 20;
   bool _hasSearched = false;
-  bool _switching = false;
-  int? _pendingTab;
 
   final _scrollController = ScrollController();
   bool _showTopButton = false;
@@ -109,15 +108,14 @@ class _SearchPageState extends State<SearchPage> {
     if (kw.isEmpty) return;
     final requestId = ++_requestId;
     final mode = _mode;
-    final tab = _tab;
+    final searchUsers = _searchUsers;
     FocusScope.of(context).unfocus();
     if (recordHistory) context.read<SearchHistoryStore>().add(kw);
     setState(() {
       _searchedKeyword = kw;
       _loading = true;
       _loadingMore = false;
-      _switching = false;
-      _pendingTab = null;
+      _moreFailed = false;
       _error = null;
       _results = [];
       _ups = [];
@@ -130,10 +128,10 @@ class _SearchPageState extends State<SearchPage> {
     try {
       var rawCount = _pageSize;
       var total = 0;
-      final ups = tab == 1
+      final ups = searchUsers
           ? await _bili.searchUser(kw, pageSize: _pageSize)
           : <UpUser>[];
-      final books = tab == 0
+      final books = !searchUsers
           ? await _bili.search(
               kw,
               mode: mode,
@@ -149,10 +147,10 @@ class _SearchPageState extends State<SearchPage> {
         _total = total;
         _loading = false;
         // 听书过滤后可能不足一页，分页以原始条数为准。
-        _noMore = tab == 1 ? ups.length < _pageSize : rawCount < _pageSize;
+        _noMore = searchUsers ? ups.length < _pageSize : rawCount < _pageSize;
       });
-      AppAnalytics.onEvent(tab == 1 ? 'search_up' : 'search',
-          {'has_result': (tab == 1 ? ups.isNotEmpty : books.isNotEmpty) ? 1 : 0});
+      AppAnalytics.onEvent(searchUsers ? 'search_up' : 'search',
+          {'has_result': (searchUsers ? ups.isNotEmpty : books.isNotEmpty) ? 1 : 0});
     } catch (_) {
       if (!mounted || requestId != _requestId) return;
       setState(() {
@@ -162,107 +160,69 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  void _switchMode(ContentMode mode) {
-    if (_mode == mode) return;
-    setState(() => _mode = mode);
-    if (_hasSearched) {
-      if (_controller.text.trim().isNotEmpty) {
-        _search(recordHistory: false);
-      } else {
-        _clearSearch();
-      }
-    }
-  }
-
-  /// 先加载目标标签，再一起替换列表与标签，保持原来的无闪屏切换。
-  Future<void> _switchTab(int tab) async {
-    if (_pendingTab == tab || _tab == tab) return;
-    final kw = _controller.text.trim();
-    if (kw.isEmpty) return;
-    final requestId = ++_requestId;
-    final mode = _mode;
+  void _selectCategory(ContentMode? mode) {
+    final searchUsers = mode == null;
+    if (_searchUsers == searchUsers && (searchUsers || _mode == mode)) return;
     setState(() {
-      _switching = true;
-      _pendingTab = tab;
-      _loadingMore = false;
+      _searchUsers = searchUsers;
+      if (mode != null) _mode = mode;
     });
-    try {
-      var rawCount = _pageSize;
-      var total = 0;
-      final ups = tab == 1
-          ? await _bili.searchUser(kw, pageSize: _pageSize)
-          : <UpUser>[];
-      final books = tab == 0
-          ? await _bili.search(kw, mode: mode, pageSize: _pageSize,
-              onFirstPage: (t) => total = t,
-              onRawCount: (c) => rawCount = c)
-          : <Book>[];
-      if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _tab = tab;
-        _results = books;
-        _ups = ups;
-        _searchedKeyword = kw;
-        _page = 1;
-        _total = total;
-        _error = null;
-        _loading = false;
-        _switching = false;
-        _pendingTab = null;
-        _noMore = tab == 1 ? ups.length < _pageSize : rawCount < _pageSize;
-      });
-    } catch (_) {
-      if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _loading = false;
-        _switching = false;
-        _pendingTab = null;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加载失败，请稍后重试')),
-      );
+    if (_hasSearched && _controller.text.trim().isNotEmpty) {
+      _search(recordHistory: false);
+    } else if (_controller.text.trim().isEmpty) {
+      _clearSearch();
     }
   }
 
   /// 上拉分页保留首次请求的关键词与模式，切换后的旧响应不追加。
-  Future<void> _loadMore() async {
+  Future<void> _loadMore({bool retry = false}) async {
     final kw = _searchedKeyword;
-    if (kw.isEmpty || _loading || _loadingMore || _switching || _noMore || _tab == 1) return;
-    if (_total > 0 && _page * _pageSize >= _total) {
+    if (kw.isEmpty || _loading || _loadingMore || _noMore || (_moreFailed && !retry)) return;
+    if (!_searchUsers && _total > 0 && _page * _pageSize >= _total) {
       setState(() => _noMore = true);
       return;
     }
     final requestId = _requestId;
     final mode = _mode;
+    final searchUsers = _searchUsers;
     final nextPage = _page + 1;
-    setState(() => _loadingMore = true);
+    setState(() {
+      _loadingMore = true;
+      _moreFailed = false;
+    });
     try {
       var rawCount = _pageSize;
-      final list = await _bili.search(
-        kw,
-        mode: mode,
-        page: nextPage,
-        pageSize: _pageSize,
-        onRawCount: (c) => rawCount = c,
-      );
+      final ups = searchUsers
+          ? await _bili.searchUser(kw, page: nextPage, pageSize: _pageSize)
+          : <UpUser>[];
+      final books = !searchUsers
+          ? await _bili.search(
+              kw,
+              mode: mode,
+              page: nextPage,
+              pageSize: _pageSize,
+              onRawCount: (c) => rawCount = c,
+            )
+          : <Book>[];
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _page = nextPage;
-        final seen = _results.map((b) => b.bvid).toSet();
-        _results = [..._results, ...list.where((b) => seen.add(b.bvid))];
+        if (searchUsers) {
+          final seen = _ups.map((up) => up.mid).toSet();
+          _ups = [..._ups, ...ups.where((up) => seen.add(up.mid))];
+        } else {
+          final seen = _results.map((b) => b.bvid).toSet();
+          _results = [..._results, ...books.where((b) => seen.add(b.bvid))];
+        }
         _loadingMore = false;
-        _noMore = rawCount < _pageSize;
+        _noMore = searchUsers ? ups.length < _pageSize : rawCount < _pageSize;
       });
     } catch (_) {
       if (!mounted || requestId != _requestId) return;
-      setState(() => _loadingMore = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('加载更多失败，上滑重试'),
-          duration: const Duration(seconds: 1),
-          action: SnackBarAction(label: '重试', onPressed: _loadMore),
-        ),
-      );
+      setState(() {
+        _loadingMore = false;
+        _moreFailed = true;
+      });
     }
   }
 
@@ -271,10 +231,9 @@ class _SearchPageState extends State<SearchPage> {
     _controller.clear();
     setState(() {
       _hasSearched = false;
-      _switching = false;
-      _pendingTab = null;
       _loading = false;
       _loadingMore = false;
+      _moreFailed = false;
       _error = null;
       _results = [];
       _ups = [];
@@ -368,10 +327,10 @@ class _SearchPageState extends State<SearchPage> {
                   onChanged: (_) => setState(() {}),
                   style: TextStyle(fontSize: 15, color: AppTheme.textMain),
                   decoration: InputDecoration(
-                    hintText: switch (_mode) {
+                    hintText: _searchUsers ? '搜索 UP 主名称' : switch (_mode) {
                       ContentMode.audiobook => '搜索书名 / 作者 / 主播',
-                      ContentMode.music => '搜索歌名 / 歌手 / UP 主',
-                      ContentMode.concert => '搜索演唱会 / 歌手 / UP 主',
+                      ContentMode.music => '搜索歌名 / 歌手',
+                      ContentMode.concert => '搜索演唱会 / 歌手',
                     },
                     hintStyle: TextStyle(
                         fontSize: 14, color: AppTheme.textHint),
@@ -380,6 +339,7 @@ class _SearchPageState extends State<SearchPage> {
                     suffixIcon: _controller.text.isEmpty
                         ? null
                         : IconButton(
+                            tooltip: '清空搜索',
                             icon: Icon(Icons.cancel_rounded,
                                 color: AppTheme.textHint, size: 18),
                             onPressed: _clearSearch,
@@ -400,81 +360,24 @@ class _SearchPageState extends State<SearchPage> {
             child: Wrap(
               spacing: 8,
               runSpacing: 4,
-              children: ContentMode.values.map((mode) => ChoiceChip(
+              children: [
+                for (final mode in ContentMode.values)
+                  ChoiceChip(
+                    key: ValueKey('search-category-${mode.name}'),
                     label: Text(mode.label),
-                    selected: _mode == mode,
-                    onSelected: (_) => _switchMode(mode),
-              )).toList(),
+                    selected: !_searchUsers && _mode == mode,
+                    onSelected: (_) => _selectCategory(mode),
+                  ),
+                ChoiceChip(
+                  key: const ValueKey('search-category-up'),
+                  label: const Text('UP 主'),
+                  selected: _searchUsers,
+                  onSelected: (_) => _selectCategory(null),
+                ),
+              ],
             ),
           ),
-          // 搜索框在上、切换在下；搜索出结果后才出现
-          if (_hasSearched) _buildTabs(),
           Expanded(child: _buildBody()),
-        ],
-      ),
-    );
-  }
-
-  /// 听书 / UP主 切换（搜索框下方，搜索后才出现）
-  Widget _buildTabs() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 48),
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceHigh,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.divider, width: 0.5),
-              ),
-              child: Row(
-                children: List.generate(2, (i) {
-                  final active = _tab == i;
-                  return Expanded(
-                    child: Semantics(
-                      key: ValueKey('search-result-tab-$i'),
-                      selected: active,
-                      button: true,
-                      child: GestureDetector(
-                      onTap: () => _switchTab(i),
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 48),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color:
-                              active ? AppTheme.accent : Colors.transparent,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Text(
-                          i == 0 ? '${_mode.label}结果' : 'UP主',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight:
-                                active ? FontWeight.w700 : FontWeight.w400,
-                            color:
-                                active ? AppTheme.onPrimary : AppTheme.textSub,
-                          ),
-                        ),
-                      ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-          if (_switching)
-            const Padding(
-              padding: EdgeInsets.only(left: 12),
-              child: SizedBox(width: 16, height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accent)),
-            ),
         ],
       ),
     );
@@ -496,7 +399,7 @@ class _SearchPageState extends State<SearchPage> {
     if (!_hasSearched) {
       return _buildSuggest();
     }
-    if (_tab == 1) {
+    if (_searchUsers) {
       if (_ups.isEmpty) {
         return _ErrorState(
           icon: Icons.person_search_outlined,
@@ -638,8 +541,20 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  /// 列表尾部：加载中 / 到底了
+  /// 列表尾部：失败重试 / 加载中 / 到底了
   Widget _buildFooter() {
+    if (_moreFailed) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(children: [
+          Text('加载更多失败', style: TextStyle(color: AppTheme.textSub)),
+          TextButton(
+            onPressed: () => _loadMore(retry: true),
+            child: const Text('重试'),
+          ),
+        ]),
+      );
+    }
     if (_loadingMore) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
@@ -699,26 +614,28 @@ class _SearchPageState extends State<SearchPage> {
           ),
           const SizedBox(height: 24),
         ],
-        _SectionHeader(
-          title: '热门搜索',
-          icon: Icons.local_fire_department_rounded,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: DiscoverSeeds.hotKeysFor(_mode)
-              .asMap()
-              .entries
-              .map(
-                (e) => _RankChip(
-                  rank: e.key + 1,
-                  label: e.value,
-                  onTap: () => _searchWith(e.value),
-                ),
-              )
-              .toList(),
-        ),
+        if (!_searchUsers) ...[
+          _SectionHeader(
+            title: '热门搜索',
+            icon: Icons.local_fire_department_rounded,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: DiscoverSeeds.hotKeysFor(_mode)
+                .asMap()
+                .entries
+                .map(
+                  (e) => _RankChip(
+                    rank: e.key + 1,
+                    label: e.value,
+                    onTap: () => _searchWith(e.value),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
         const SizedBox(height: 32),
         Center(
           child: Column(
@@ -727,11 +644,15 @@ class _SearchPageState extends State<SearchPage> {
                 shaderCallback: (rect) => const LinearGradient(
                   colors: [AppTheme.accentSoft, AppTheme.accentLilac],
                 ).createShader(rect),
-                child: const Icon(Icons.auto_stories_rounded, size: 40),
+                child: Icon(
+                  _searchUsers ? Icons.person_search_rounded : Icons.auto_stories_rounded,
+                  size: 40,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
-                '发现 · 收听 · 一路在听',
+                _searchUsers ? '输入 UP 主名称，找到想听的创作者' : '发现 · 收听 · 一路在听',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: AppTheme.textHint),
               ),
             ],

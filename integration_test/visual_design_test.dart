@@ -12,6 +12,7 @@ import 'package:blisten/core/theme/theme_controller.dart';
 import 'package:blisten/models/content_mode.dart';
 import 'package:blisten/pages/home_shell.dart';
 import 'package:blisten/pages/player_page.dart';
+import 'package:blisten/pages/search_page.dart';
 import 'package:blisten/pages/splash_screen.dart';
 import 'package:blisten/player/bili_audio_handler.dart';
 import 'package:blisten/player/book_player.dart';
@@ -81,6 +82,7 @@ void main() {
       await player.stop();
       await prefs.remove('abts_shelf');
       await prefs.remove('abts_recent_progress');
+      await FollowStore.instance.remove(1);
       await shelf.load();
       HomeTabs.switchTo(0);
     }),
@@ -100,6 +102,7 @@ void main() {
   );
 
   Future<void> capture(WidgetTester tester, String name) async {
+    await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull, reason: name);
     await binding.takeScreenshot(name);
@@ -169,6 +172,52 @@ void main() {
         await tester.tap(find.widgetWithText(NavigationDestination, '发现'));
         await tester.pump(const Duration(seconds: 1));
         await capture(tester, '$tone-discover');
+        await tester.tap(find.text('更多'));
+        await _until(
+          tester,
+          () =>
+              find.byType(SearchPage).evaluate().isNotEmpty &&
+              find.text('本地有声小说测试').evaluate().isNotEmpty,
+          'content search results',
+        );
+        await capture(tester, '$tone-search-categories');
+        await tester.tap(find.widgetWithText(ChoiceChip, 'UP 主'));
+        await _until(
+          tester,
+          () => find.text('本地测试 UP 主').evaluate().isNotEmpty,
+          'independent UP results',
+        );
+        await capture(tester, '$tone-search-up');
+        await tester.tap(find.widgetWithText(FilledButton, '关注'));
+        await _until(
+          tester,
+          () =>
+              FollowStore.instance.isFollowing(1) &&
+              find.widgetWithText(FilledButton, '已关注').evaluate().isNotEmpty,
+          'follow search result',
+        );
+        expect(find.byType(SearchPage), findsOneWidget);
+        await tester.tap(find.widgetWithText(FilledButton, '已关注'));
+        await _until(
+          tester,
+          () =>
+              !FollowStore.instance.isFollowing(1) &&
+              find.widgetWithText(FilledButton, '关注').evaluate().isNotEmpty,
+          'unfollow search result',
+        );
+        await tester.tap(find.widgetWithText(ChoiceChip, '听歌'));
+        await _until(
+          tester,
+          () =>
+              !tester
+                  .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'UP 主'))
+                  .selected &&
+              find.text('本地测试 UP 主').evaluate().isEmpty &&
+              find.byType(CircularProgressIndicator).evaluate().isEmpty,
+          'return to content category',
+        );
+        await tester.tap(find.byTooltip('返回上一页'));
+        await tester.pump(const Duration(milliseconds: 450));
         await tester.tap(find.widgetWithText(NavigationDestination, '我的'));
         await tester.pump(const Duration(milliseconds: 300));
         await capture(tester, '$tone-my');
@@ -230,6 +279,33 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.widgetWithText(NavigationDestination, '我的'));
       await capture(tester, '$tone-large-my');
+      await tester.tap(find.widgetWithText(NavigationDestination, '发现'));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('听歌').first);
+      await _until(
+        tester,
+        () => find.text('本地三分钟歌曲').evaluate().isNotEmpty,
+        'large text music discovery',
+      );
+      await tester.tap(find.text('更多'));
+      await _until(
+        tester,
+        () =>
+            find.byType(SearchPage).evaluate().isNotEmpty &&
+            ModalRoute.of(
+              tester.element(find.byType(SearchPage)),
+            )!.animation!.isCompleted &&
+            find.text('本地三分钟歌曲').evaluate().isNotEmpty,
+        'large text content search',
+      );
+      await capture(tester, '$tone-large-search-categories');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'UP 主'));
+      await _until(
+        tester,
+        () => find.text('本地测试 UP 主').evaluate().isNotEmpty,
+        'large text UP search',
+      );
+      await capture(tester, '$tone-large-search-up');
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }

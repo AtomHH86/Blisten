@@ -260,30 +260,37 @@ void main() {
   });
 
   testWidgets(
-    'UP tab keeps visible results until success and keeps old tab on failure',
+    'UP category replaces old results and retains selection on failure',
     (tester) async {
       final api = _Api()..deferUsers = true;
       await tester.pumpWidget(
         _host(SearchPage(initialKeyword: '三体', api: api)),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('UP主'));
+      await tester.tap(find.text('UP 主'));
       await tester.pump();
-      expect(find.text('audiobook 第 1 页'), findsOneWidget);
+      expect(find.text('audiobook 第 1 页'), findsNothing);
       api.pendingUsers.single.complete(const [
         UpUser(mid: 17, name: '测试 UP 主'),
       ]);
       await tester.pumpAndSettle();
       expect(find.text('测试 UP 主'), findsOneWidget);
       expect(find.text('audiobook 第 1 页'), findsNothing);
-      await tester.tap(find.text('听书结果'));
+      await tester.tap(find.widgetWithText(ChoiceChip, '听书'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('UP主'));
+      await tester.tap(find.text('UP 主'));
       await tester.pump();
       api.pendingUsers.last.completeError(Exception('网络不可用'));
       await tester.pumpAndSettle();
-      expect(find.text('audiobook 第 1 页'), findsOneWidget);
+      expect(find.text('audiobook 第 1 页'), findsNothing);
       expect(find.text('测试 UP 主'), findsNothing);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'UP 主'))
+            .selected,
+        isTrue,
+      );
+      expect(find.text('重试'), findsOneWidget);
     },
   );
 
@@ -382,6 +389,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     api.defer = false;
+    await tester.ensureVisible(find.text('重试'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     expect(api.requests.last, (
@@ -406,13 +415,13 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.tap(find.text('UP主'));
+      await tester.tap(find.text('UP 主'));
       await tester.pumpAndSettle();
       expect(find.text('测试 UP 主'), findsOneWidget);
       api.pending.single.complete([_book(ContentMode.concert, '旧视频结果')]);
       await tester.pumpAndSettle();
       expect(find.text('旧视频结果'), findsNothing);
-      await tester.tap(find.text('听现场结果'));
+      await tester.tap(find.widgetWithText(ChoiceChip, '听现场'));
       await tester.pump();
       expect(api.requests.last.mode, ContentMode.concert);
       api.pending.last.complete([_book(ContentMode.concert, '新演唱会结果')]);

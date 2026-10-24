@@ -16,6 +16,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 | 歌曲 | 按歌名、歌手搜索，不套用听书筛选 | 初始 1.0 倍，独立记忆 | 第一 P 从头开始 |
 | 演唱会 | 按歌手、场次等搜索 | 初始 1.0 倍，独立记忆 | 恢复分 P 与进度 |
 
+- 搜索提供“听书 / 听歌 / 听现场 / UP 主”四个并列入口；UP 搜索支持分页，进入主页后可切换收听模式。
 - 支持粘贴 BV 号、视频链接、分享文本和 `b23.tv` 短链接，选择类型后添加；显式分 P 链接可打开对应章节。
 - 保留分 P 连播、暂停/恢复、倍速、睡眠定时、后台播放、锁屏媒体控制、收藏和离线缓存。
 - 旧收藏、缓存和进度默认按听书读取。暂停后继续播放与主动重新选择歌曲是不同操作。
@@ -33,7 +34,7 @@ B听（Blisten）基于开源项目 [阿B听书（fengqiao57/abts）](https://gi
 - 新包名使用独立数据空间，可与阿B听书并存；本版不自动迁移旧收藏、进度、缓存或登录状态。
 - 底部导航：收藏 / 发现 / 我的；收听入口：听书 / 听歌 / 听现场。
 - 原作者统计 SDK 已移除；Blisten 仓库、官网、反馈地址和更新源尚未配置，不再检查上游 Release。
-- 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.0](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
+- 已落实 B「闭眼听友」正式图标、启动、深浅主题及相关交互。[视觉与交互规范 v1.1](docs/design/bting-design-system-v1.md) 是后续开发基线；母版和提示词见 [品牌资产](docs/design/bting-v1/production/README.md)，验证范围见[实施记录](docs/testing/2026-10-24-bting-design.md)。
 
 本应用直接请求 B 站接口，音频、封面等请求也会访问对应资源服务。登录信息、收藏、播放进度和用户选择的离线音频保存在本机；卸载或清除应用数据会影响这些本地资料。移除统计不表示播放功能无需网络。
 
@@ -50,7 +51,7 @@ tool/test-android.sh online        # 可选的真实 B 站联网搜索与播放
 tool/android-emulator.sh stop      # 测试结束后关闭模拟器
 ```
 
-全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。现有回归通过，新增边界用例已复现的问题仍待后续修复。
+全项目质量检查与后续安排见 [2026-10-24 审查报告](docs/reviews/2026-10-24/README.md)和[分阶段改进方案](docs/superpowers/plans/2026-10-24-quality-improvement.md)。审查基线的问题保留原始证据；后续搜索分类、UP 分页与模式选择的改动见[搜索调整验收](docs/testing/2026-10-24-search-categories.md)，其余问题仍按方案推进。
 
 完整操作和测试边界见 [电脑 Android 测试教程](docs/testing/android-desktop-guide.md)。测试仅使用专用模拟器，会重置其中的测试应用数据；无需连接手机。日志保存在 `build/desktop-tests/`。
 
