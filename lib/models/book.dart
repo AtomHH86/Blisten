@@ -51,6 +51,14 @@ class Book {
     pubdate: pubdate, upName: upName, chapters: chapters, contentMode: mode,
   );
 
+  Book withChapters(List<Chapter> directory) => Book(
+    bvid: bvid, aid: aid, title: title, pic: pic, pages: pages,
+    duration: duration, author: author, mid: mid, authorFace: authorFace,
+    desc: desc, play: play, like: like, coin: coin, favorite: favorite,
+    pubdate: pubdate, upName: upName, chapters: List.of(directory),
+    contentMode: contentMode,
+  );
+
   String get cleanTitle => title
       .replaceAll('<em class="keyword">', '')
       .replaceAll('</em>', '');
@@ -153,6 +161,12 @@ class Book {
         'desc': desc,
         'play': play,
         'contentMode': contentMode.name,
+        if (chapters != null) 'chapters': [
+          for (final chapter in chapters!) {
+            'cid': chapter.cid, 'page': chapter.page,
+            'part': chapter.part, 'duration': chapter.duration,
+          },
+        ],
       };
 
   factory Book.fromJson(Map<String, dynamic> m) => Book(
@@ -168,5 +182,7 @@ class Book {
         desc: m['desc'] as String? ?? '',
         play: int.tryParse('${m['play'] ?? 0}') ?? 0,
         contentMode: ContentMode.fromJson(m['contentMode']),
+        chapters: (m['chapters'] as List?)?.map((e) =>
+            Chapter.fromMap((e as Map).cast<String, dynamic>())).toList(),
       );
 }

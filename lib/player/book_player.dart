@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart' hide AudioTrack;
 import 'package:permission_handler/permission_handler.dart';
 
 import '../core/network/api_config.dart';
+import '../core/network/bili_client.dart';
 import '../core/storage/cache_store.dart';
 import '../core/storage/shelf_store.dart';
 import '../models/audio_stream.dart';
@@ -61,8 +62,10 @@ class BookPlayer extends ChangeNotifier {
   // 只保留最近一次失败的播放目标；重试沿用当次分 P 和偏移，
   // 不能重新套用「重新选择歌曲从首曲开始」的入口规则。
   ({Book book, List<Chapter> chapters, int index, int positionMs,
-    bool complete})? _failedTarget;
+    int? cid, bool complete})? _failedTarget;
   int _loadGeneration = 0;
+  String? _pendingBvid;
+  final Set<String> _clearedRecords = {};
   // 用户的最新播放意图独立于资源加载代次；晚到的请求不得逆转暂停。
   bool _wantsPlayback = false;
   bool _preserveCompletedProgress = false;
@@ -269,6 +272,7 @@ class BookPlayer extends ChangeNotifier {
         final retryTarget = retryBook == null ? null : (
           book: retryBook, chapters: List<Chapter>.of(_chapters),
           index: _index, positionMs: currentPosition.inMilliseconds,
+          cid: currentChapter?.cid,
           complete: _chaptersComplete,
         );
         final ok = await _reconnect();
@@ -341,7 +345,11 @@ class BookPlayer extends ChangeNotifier {
         unawaited(_pauseForInterruption());
       }
       ..onFocusDucked = () {
-        unawaited(_duckVolume());
+        if (AudioFocus.instance.pausesOnDuck) {
+          unawaited(_pauseForInterruption());
+        } else {
+          unawaited(_duckVolume());
+        }
       }
       ..onFocusLost = () {
         debugPrint('[BookPlayer] 音频焦点被永久抢占，暂停');
@@ -394,7 +402,7 @@ class BookPlayer extends ChangeNotifier {
           if (!stillCurrent()) return false;
           await _player.setRate(rate);
           if (!stillCurrent()) return false;
-          await _seekToResume(resumeMs,
+          await _seekToResume(resumeMs, mode: book.contentMode,
               stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
           if (!stillCurrent()) return false;
           if (nativeError.isCompleted) throw StateError('原生音源加载失败');
@@ -404,7 +412,6 @@ class BookPlayer extends ChangeNotifier {
           _loading = false;
           _lastPos = currentPosition;
           _lastPosAt = DateTime.now();
-          unawaited(AudioFocus.instance.request());
           _pushState(force: true);
           notifyListeners();
           return true;
@@ -434,7 +441,7 @@ class BookPlayer extends ChangeNotifier {
           // open 之后倍速可能被复位，这里显式恢复
           await _player.setRate(rate);
           if (!stillCurrent()) return false;
-          await _seekToResume(resumeMs,
+          await _seekToResume(resumeMs, mode: book.contentMode,
               stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
           if (!stillCurrent()) return false;
           if (nativeError.isCompleted) throw StateError('原生音源加载失败');
@@ -456,7 +463,6 @@ class BookPlayer extends ChangeNotifier {
       _mediaReady = true;
       _lastPos = currentPosition;
       _lastPosAt = DateTime.now();
-      unawaited(AudioFocus.instance.request());
       _pushState(force: true);
       notifyListeners();
       debugPrint('[BookPlayer] 自动重连成功 @${resumeMs}ms');
@@ -478,6 +484,7 @@ class BookPlayer extends ChangeNotifier {
   void _advanceSavedProgress() {
     final book = _book;
     if (book == null || !hasNext) return;
+    if (_clearedRecords.contains(book.bvid)) return;
     if (_shelf.progressByBvid(book.bvid) == null) return;
     final nextIndex = _index + 1;
     if (nextIndex < 0 || nextIndex >= _chapters.length) return;
@@ -489,6 +496,8 @@ class BookPlayer extends ChangeNotifier {
       chapterIndex: nextIndex,
       positionMs: 0,
       chapterDurationMs: nextChapter.duration * 1000,
+      chapters: _chapters,
+      chaptersComplete: _chaptersComplete,
     ));
   }
 
@@ -509,7 +518,7 @@ class BookPlayer extends ChangeNotifier {
 
   /// 系统打断（来电等）导致的暂停：不放弃焦点，等待 GAIN 后自动续播
   Future<void> _pauseForInterruption() async {
-    if (!_player.state.playing) return;
+    if (!_wantsPlayback) return;
     _pausedByInterruption = true;
     await _player.pause();
     _pushState(force: true);
@@ -537,11 +546,14 @@ class BookPlayer extends ChangeNotifier {
 
   /// 焦点恢复：先还原音量，若之前是被打断暂停则续播
   Future<void> _restoreAfterFocusGain() async {
+    final generation = _loadGeneration;
+    final session = _session;
+    bool current() => generation == _loadGeneration && session == _session;
     await _restoreVolumeIfDucked();
-    if (!_pausedByInterruption) return;
-    debugPrint('[BookPlayer] 音频焦点恢复，继续播放');
+    if (!current() || !_wantsPlayback || !_pausedByInterruption) return;
     _pausedByInterruption = false;
-    await resume();
+    if (_loading || _reconnecting) return;
+    await _playIfIntended(current);
   }
 
   /// 累积的真实播放时长：满 1 分钟才自动加入书架（未手动加入时）
@@ -562,8 +574,11 @@ class BookPlayer extends ChangeNotifier {
     }());
   }
 
-  int _beginLoad() {
+  int _beginLoad([String? bvid]) {
     flushProgress();
+    if (AudioFocus.instance.waiting) unawaited(AudioFocus.instance.abandon());
+    _pendingBvid = bvid ?? _book?.bvid;
+    _clearedRecords.remove(_pendingBvid);
     _wantsPlayback = true;
     _preserveCompletedProgress = false;
     _nativeLoadGeneration = null;
@@ -578,16 +593,23 @@ class BookPlayer extends ChangeNotifier {
   /// 播放指定作品；resume:false 从首个分P开头播放，显式分P可直接传入位置。
   /// 返回是否成功进入播放
   Future<bool> playBook(Book book,
-      {int resumeIndex = 0, int resumeMs = 0, bool resume = true}) async {
-    final generation = _beginLoad();
+      {int resumeIndex = 0, int resumeMs = 0, int? resumeCid, bool resume = true}) async {
+    final generation = _beginLoad(book.bvid);
     notifyListeners();
     _ensureNotificationPermission();
     List<Chapter> chapters;
+    var complete = true;
     try {
-      if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
+      if (_book?.bvid == book.bvid && _chapters.isNotEmpty && _chaptersComplete) {
         chapters = _chapters; // 同本书复用列表
+      } else if (book.chapters?.isNotEmpty == true &&
+          _shelf.progressByBvid(book.bvid)?.chaptersComplete != false) {
+        chapters = book.chapters!;
       } else {
-        chapters = book.chapters ?? await _api.pageList(book.bvid);
+        final directory = await resolveChapters(book.bvid);
+        chapters = directory.chapters;
+        complete = directory.complete;
+        if (chapters.isEmpty) throw StateError('目录不可用');
       }
     } catch (e) {
       if (generation != _loadGeneration) return false;
@@ -595,6 +617,7 @@ class BookPlayer extends ChangeNotifier {
       _error = '加载目录失败，请重试';
       _failedTarget = (book: book, chapters: <Chapter>[],
         index: resume ? resumeIndex : 0, positionMs: resume ? resumeMs : 0,
+        cid: resume ? resumeCid : null,
         complete: true);
       debugPrint('[BookPlayer] 加载目录失败: ${e.runtimeType}');
       notifyListeners();
@@ -621,11 +644,21 @@ class BookPlayer extends ChangeNotifier {
       _autoShelved = false;
     }
 
-    final idx = resume && resumeIndex >= 0 && resumeIndex < chapters.length
+    var idx = resume && resumeIndex >= 0 && resumeIndex < chapters.length
         ? resumeIndex
         : 0;
+    var offset = resume ? resumeMs : 0;
+    if (resume && resumeCid != null && resumeCid != 0) {
+      final found = chapters.indexWhere((chapter) => chapter.cid == resumeCid);
+      if (found >= 0) {
+        idx = found;
+      } else {
+        offset = 0; // 旧 CID 已不存在，不能把它的时间应用到另一分 P。
+      }
+    }
     return _loadTarget(idx,
-        resumeMs: resume ? resumeMs : 0, newBook: book, newChapters: chapters,
+        resumeMs: offset, newBook: book, newChapters: chapters,
+        chaptersComplete: complete,
         requestGeneration: generation);
   }
 
@@ -633,10 +666,10 @@ class BookPlayer extends ChangeNotifier {
   ///
   /// 三种结局分得很清楚，UI 才能给出对的提示：
   /// - [ShelfPlayOutcome.ok]：播上了（可能是在线，也可能是本地缓存）
-  /// - [ShelfPlayOutcome.bookGone]：**网络正常但接口返回空**，说明作品被删/下架
+  /// - [ShelfPlayOutcome.bookGone]：目录接口明确报告作品不存在，且无可用缓存
   /// - [ShelfPlayOutcome.loadFailed]：请求本身失败（多半没网）且没有离线数据
   Future<ShelfPlayOutcome> playBookWithFallback(ShelfBook sb) async {
-    final generation = _beginLoad();
+    final generation = _beginLoad(sb.book.bvid);
     notifyListeners();
     _ensureNotificationPermission();
     final book = sb.book;
@@ -645,30 +678,42 @@ class BookPlayer extends ChangeNotifier {
 
     // ① 拿章节列表：已加载的 → 书里带的 → 在线接口
     var chapters = const <Chapter>[];
-    var networkOk = false;
+    var complete = true;
+    var confirmedGone = false;
     try {
-      if (_book?.bvid == book.bvid && _chapters.isNotEmpty) {
+      if (_book?.bvid == book.bvid && _chapters.isNotEmpty && _chaptersComplete) {
         chapters = _chapters;
-        networkOk = true;
-      } else if (book.chapters != null && book.chapters!.isNotEmpty) {
+      } else if (book.chapters != null && book.chapters!.isNotEmpty && sb.chaptersComplete) {
         chapters = book.chapters!;
-        networkOk = true;
       } else {
-        chapters = await _api.pageList(book.bvid);
-        networkOk = true; // 请求成功（哪怕是空列表）
+        final directory = await resolveChapters(book.bvid, reportGone: true);
+        chapters = directory.chapters;
+        complete = directory.complete;
       }
+    } on BiliApiException catch (error) {
+      confirmedGone = error.code == -404 || error.code == 62002;
     } catch (_) {
-      networkOk = false; // 网络不可用 / 请求异常
+      // 目录或网络异常不构成作品下架的证据。
     }
     if (generation != _loadGeneration) return ShelfPlayOutcome.loadFailed;
 
     // ② 在线拿到了章节：正常播放（命中缓存的集自动播本地文件）
     if (chapters.isNotEmpty) {
-      final idx = start.index >= 0 && start.index < chapters.length
+      var idx = start.index >= 0 && start.index < chapters.length
           ? start.index
           : 0;
+      var offset = start.positionMs;
+      if (book.contentMode.resumesPosition && sb.lastCid != 0) {
+        final found = chapters.indexWhere((chapter) => chapter.cid == sb.lastCid);
+        if (found >= 0) {
+          idx = found;
+        } else {
+          offset = 0;
+        }
+      }
       final ok = await _loadTarget(idx,
-          resumeMs: start.positionMs, newBook: book, newChapters: chapters,
+          resumeMs: offset, newBook: book, newChapters: chapters,
+          chaptersComplete: complete,
           requestGeneration: generation);
       if (generation != _loadGeneration) return ShelfPlayOutcome.loadFailed;
       if (ok) return ShelfPlayOutcome.ok;
@@ -702,9 +747,9 @@ class BookPlayer extends ChangeNotifier {
     _chapters = const [];
     _loaded = false;
     _loading = false;
-    _error = networkOk ? '作品已下架或无法播放' : '网络不可用，且没有离线缓存';
+    _error = confirmedGone ? '作品已下架或不存在' : '暂时无法播放，请稍后重试或使用离线缓存';
     notifyListeners();
-    return networkOk ? ShelfPlayOutcome.bookGone : ShelfPlayOutcome.loadFailed;
+    return confirmedGone ? ShelfPlayOutcome.bookGone : ShelfPlayOutcome.loadFailed;
   }
 
   /// 从书架进度继续收听
@@ -713,6 +758,7 @@ class BookPlayer extends ChangeNotifier {
       sb.book,
       resumeIndex: sb.lastChapterIndex,
       resumeMs: sb.positionMs,
+      resumeCid: sb.lastCid,
       resume: sb.book.contentMode.resumesPosition,
     );
   }
@@ -733,7 +779,7 @@ class BookPlayer extends ChangeNotifier {
       }
       if (target.chapters.isEmpty) {
         return playBook(target.book, resumeIndex: target.index,
-            resumeMs: target.positionMs);
+            resumeMs: target.positionMs, resumeCid: target.cid);
       }
       return _loadTarget(target.index,
           resumeMs: target.positionMs, newBook: target.book,
@@ -760,7 +806,7 @@ class BookPlayer extends ChangeNotifier {
     bool chaptersComplete = true,
     int? requestGeneration,
   }) async {
-    final generation = requestGeneration ?? _beginLoad();
+    final generation = requestGeneration ?? _beginLoad(newBook?.bvid);
     if (generation != _loadGeneration) return false;
     final session = _session;
     bool stillCurrent() => generation == _loadGeneration && session == _session;
@@ -837,10 +883,10 @@ class BookPlayer extends ChangeNotifier {
           if (!stillCurrent()) return false;
           final error = nativeError!;
           if (resumeMs > 0) {
-            await _seekToResume(resumeMs,
+            await _seekToResume(resumeMs, mode: retryBook.contentMode,
                 stillCurrent: () => stillCurrent() && !error.isCompleted);
           } else {
-            await _playIfIntended(stillCurrent);
+            await _playIfIntended(stillCurrent, mode: retryBook.contentMode);
           }
           if (!stillCurrent()) return false;
           if (error.isCompleted) throw StateError('原生音源加载失败');
@@ -881,10 +927,10 @@ class BookPlayer extends ChangeNotifier {
             await _player.setRate(rate);
             if (!stillCurrent()) return false;
             if (resumeMs > 0) {
-              await _seekToResume(resumeMs,
+              await _seekToResume(resumeMs, mode: retryBook.contentMode,
                   stillCurrent: () => stillCurrent() && !nativeError.isCompleted);
             } else {
-              await _playIfIntended(stillCurrent);
+              await _playIfIntended(stillCurrent, mode: retryBook.contentMode);
             }
             if (!stillCurrent()) return false;
             if (nativeError.isCompleted) throw StateError('原生音源加载失败');
@@ -908,8 +954,7 @@ class BookPlayer extends ChangeNotifier {
       if (!ok) {
         throw StateError('无法播放该内容');
       }
-      // 在线与离线两条路径都要抢占音频焦点
-      unawaited(AudioFocus.instance.request());
+      // 在线与离线路径均已在起播前检查焦点与最新播放意图。
       _book = retryBook;
       _chapters = retryChapters;
       _chaptersComplete = retryComplete;
@@ -923,7 +968,9 @@ class BookPlayer extends ChangeNotifier {
         _error = '播放失败，请稍后重试';
         if (retryBook != null) {
           _failedTarget = (book: retryBook, chapters: retryChapters,
-            index: index, positionMs: resumeMs, complete: retryComplete);
+            index: index, positionMs: resumeMs,
+            cid: index >= 0 && index < retryChapters.length ? retryChapters[index].cid : null,
+            complete: retryComplete);
         }
       }
       debugPrint('[BookPlayer] 加载失败: ${e.runtimeType}');
@@ -969,13 +1016,13 @@ class BookPlayer extends ChangeNotifier {
   }
 
   /// 精确续播：等媒体就绪后跳转，并校验落点（首次 seek 可能被播放器忽略）
-  Future<void> _seekToResume(int resumeMs, {bool Function()? stillCurrent}) async {
+  Future<void> _seekToResume(int resumeMs, {bool Function()? stillCurrent, ContentMode? mode}) async {
     final target = Duration(milliseconds: resumeMs);
     await _waitForDuration();
     if (stillCurrent != null && !stillCurrent()) return;
     await _player.seek(target);
     if (stillCurrent != null && !stillCurrent()) return;
-    await _playIfIntended(stillCurrent);
+    await _playIfIntended(stillCurrent, mode: mode);
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (stillCurrent != null && !stillCurrent()) return;
     final off = (_player.state.position - target).inMilliseconds.abs();
@@ -985,12 +1032,21 @@ class BookPlayer extends ChangeNotifier {
     }
   }
 
-  Future<void> _playIfIntended(bool Function()? stillCurrent) async {
+  Future<void> _playIfIntended(bool Function()? stillCurrent, {ContentMode? mode}) async {
     bool current() => stillCurrent == null || stillCurrent();
     if (!_wantsPlayback || !current()) return;
+    final focus = AudioFocus.instance;
+    final speech = (mode ?? _book?.contentMode) == ContentMode.audiobook;
+    // 新焦点或新的语音策略不能继承旧音源的闪避音量；仍持有的音乐闪避保留。
+    if (!focus.hasFocus || focus.pausesOnDuck != speech) {
+      await _restoreVolumeIfDucked();
+      if (!_wantsPlayback || !current()) return;
+    }
+    final granted = await focus.request(speech: speech);
+    if (!granted || !_wantsPlayback || !current() || !focus.hasFocus) return;
     await _player.play();
-    // pause may arrive while the native play command is in flight.
-    if (current() && !_wantsPlayback) await _player.pause();
+    // 暂停/焦点丢失可在原生命令执行期间到达，不能由旧起播命令逆转。
+    if (current() && (!_wantsPlayback || !focus.hasFocus)) await _player.pause();
   }
 
   /// 等待播放器拿到时长（最多 4 秒）
@@ -1169,15 +1225,15 @@ class BookPlayer extends ChangeNotifier {
     if (!stillCurrent()) return;
     await _playIfIntended(stillCurrent);
     if (!stillCurrent()) return;
-    unawaited(AudioFocus.instance.request());
     _pushState(force: true);
   }
 
   Future<void> pause() async {
     _wantsPlayback = false;
     _pausedByInterruption = false;
-    await _player.pause();
+    // 先取消本次焦点，避免旧 pause 的迟到回复释放新选择已取得的焦点。
     unawaited(AudioFocus.instance.abandon());
+    await _player.pause();
     _pushState(force: true);
     flushProgress();
   }
@@ -1216,6 +1272,7 @@ class BookPlayer extends ChangeNotifier {
     _nativeLoadGeneration = null;
     _nativeLoadError = null;
     _failedTarget = null;
+    _pendingBvid = null;
     _error = null;
     _loading = false;
     await _player.stop();
@@ -1243,6 +1300,38 @@ class BookPlayer extends ChangeNotifier {
       );
     }
     notifyListeners();
+  }
+
+  /// 移出收藏保留当前播放与断点；收听记录同时保留不自动重新收藏的意图。
+  Future<void> removeFromShelf(String bvid) async {
+    if (_book?.bvid == bvid) flushProgress();
+    await _shelf.remove(bvid);
+  }
+
+  /// 先终止匹配的播放/加载，再删除断点，避免节流保存或迟到请求写回。
+  Future<void> clearListeningRecord(String bvid) async {
+    _clearedRecords.add(bvid);
+    final pendingMatches = _loading && _pendingBvid == bvid;
+    final activeMatches = _book?.bvid == bvid;
+    if (pendingMatches && !activeMatches && _loaded && _mediaReady &&
+        _nativeLoadGeneration == null) {
+      // 目录请求尚未触碰原生音源；取消它即可，保留另一作品的播放。
+      ++_loadGeneration;
+      _loading = false;
+      _pendingBvid = null;
+      _failedTarget = null;
+      _error = null;
+      notifyListeners();
+    } else if (pendingMatches ||
+        (activeMatches && (!_loading || _pendingBvid == null))) {
+      await stop();
+    } else if (activeMatches && _nativeLoadGeneration == null) {
+      // 另一作品正在查目录/链接，只停止旧音源，不取消新的加载代次。
+      _loaded = false;
+      _mediaReady = false;
+      await _player.stop();
+    }
+    await _shelf.clearListeningRecord(bvid);
   }
 
   /// 书籍启用中（真实播放超过 1 分钟）自动加入书架
@@ -1275,7 +1364,9 @@ class BookPlayer extends ChangeNotifier {
     _playTally += delta;
     if (_playTally >= _autoShelfAfter && !_autoShelved) {
       _autoShelved = true;
-      if (!_shelf.isOnShelf(book.bvid)) {
+      if (!_shelf.isOnShelf(book.bvid) &&
+          !(_shelf.progressByBvid(book.bvid)?.autoAddSuppressed ?? false) &&
+          !_clearedRecords.contains(book.bvid)) {
         unawaited(_shelf.add(book));
         AppAnalytics.onEvent('shelf_add_auto');
       }
@@ -1290,6 +1381,7 @@ class BookPlayer extends ChangeNotifier {
     final book = _book;
     _markingDone = false;
     if (chapter == null || book == null) return;
+    if (_clearedRecords.contains(book.bvid)) return;
     if (!_shelf.isOnShelf(book.bvid)) return;
     _shelf.markChapterDone(book.bvid, chapter.cid);
   }
@@ -1301,6 +1393,7 @@ class BookPlayer extends ChangeNotifier {
     final book = _book;
     final dur = currentDuration;
     if (chapter == null || book == null || dur <= Duration.zero) return;
+    if (_clearedRecords.contains(book.bvid)) return;
     if (pos < dur * 0.95) return;
     if (!_shelf.isOnShelf(book.bvid)) return;
     _shelf.markChapterDone(book.bvid, chapter.cid);
@@ -1314,21 +1407,28 @@ class BookPlayer extends ChangeNotifier {
   /// 「已加载的完整列表 → 在线接口 → 书架里存的 → 缓存索引」，
   /// 保证任何情况下目录里都是**真实章节**，而不是一条占位项。
   Future<({List<Chapter> chapters, bool complete})> resolveChapters(
-      String bvid) async {
-    if (_book?.bvid == bvid && _chapters.isNotEmpty) {
+      String bvid, {bool reportGone = false}) async {
+    if (_book?.bvid == bvid && _chapters.isNotEmpty && _chaptersComplete) {
       return (chapters: [..._chapters], complete: _chaptersComplete);
     }
 
     try {
       final list = await _api.pageList(bvid);
-      if (list.isNotEmpty) return (chapters: list, complete: true);
+      if (list.isNotEmpty) return (chapters: [...list], complete: true);
+    } on BiliApiException catch (error) {
+      if (reportGone && (error.code == -404 || error.code == 62002)) rethrow;
+      // 风控、权限、限流及临时网络失败继续尝试本地数据。
     } catch (_) {
       // 无网络 / 接口失败，继续用本地数据兜底
     }
 
-    final saved = _shelf.progressByBvid(bvid)?.book.chapters;
+    final progress = _shelf.progressByBvid(bvid);
+    final saved = progress?.book.chapters;
     if (saved != null && saved.isNotEmpty) {
-      return (chapters: [...saved], complete: true);
+      return (chapters: [...saved], complete: progress!.chaptersComplete);
+    }
+    if (_book?.bvid == bvid && _chapters.isNotEmpty) {
+      return (chapters: [..._chapters], complete: _chaptersComplete);
     }
 
     // 缓存索引里只有已缓存的那几集，不是完整目录
@@ -1345,7 +1445,7 @@ class BookPlayer extends ChangeNotifier {
   /// 两者对用户是完全不同的处境，不能一律提示「缓存文件已失效」。
   Future<CachePlayOutcome> playCachedEntry(
       String bvid, int cid, Book book) {
-    final generation = _beginLoad();
+    final generation = _beginLoad(bvid);
     notifyListeners();
     return _playCachedEntry(bvid, cid, book, generation);
   }
@@ -1367,6 +1467,7 @@ class BookPlayer extends ChangeNotifier {
     final resolved = await resolveChapters(bvid);
     if (generation != _loadGeneration) return CachePlayOutcome.failed;
     final chapters = resolved.chapters;
+    var complete = resolved.complete;
     var index = chapters.indexWhere((c) => c.cid == cid);
     if (index < 0) {
       // 离线时列表来自缓存索引，理论上必然包含这一集；兜底补一条，
@@ -1377,13 +1478,15 @@ class BookPlayer extends ChangeNotifier {
               contentMode: book.contentMode));
       chapters.add(fromCache.toChapter());
       index = chapters.length - 1;
+      complete = false;
     }
 
     // 优先用书架里存的完整书籍信息（合成的 Book 缺作者/章节等字段）
     var progress = _shelf.progressByBvid(bvid);
     final target = progress?.book ?? book;
     // 保留听书缓存入口自动入架；其他类型只保存独立收听记录。
-    if (!_shelf.isOnShelf(bvid) && target.contentMode.autoShelf) {
+    if (!_shelf.isOnShelf(bvid) && target.contentMode.autoShelf &&
+        !(progress?.autoAddSuppressed ?? false) && !_clearedRecords.contains(bvid)) {
       await _shelf.add(target);
       if (generation != _loadGeneration) return CachePlayOutcome.failed;
       progress = _shelf.progressByBvid(bvid);
@@ -1399,7 +1502,7 @@ class BookPlayer extends ChangeNotifier {
         resumeMs: start.positionMs,
         newBook: target,
         newChapters: chapters,
-        chaptersComplete: resolved.complete,
+        chaptersComplete: complete,
         requestGeneration: generation);
     if (generation != _loadGeneration) return CachePlayOutcome.failed;
 
@@ -1476,6 +1579,7 @@ class BookPlayer extends ChangeNotifier {
     final chapter = currentChapter;
     final book = _book;
     if (chapter == null || book == null) return;
+    if (_clearedRecords.contains(book.bvid)) return;
     final pos = currentPosition;
     // 媒体时长可能还没解析出来（刚点开就退出）。这时用章节列表里带的
     // 时长兜底，否则这一章的进度会被整条丢弃——「点开就退，进度不存」。
@@ -1491,6 +1595,8 @@ class BookPlayer extends ChangeNotifier {
       chapterDurationMs: durMs,
       // 目录不全时不要写总章节数，否则整本进度会被算歪
       totalChapters: _chaptersComplete ? _chapters.length : 0,
+      chapters: _chapters,
+      chaptersComplete: _chaptersComplete,
     );
   }
 

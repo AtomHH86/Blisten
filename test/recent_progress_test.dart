@@ -49,7 +49,7 @@ void main() {
   );
 
   test(
-    'collecting preserves progress and removal clears it as before',
+    'collecting and removing a favorite both preserve recent progress',
     () async {
       final shelf = ShelfStore.instance;
       final book = resource('music', ContentMode.music);
@@ -59,10 +59,10 @@ void main() {
       expect(shelf.recentBooks, hasLength(1));
       await shelf.remove('music');
       expect(shelf.isOnShelf('music'), isFalse);
-      expect(shelf.progressByBvid('music'), isNull);
-      expect(shelf.recentBooks, isEmpty);
+      expect(shelf.progressByBvid('music')!.positionMs, 47000);
+      expect(shelf.recentBooks, hasLength(1));
       await shelf.load();
-      expect(shelf.progressByBvid('music'), isNull);
+      expect(shelf.progressByBvid('music')!.positionMs, 47000);
     },
   );
 

@@ -82,6 +82,9 @@ class _Player extends ChangeNotifier implements BookPlayer {
   }
 
   @override
+  Future<void> removeFromShelf(String bvid) => ShelfStore.instance.remove(bvid);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -139,7 +142,7 @@ void main() {
     tester,
   ) async {
     await showDetail(tester);
-    expect(find.textContaining('收听进度也会一并清除'), findsOneWidget);
+    expect(find.textContaining('收听进度保留在最近收听中'), findsOneWidget);
     expect(ShelfStore.instance.isOnShelf(_bvid), isTrue);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
@@ -149,14 +152,15 @@ void main() {
   });
 
   testWidgets(
-    'detail removal clears collection and progress only after confirmation',
+    'detail removal requires confirmation and keeps recent progress',
     (tester) async {
       await showDetail(tester);
       expect(ShelfStore.instance.progressByBvid(_bvid), isNotNull);
       await tester.tap(find.text('移出'));
       await tester.pumpAndSettle();
       expect(ShelfStore.instance.isOnShelf(_bvid), isFalse);
-      expect(ShelfStore.instance.progressByBvid(_bvid), isNull);
+      expect(ShelfStore.instance.progressByBvid(_bvid)!.positionMs, 42000);
+      expect(ShelfStore.instance.progressByBvid(_bvid)!.doneCids, [11]);
     },
   );
 

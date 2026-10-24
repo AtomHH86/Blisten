@@ -35,11 +35,11 @@ class CachePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('离线缓存'),
         actions: [
-          if (all.isNotEmpty)
+          if (all.isNotEmpty || caching || showFail || cache.clearing)
             TextButton(
-              onPressed: () => _confirmClearAll(context, cache),
+              onPressed: cache.clearing ? null : () => _confirmClearAll(context, cache),
               child: Text(
-                '清空',
+                cache.clearing ? '清理中…' : '清空',
                 style: TextStyle(color: AppTheme.actionText, fontSize: 16),
               ),
             ),
@@ -368,7 +368,8 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface,
         title: const Text('清空缓存'),
-        content: Text('清空全部 ${cache.entries.length} 项离线缓存？此操作不可撤销。',
+        content: Text('删除全部 ${cache.entries.length} 项离线缓存，并取消正在下载和排队中的任务？'
+            '\n收藏和收听进度会保留。此操作不可撤销。',
             style: TextStyle(color: AppTheme.textMain, fontSize: 16)),
         actions: [
           TextButton(
@@ -382,7 +383,15 @@ Icon(Icons.chevron_right_rounded, color: AppTheme.textHint),
         ],
       ),
     );
-    if (ok == true) await cache.clearAll();
+    if (ok != true || !context.mounted) return;
+    try {
+      await cache.clearAll();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清空全部缓存和下载任务')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('部分缓存未能清除，请重试')));
+    }
   }
 }
 
@@ -532,11 +541,20 @@ class _BookChaptersSheet extends StatelessWidget {
                           ],
                         ),
                         onTap: () => _playEntry(context, cache, e),
-                        trailing: IconButton(
-                          tooltip: '删除',
-                          icon: Icon(Icons.delete_outline,
-                              size: 20, color: AppTheme.textSub),
-                          onPressed: () => _confirmDeleteOne(context, cache, e),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: '重新缓存',
+                              icon: Icon(Icons.refresh_rounded, size: 20, color: AppTheme.textSub),
+                              onPressed: cache.clearing ? null : () => _confirmRecache(context, cache, e),
+                            ),
+                            IconButton(
+                              tooltip: '删除',
+                              icon: Icon(Icons.delete_outline, size: 20, color: AppTheme.textSub),
+                              onPressed: cache.clearing ? null : () => _confirmDeleteOne(context, cache, e),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -589,6 +607,30 @@ class _BookChaptersSheet extends StatelessWidget {
   }
 
   /// 删除单集缓存前的二次确认
+  Future<void> _confirmRecache(BuildContext context, CacheStore cache, CacheEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('重新缓存'),
+        content: Text('删除「${entry.chapterTitle}」的当前缓存并重新下载？'
+            '\n重新下载完成前，这一项将无法离线收听。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('重新缓存')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final player = BookPlayer.instance;
+    try {
+      await cache.recache(entry, resolveUrl: player.resolveUrlFor, headers: player.downloadHeaders);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('未能重新缓存，请重试')));
+    }
+  }
+
+  /// 删除单集缓存前的二次确认
   Future<void> _confirmDeleteOne(
       BuildContext context, CacheStore cache, CacheEntry e) async {
     final ok = await showDialog<bool>(
@@ -614,7 +656,15 @@ class _BookChaptersSheet extends StatelessWidget {
         ],
       ),
     );
-    if (ok == true) await cache.remove(e.bvid, e.cid);
+    if (ok != true) return;
+    try {
+      await cache.remove(e.bvid, e.cid);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('缓存未能删除，请重试')),
+      );
+    }
   }
 
   /// 直接播放这一集（离线）
@@ -680,7 +730,15 @@ class _BookChaptersSheet extends StatelessWidget {
         ],
       ),
     );
-    if (ok == true) await cache.removeBook(bvid);
+    if (ok != true) return;
+    try {
+      await cache.removeBook(bvid);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('部分缓存未能删除，请重试')),
+      );
+    }
   }
 }
 

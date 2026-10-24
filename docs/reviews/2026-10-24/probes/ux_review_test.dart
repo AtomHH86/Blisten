@@ -72,7 +72,7 @@ class _Player extends ChangeNotifier implements BookPlayer {
   Future<bool> playBook(
     Book book, {
     int resumeIndex = 0,
-    int resumeMs = 0,
+    int resumeMs = 0, int? resumeCid,
     bool resume = true,
   }) async {
     playCalls++;

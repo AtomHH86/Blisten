@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/book.dart';
+import '../../models/chapter.dart';
 
 /// 书架上的书 + 阅读进度（本地持久化）
 class ShelfBook {
@@ -14,6 +15,10 @@ class ShelfBook {
   int positionMs;
   int chapterDurationMs;
   int updatedAt;
+  /// 完整目录与离线缓存子集必须跨重启保持区分。
+  bool chaptersComplete;
+  /// 取消收藏后，在这条收听记录保留期间禁止自动重新收藏。
+  bool autoAddSuppressed;
 
   /// 已听完的章节 cid 列表（用于「已听 ✓」区分）
   List<int> doneCids;
@@ -40,7 +45,10 @@ class ShelfBook {
     List<int>? doneCids,
     this.totalChapters = 0,
     Map<int, double>? chapterProgress,
+    bool? chaptersComplete,
+    this.autoAddSuppressed = false,
   })  : updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch,
+        chaptersComplete = chaptersComplete ?? (book.chapters?.isNotEmpty ?? false),
         doneCids = doneCids ?? <int>[],
         chapterProgress = chapterProgress ?? <int, double>{};
 
@@ -50,6 +58,8 @@ class ShelfBook {
         'lastChapterIndex': lastChapterIndex,
         'positionMs': positionMs,
         'chapterDurationMs': chapterDurationMs,
+        'chaptersComplete': chaptersComplete,
+        'autoAddSuppressed': autoAddSuppressed,
         'updatedAt': updatedAt,
         'doneCids': doneCids,
         'totalChapters': totalChapters,
@@ -79,6 +89,8 @@ class ShelfBook {
           <int>[],
       totalChapters: int.tryParse('${m['totalChapters'] ?? 0}') ?? 0,
       chapterProgress: progress,
+      chaptersComplete: m['chaptersComplete'] as bool?,
+      autoAddSuppressed: m['autoAddSuppressed'] as bool? ?? false,
     );
   }
 
@@ -257,16 +269,28 @@ class ShelfStore extends ChangeNotifier {
       {ShelfBook? withProgress, bool updateContentMode = false}) async {
     final existing = byBvid(book.bvid);
     if (existing != null) {
+      existing.autoAddSuppressed = false;
+      final directory = existing.book.chapters;
       // 默认只刷新元数据，显式导入才允许重分类已有收藏。
       existing.book = updateContentMode
           ? book
           : book.withContentMode(existing.book.contentMode);
+      if (book.chapters == null && directory != null) {
+        existing.book = existing.book.withChapters(directory);
+      } else if (book.chapters?.isNotEmpty ?? false) {
+        existing.chaptersComplete = true;
+      }
       existing.updatedAt = DateTime.now().millisecondsSinceEpoch;
     } else {
       final progress = withProgress ?? progressByBvid(book.bvid);
       if (progress != null) {
+        progress.autoAddSuppressed = false;
+        final directory = progress.book.chapters;
         // 首次收藏以当前选择的模式为准，同时迁移原收听位置。
         progress.book = book;
+        if (book.chapters == null && directory != null) {
+          progress.book = progress.book.withChapters(directory);
+        }
         _books.add(progress);
       } else {
         _books.add(ShelfBook(
@@ -279,8 +303,29 @@ class ShelfStore extends ChangeNotifier {
   }
 
   Future<void> remove(String bvid) async {
+    final existing = byBvid(bvid);
     _books.removeWhere((b) => b.book.bvid == bvid);
+    if (existing != null) {
+      existing.autoAddSuppressed = true;
+      _rememberRecent(existing);
+    }
+    notifyListeners();
+    await _save();
+  }
+
+  /// 清除收听数据；收藏身份、目录和离线缓存由各自的操作管理。
+  Future<void> clearListeningRecord(String bvid) async {
     _recent.removeWhere((b) => b.book.bvid == bvid);
+    final favorite = byBvid(bvid);
+    if (favorite != null) {
+      favorite
+        ..lastCid = 0
+        ..lastChapterIndex = 0
+        ..positionMs = 0
+        ..chapterDurationMs = 0
+        ..doneCids.clear()
+        ..chapterProgress.clear();
+    }
     notifyListeners();
     await _save();
   }
@@ -308,14 +353,28 @@ class ShelfStore extends ChangeNotifier {
     Book? book,
     /// 实测的总章节数（播放器从真实章节列表传入），用于整本书进度
     int totalChapters = 0,
+    List<Chapter>? chapters,
+    bool? chaptersComplete,
   }) async {
     var existing = progressByBvid(bvid);
     if (existing == null) {
       if (book == null) return null;
-      existing = ShelfBook(book: book);
+      existing = ShelfBook(book: book, chaptersComplete: chaptersComplete);
+    }
+    final directory = chapters ?? book?.chapters;
+    final complete = chaptersComplete ?? (directory?.isNotEmpty ?? false);
+    final oldDirectory = existing.book.chapters;
+    if (book != null) {
+      // 保存进度不能重分类已收藏作品，也不能抹掉已知的完整目录。
+      existing.book = book.withContentMode(existing.book.contentMode);
+      if (oldDirectory != null) existing.book = existing.book.withChapters(oldDirectory);
+    }
+    if (directory != null && directory.isNotEmpty &&
+        (complete || !existing.chaptersComplete)) {
+      existing.book = existing.book.withChapters(directory);
+      existing.chaptersComplete = complete;
     }
     if (!isOnShelf(bvid)) {
-      if (book != null) existing.book = book;
       _rememberRecent(existing);
     }
     existing

@@ -3,68 +3,111 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
-/// Android 音频焦点（走 MainActivity 原生通道）：
-/// 播放时抢占焦点（让其他音乐 App 暂停）；
-/// 被来电等暂时打断时通知暂停，打断结束后通知恢复。
+/// 与后台媒体引擎同寿命的 Android 焦点通道；迟到事件按请求号隔离。
 class AudioFocus {
   AudioFocus._();
   static final AudioFocus instance = AudioFocus._();
 
   static const _method = MethodChannel('abts/audio_focus');
   static const _events = EventChannel('abts/audio_focus_events');
-
   StreamSubscription<dynamic>? _sub;
+  int _requestId = 0;
+  int _lossRevision = 0;
+  bool _granted = false;
+  bool _speech = false;
+  Completer<bool>? _pending;
 
-  /// 被永久抢占（其他播放器开始播放）：应暂停且不自动恢复
   void Function()? onFocusLost;
-
-  /// 被暂时打断（来电等）：应暂停并等待恢复
   void Function()? onFocusInterrupted;
-
-  /// 短暂闪避（导航/提示音）：只需压低音量，不中断播放
   void Function()? onFocusDucked;
-
-  /// 打断结束、重新拿到焦点：应恢复音量并续播
   void Function()? onFocusGained;
-
-  /// 输出设备变为噪音（拔耳机 / 蓝牙断开）：应自动暂停
   void Function()? onNoisy;
 
-  bool get _isAndroid => Platform.isAndroid;
+  bool get hasFocus => !Platform.isAndroid || _granted;
+  bool get waiting => _pending != null;
+  bool get pausesOnDuck => _speech;
 
-  /// 订阅焦点事件
   void start() {
-    if (_sub != null) return;
-    _sub = _events.receiveBroadcastStream().listen((e) {
-      switch (e) {
+    if (_sub != null || !Platform.isAndroid) return;
+    _sub = _events.receiveBroadcastStream().listen((value) {
+      if (value is! Map || value['requestId'] != _requestId) return;
+      switch (value['event']) {
+        case 'gained':
+          _granted = true;
+          _finish(true);
+          onFocusGained?.call();
         case 'lost':
+          ++_lossRevision;
+          _granted = false;
+          _finish(false);
           onFocusLost?.call();
         case 'interrupted':
+          ++_lossRevision;
+          _granted = false;
           onFocusInterrupted?.call();
         case 'ducked':
+          if (_speech) {
+            ++_lossRevision;
+            _granted = false;
+          }
           onFocusDucked?.call();
-        case 'gained':
-          onFocusGained?.call();
         case 'noisy':
           onNoisy?.call();
       }
+    }, onError: (Object _) {
+      _granted = false;
+      _finish(false);
+      onFocusLost?.call();
     });
   }
 
-  /// 请求焦点（成功返回 true；非 Android 或通道不可用时放行）
-  Future<bool> request() async {
-    if (!_isAndroid) return true;
-    try {
-      return await _method.invokeMethod<bool>('request') ?? false;
-    } catch (_) {
-      return true;
+  void _finish(bool granted) {
+    final pending = _pending;
+    _pending = null;
+    if (pending != null && !pending.isCompleted) pending.complete(granted);
+  }
+
+  /// delayed 保持等待；只有真实 GAIN 才放行。取消和 Android 通道故障均不放行。
+  Future<bool> request({bool speech = false}) async {
+    if (!Platform.isAndroid) return true;
+    start();
+    if (_speech == speech) {
+      if (_granted) return true;
+      final pending = _pending;
+      if (pending != null) return pending.future;
     }
+    _finish(false);
+    final id = ++_requestId;
+    _speech = speech;
+    _granted = false;
+    final pending = Completer<bool>();
+    _pending = pending;
+    final lossRevision = _lossRevision;
+    try {
+      final result = await _method.invokeMethod<Object>('request',
+          {'requestId': id, 'speech': speech});
+      if (id != _requestId) return false;
+      if (result == 'granted') {
+        // 原生事件可能先于 request 的回复到达；旧回复不能抹掉新的打断。
+        if (lossRevision == _lossRevision) _granted = true;
+        if (_granted) _finish(true);
+      } else if (result != 'delayed') {
+        _finish(false);
+      }
+    } catch (_) {
+      if (id == _requestId) _finish(false);
+    }
+    return pending.future;
   }
 
   Future<void> abandon() async {
-    if (!_isAndroid) return;
+    final oldId = _requestId;
+    ++_requestId;
+    _granted = false;
+    _finish(false);
+    if (!Platform.isAndroid) return;
     try {
-      await _method.invokeMethod<void>('abandon');
+      await _method.invokeMethod<void>('abandon', {'requestId': oldId});
     } catch (_) {}
   }
 }

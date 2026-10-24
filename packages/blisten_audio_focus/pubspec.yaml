@@ -1,0 +1,19 @@
+name: blisten_audio_focus
+description: Blisten engine-owned Android audio focus and noisy receiver.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.10.8
+  flutter: '>=3.35.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.bting.audio.focus
+        pluginClass: BlistenAudioFocusPlugin

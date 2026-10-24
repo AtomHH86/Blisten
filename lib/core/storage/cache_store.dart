@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/chapter.dart';
 import '../../models/content_mode.dart';
+import 'cache_media_validation.dart';
 
 /// 一条离线缓存记录（一个章节一个文件）
 class CacheEntry {
@@ -226,6 +227,8 @@ class CacheFailure {
   final int page;
   final String part;
   final int order;
+  final String cover;
+  final int durationSec;
 
   const CacheFailure({
     required this.bvid,
@@ -237,6 +240,8 @@ class CacheFailure {
     this.page = 0,
     this.part = '',
     this.order = 0,
+    this.cover = '',
+    this.durationSec = 0,
     this.contentMode = ContentMode.audiobook,
   });
 
@@ -251,6 +256,8 @@ class CacheFailure {
         'part': part,
         'order': order,
         'contentMode': contentMode.name,
+        'cover': cover,
+        'durationSec': durationSec,
       };
 
   factory CacheFailure.fromJson(Map<String, dynamic> m) => CacheFailure(
@@ -264,6 +271,8 @@ class CacheFailure {
         part: m['part'] as String? ?? '',
         order: int.tryParse('${m['order'] ?? 0}') ?? 0,
         contentMode: ContentMode.fromJson(m['contentMode']),
+        cover: m['cover'] as String? ?? '',
+        durationSec: int.tryParse('${m['durationSec'] ?? 0}') ?? 0,
       );
 }
 
@@ -359,6 +368,15 @@ class CacheStore extends ChangeNotifier {
   /// 结果就是「列表里还有、文件却没了」。
   Directory? _dir;
   final Dio _dio = Dio();
+  Future<void> _ready = Future<void>.value();
+  Future<void>? _loadingFuture;
+  Future<void>? _clearing;
+  Future<void>? _pendingWrite;
+  int _generation = 0;
+  Completer<void> _generationCanceled = Completer<void>();
+  final Set<CancelToken> _cancelTokens = {};
+  final Set<Future<bool>> _writers = {};
+  bool get clearing => _clearing != null;
 
   List<CacheEntry> get entries => List.unmodifiable(_entries);
 
@@ -372,7 +390,7 @@ class CacheStore extends ChangeNotifier {
   /// 队列中的待下载项（由页面入队，下载在 CacheStore 内串行执行，
   /// 因此离开弹窗、切页面、回到桌面都不会中断）
   final List<CacheRequest> _queue = [];
-  bool _draining = false;
+  Future<void>? _drainFuture;
 
   /// 由入队方（播放/详情页）注入：解析下载地址与下载请求头
   Future<String?> Function(String bvid, int cid)? _resolveUrl;
@@ -422,6 +440,8 @@ class CacheStore extends ChangeNotifier {
     required Map<String, String> headers,
   }) async {
     if (items.isEmpty) return;
+    final generation = await _prepareWork();
+    if (generation == null || generation != _generation || clearing) return;
     _resolveUrl = resolveUrl;
     _headers = headers;
     var added = 0;
@@ -457,6 +477,7 @@ class CacheStore extends ChangeNotifier {
     _failures.removeWhere(
         (f) => f.bvid == bvid && items.any((i) => i.cid == f.cid));
     await _persistPending();
+    if (generation != _generation) return;
     notifyListeners();
     unawaited(_drain());
   }
@@ -471,17 +492,19 @@ class CacheStore extends ChangeNotifier {
         List<({int cid, String chapterTitle, int durationSec, int page, String part, int order})>>{};
     final titles = <String, String>{};
     final modes = <String, ContentMode>{};
+    final covers = <String, String>{};
     for (final f in _failures) {
       grouped.putIfAbsent(f.bvid, () => []).add((
             cid: f.cid,
             chapterTitle: f.chapterTitle,
-            durationSec: 0,
+            durationSec: f.durationSec,
             page: f.page,
             part: f.part,
             order: f.order,
           ));
       titles[f.bvid] = f.bookTitle;
       modes[f.bvid] = f.contentMode;
+      covers[f.bvid] = f.cover;
     }
     _failures.clear();
     for (final e in grouped.entries) {
@@ -489,7 +512,7 @@ class CacheStore extends ChangeNotifier {
         bvid: e.key,
         bookTitle: titles[e.key] ?? '',
         contentMode: modes[e.key] ?? ContentMode.audiobook,
-        cover: '',
+        cover: covers[e.key] ?? '',
         items: e.value,
         resolveUrl: resolveUrl,
         headers: headers,
@@ -504,10 +527,12 @@ class CacheStore extends ChangeNotifier {
   }
 
   /// 取消排队中（尚未开始）的任务
-  void cancelQueued(String bvid, int cid) {
+  Future<void> cancelQueued(String bvid, int cid) async {
+    if (!_queue.any((e) => e.bvid == bvid && e.cid == cid)) return;
     _queue.removeWhere((e) => e.bvid == bvid && e.cid == cid);
     if (_tasks.remove('$bvid-$cid') != null) _batchTotal--;
     notifyListeners();
+    await _persistPending();
   }
 
   /// 清空任务记录（全部完成后调用，避免列表里堆积）
@@ -516,20 +541,43 @@ class CacheStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _drain() async {
-    if (_draining) return;
-    _draining = true;
+  Future<int?> _prepareWork() async {
+    while (_clearing != null) {
+      await _clearing;
+    }
+    final generation = _generation;
+    await _ready;
+    return generation == _generation ? generation : null;
+  }
+
+  Future<void> _drain() {
+    final active = _drainFuture;
+    if (active != null) return active;
+    if (_queue.isEmpty) return Future<void>.value();
+    final work = _runDrain(_generation, _generationCanceled.future);
+    _drainFuture = work;
+    void finished() {
+      if (identical(_drainFuture, work)) _drainFuture = null;
+    }
+    unawaited(work.then((_) => finished(), onError: (Object _, StackTrace _) => finished()));
+    return work;
+  }
+
+  Future<void> _runDrain(int generation, Future<void> canceled) async {
+    bool current() => generation == _generation;
     try {
       var first = true;
-      while (_queue.isNotEmpty) {
+      while (current() && _queue.isNotEmpty) {
         if (!first) {
-          // 两集之间留出间隔，降低连续请求 playurl 触发风控的概率
-          await Future<void>.delayed(_itemGap);
+          // 间隔可被清空操作唤醒，醒来后再次检查队列和代次。
+          await Future.any([Future<void>.delayed(_itemGap), canceled]);
         }
+        if (!current() || _queue.isEmpty) return;
         first = false;
         final item = _queue.removeAt(0);
-        final task = _tasks['${item.bvid}-${item.cid}'];
-        if (task == null) continue; // 已被取消
+        final key = '${item.bvid}-${item.cid}';
+        final task = _tasks[key];
+        if (task == null) continue;
         _active = item;
         task
           ..done = false
@@ -538,77 +586,80 @@ class CacheStore extends ChangeNotifier {
           ..error = null;
         notifyListeners();
 
-        final url = await _resolveWithRetry(item);
+        final url = await _resolveWithRetry(item, generation, canceled);
+        if (!current()) return;
         if (url == null) {
-          debugPrint('[CacheStore] 获取下载地址失败 ${item.bvid}/${item.cid}');
-          _recordFailure(
-            item,
-            '网络繁忙，未能获取下载地址，请重试',
-          );
-          _tasks.remove('${item.bvid}-${item.cid}');
-          notifyListeners();
+          _recordFailure(item, '网络繁忙，未能获取下载地址，请重试');
+          _tasks.remove(key);
+          _active = null;
           await _persistPending();
+          if (!current()) return;
+          notifyListeners();
           _onQueueProgress();
           continue;
         }
         final ok = await download(
-          bvid: item.bvid,
-          cid: item.cid,
-          url: url,
-          bookTitle: item.bookTitle,
-          chapterTitle: item.chapterTitle,
-          cover: item.cover,
-          durationSec: item.durationSec,
-          headers: _headers,
-          page: item.page,
-          part: item.part,
-          order: item.order,
+          bvid: item.bvid, cid: item.cid, url: url,
+          bookTitle: item.bookTitle, chapterTitle: item.chapterTitle,
+          cover: item.cover, durationSec: item.durationSec, headers: _headers,
+          page: item.page, part: item.part, order: item.order,
           contentMode: item.contentMode,
-          // 按 132kbps 音轨估算（B 站默认档 qn=80 对应 132K），
-          // 之前按 16kbps 估算，空间预检形同虚设，下载到一半才会 ENOSPC
-          expectBytes: item.durationSec > 0
-              ? item.durationSec * 16500 + 2097152
-              : null,
+          expectBytes: item.durationSec > 0 ? item.durationSec * 16500 + 2097152 : null,
           onProgress: (p) {
+            if (!current() || !identical(_tasks[key], task)) return;
             task.progress = p;
             notifyListeners();
             _onQueueProgress();
           },
         );
-        if (!ok) {
-          debugPrint('[CacheStore] 下载未完成 ${item.bvid}/${item.cid}: '
-              '${task.error}');
-          _recordFailure(item, task.error ?? '缓存失败，请重试');
-        } else {
+        if (!current()) return;
+        if (ok) {
           _batchDone++;
+        } else {
+          _recordFailure(item, task.error ?? '缓存失败，请重试');
         }
-        // 完成/失败都清掉任务，避免进度卡片残留
-        _tasks.remove('${item.bvid}-${item.cid}');
+        _tasks.remove(key);
         _active = null;
-        notifyListeners();
         await _persistPending();
+        if (!current()) return;
+        notifyListeners();
         _onQueueProgress();
       }
+    } catch (e) {
+      if (current()) logEvent('缓存队列未完成：${e.runtimeType}');
     } finally {
-      _draining = false;
-      _active = null;
-      // 整批跑完且没有失败项时清零，下一批从 0% 重新计
-      if (_queue.isEmpty && _tasks.isEmpty && _failures.isEmpty) {
-        _batchTotal = 0;
-        _batchDone = 0;
-        _batchFailed = 0;
+      if (current()) {
+        _active = null;
+        if (_queue.isEmpty && _tasks.isEmpty && _failures.isEmpty) {
+          _batchTotal = 0;
+          _batchDone = 0;
+          _batchFailed = 0;
+        }
         notifyListeners();
+        _onQueueDone();
       }
-      _onQueueDone();
     }
   }
 
-  /// 解析下载地址，失败重试 [_urlAttempts] 次
-  Future<String?> _resolveWithRetry(CacheRequest item) async {
+  /// URL 请求可能无法中止；清空时停止等待，迟到结果不再进入下载路径。
+  Future<String?> _resolveWithRetry(CacheRequest item, int generation,
+      Future<void> canceled) async {
+    final resolver = _resolveUrl;
     for (var i = 0; i < _urlAttempts; i++) {
-      if (i > 0) await Future<void>.delayed(Duration(milliseconds: 2000 * i));
-      final url = await _resolveUrl?.call(item.bvid, item.cid);
-      if (url != null && url.isNotEmpty) return url;
+      if (i > 0) {
+        await Future.any([Future<void>.delayed(Duration(milliseconds: 2000 * i)), canceled]);
+      }
+      if (generation != _generation) return null;
+      try {
+        final url = await Future.any<String?>([
+          Future<String?>.sync(() => resolver?.call(item.bvid, item.cid)),
+          canceled.then((_) => null),
+        ]);
+        if (generation != _generation) return null;
+        if (url != null && url.isNotEmpty) return url;
+      } catch (_) {
+        if (generation != _generation) return null;
+      }
     }
     return null;
   }
@@ -627,6 +678,8 @@ class CacheStore extends ChangeNotifier {
       part: item.part,
       order: item.order,
       contentMode: item.contentMode,
+      cover: item.cover,
+      durationSec: item.durationSec,
     ));
     _batchFailed++;
   }
@@ -686,10 +739,24 @@ class CacheStore extends ChangeNotifier {
     }
   }
 
-  Future<void> load() async {
+  Future<void> load() {
+    final active = _loadingFuture;
+    if (active != null) return active;
+    final work = _loadAndReconcile();
+    _ready = work;
+    _loadingFuture = work;
+    void finished() {
+      if (identical(_loadingFuture, work)) _loadingFuture = null;
+    }
+    unawaited(work.then((_) => finished(), onError: (Object _, StackTrace _) => finished()));
+    return work;
+  }
+
+  Future<void> _loadAndReconcile() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     await _loadEvents();
+    _entries.clear();
     if (raw != null) {
       try {
         final arr = jsonDecode(raw) as List;
@@ -701,6 +768,7 @@ class CacheStore extends ChangeNotifier {
     }
     // 读取上次没下完的队列，等 main 注入 resolver 后自动续传
     final rawPending = prefs.getString(_pendingKey);
+    _pendingOnDisk.clear();
     if (rawPending != null) {
       try {
         final arr = jsonDecode(rawPending) as List;
@@ -709,7 +777,7 @@ class CacheStore extends ChangeNotifier {
       } catch (_) {}
     }
     // 清理磁盘上已被删掉的孤儿文件 + 校验索引与文件一致
-    unawaited(_reconcile());
+    await _reconcile();
   }
 
   /// 注入续传所需的地址解析器与请求头，并在有未完成队列时自动开始
@@ -726,9 +794,8 @@ class CacheStore extends ChangeNotifier {
   ///
   /// 进程被杀 / 用户划掉重进时队列不会丢，联网后接着下。
   Future<void> _resumePending() async {
-    if (_pendingOnDisk.isEmpty || _queue.isNotEmpty) return;
-    // 等 WBI 签名 / buvid 预热完成再请求，否则首单容易失败
-    await Future<void>.delayed(const Duration(seconds: 4));
+    final generation = await _prepareWork();
+    if (generation == null || generation != _generation || clearing) return;
     if (_pendingOnDisk.isEmpty || _queue.isNotEmpty) return;
     final items = _pendingOnDisk.toList();
     _pendingOnDisk.clear();
@@ -752,53 +819,43 @@ class CacheStore extends ChangeNotifier {
     _headers = resumeHeaders;
     debugPrint('[CacheStore] 续传上次未完成的 $added 集缓存');
     await _persistPending();
+    if (generation != _generation) return;
     notifyListeners();
     unawaited(_drain());
   }
 
   /// 把尚未完成的队列落盘，保证重启后能续传
-  Future<void> _persistPending() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      // 正在下载的（已出队但未完成）也要算上，否则崩溃后这一集会丢
-      final all = <CacheRequest>[..._queue];
-      for (final t in _tasks.values) {
-        if (t.done || t.failed) continue;
-        if (all.any((e) => e.bvid == t.bvid && e.cid == t.cid)) continue;
-        final active = _active;
-        if (active != null && active.bvid == t.bvid && active.cid == t.cid) {
-          all.add(active);
-          continue;
-        }
-        all.add(CacheRequest(
-          bvid: t.bvid,
-          bookTitle: _active?.bvid == t.bvid ? _active?.bookTitle ?? '' : '',
-          cover: _active?.bvid == t.bvid ? _active?.cover ?? '' : '',
-          cid: t.cid,
-          chapterTitle: t.title,
-          durationSec: _active?.cid == t.cid ? _active?.durationSec ?? 0 : 0,
-          contentMode: t.contentMode,
-        ));
-      }
-      if (all.isEmpty) {
-        await prefs.remove(_pendingKey);
-        return;
-      }
-      await prefs.setString(
-        _pendingKey,
-        jsonEncode(all.map((e) => e.toJson()).toList()),
-      );
-    } catch (e) {
-      debugPrint('[CacheStore] 队列落盘失败: $e');
+  Future<void> _persistPending() {
+    final all = <CacheRequest>[..._pendingOnDisk, ..._queue];
+    final active = _active;
+    if (active != null && !all.any((e) => e.bvid == active.bvid && e.cid == active.cid)) {
+      all.add(active);
     }
+    return _writePreference(_pendingKey,
+        all.isEmpty ? null : jsonEncode(all.map((e) => e.toJson()).toList()));
+  }
+
+  /// 在调用时捕获快照并顺序写入，清空后的空快照始终排在旧写入之后。
+  Future<void> _writePreference(String key, String? value) {
+    final previous = _pendingWrite;
+    final write = () async {
+      if (previous != null) {
+        try { await previous; } catch (_) { /* 后续保存仍需继续。 */ }
+      }
+      final prefs = await SharedPreferences.getInstance();
+      final saved = value == null ? await prefs.remove(key) : await prefs.setString(key, value);
+      if (!saved) throw StateError('缓存信息保存失败');
+    }();
+    _pendingWrite = write;
+    void finished() {
+      if (identical(_pendingWrite, write)) _pendingWrite = null;
+    }
+    unawaited(write.then((_) => finished(), onError: (Object _, StackTrace _) => finished()));
+    return write;
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(_entries.map((e) => e.toJson()).toList()),
-    );
+    await _writePreference(_key, jsonEncode(_entries.map((e) => e.toJson()).toList()));
     notifyListeners();
   }
 
@@ -850,11 +907,7 @@ class CacheStore extends ChangeNotifier {
       if (dropped > 0) {
         debugPrint('[CacheStore] 清理失效缓存记录 $dropped 条');
         logEvent('启动对账：${_entries.length} 条记录中 $dropped 条文件已丢失，已移除');
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          _key,
-          jsonEncode(_entries.map((e) => e.toJson()).toList()),
-        );
+        await _save();
       } else if (_entries.isNotEmpty) {
         logEvent('启动对账：${_entries.length} 条记录与磁盘一致');
       }
@@ -1038,99 +1091,105 @@ class CacheStore extends ChangeNotifier {
     /// 下载进度回调（0~1）
     void Function(double progress)? onProgress,
   }) async {
+    final generation = await _prepareWork();
+    if (generation == null || generation != _generation || clearing) return false;
     if (isCached(bvid, cid)) return true;
-
-    // 空间检查：按音频码率粗估所需大小，空间不足就别白跑一趟
-    if (expectBytes != null && expectBytes > 0) {
-      final free = await freeSpace();
-      if (free >= 0 && free < expectBytes * 1.2) {
-        debugPrint('[CacheStore] 空间不足：需要约 ${expectBytes ~/ 1024 ~/ 1024}MB，'
-            '可用 ${free ~/ 1024 ~/ 1024}MB');
-        return false;
-      }
-    }
-
-    final task = _tasks.putIfAbsent(
-      '$bvid-$cid',
-      () => CacheTask(
-          bvid: bvid, cid: cid, title: chapterTitle, contentMode: contentMode),
+    final request = CacheRequest(
+      bvid: bvid, cid: cid, bookTitle: bookTitle, chapterTitle: chapterTitle,
+      cover: cover, durationSec: durationSec, page: page, part: part,
+      order: order, contentMode: contentMode,
     );
-    notifyListeners();
-
-    File? tmp;
+    final work = _downloadToFile(request, url, headers, generation,
+        expectBytes: expectBytes, onProgress: onProgress);
+    _writers.add(work);
     try {
-      final dir = await _root();
-      final name = CacheEntry(
-        bvid: bvid,
-        cid: cid,
-        bookTitle: bookTitle,
-        chapterTitle: chapterTitle,
-      ).fileName;
-      final target = File('${dir.path}/$name');
-      tmp = File('${target.path}.part');
+      return await work;
+    } finally {
+      _writers.remove(work);
+    }
+  }
 
-      await _dio.download(
-        url,
-        tmp.path,
-        options: Options(
-          headers: headers,
-          followRedirects: true,
-          receiveTimeout: const Duration(minutes: 10),
-        ),
-        onReceiveProgress: (r, t) {
-          if (t > 0) {
-            task.progress = (r / t).clamp(0.0, 1.0);
+  Future<bool> _downloadToFile(CacheRequest request, String url,
+      Map<String, String> headers, int generation,
+      {int? expectBytes, void Function(double)? onProgress}) async {
+    final bvid = request.bvid;
+    final cid = request.cid;
+    final key = '$bvid-$cid';
+    final task = _tasks.putIfAbsent(key, () => CacheTask(
+        bvid: bvid, cid: cid, title: request.chapterTitle, contentMode: request.contentMode));
+    bool current() => generation == _generation && identical(_tasks[key], task);
+    final cancel = CancelToken();
+    _cancelTokens.add(cancel);
+    File? tmp;
+    notifyListeners();
+    try {
+      if (expectBytes != null && expectBytes > 0) {
+        final free = await freeSpace();
+        if (!current()) return false;
+        if (free >= 0 && free < expectBytes * 1.2) throw StateError('存储空间不足');
+      }
+      final dir = await _root();
+      if (!current()) return false;
+      final target = File('${dir.path}/$key.m4a');
+      tmp = File('${target.path}.part');
+      final response = await _dio.download(
+        url, tmp.path, cancelToken: cancel,
+        options: Options(headers: headers, followRedirects: true,
+          receiveTimeout: const Duration(minutes: 10)),
+        onReceiveProgress: (received, total) {
+          if (!current()) return;
+          if (total > 0) {
+            task.progress = (received / total).clamp(0.0, 1.0);
             onProgress?.call(task.progress);
           }
           notifyListeners();
         },
       );
-
-      final size = await tmp.length();
-      if (size <= 0) throw StateError('下载内容为空');
-
-      if (await target.exists()) await target.delete();
+      if (!current()) return false;
+      final size = await validateCacheDownload(tmp,
+          statusCode: response.statusCode,
+          contentType: response.headers.value(Headers.contentTypeHeader),
+          contentLength: int.tryParse(response.headers.value(Headers.contentLengthHeader) ?? ''));
+      if (!current()) return false;
+      final exists = await target.exists();
+      if (!current()) return false;
+      if (exists) await target.delete();
+      if (!current()) return false;
       await tmp.rename(target.path);
       tmp = null;
-
+      if (!current()) return false;
       _entries.removeWhere((e) => e.bvid == bvid && e.cid == cid);
-      _entries.add(
-        CacheEntry(
-          bvid: bvid,
-          cid: cid,
-          bookTitle: bookTitle,
-          chapterTitle: chapterTitle,
-          cover: cover,
-          durationSec: durationSec,
-          sizeBytes: size,
-          cachedAt: DateTime.now().millisecondsSinceEpoch,
-          page: page,
-          part: part,
-          order: order,
-          contentMode: contentMode,
-        ),
-      );
+      _entries.add(CacheEntry(
+        bvid: bvid, cid: cid, bookTitle: request.bookTitle,
+        chapterTitle: request.chapterTitle, cover: request.cover,
+        durationSec: request.durationSec, sizeBytes: size,
+        cachedAt: DateTime.now().millisecondsSinceEpoch,
+        page: request.page, part: request.part, order: request.order,
+        contentMode: request.contentMode,
+      ));
       await _save();
-      task
-        ..progress = 1
-        ..done = true;
+      if (!current()) return false;
+      task..progress = 1..done = true;
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('[CacheStore] 下载失败 $bvid/$cid: ${e.runtimeType}');
+      if (current() && !(e is DioException && CancelToken.isCancel(e))) {
+        debugPrint('[CacheStore] 下载失败 $bvid/$cid: ${e.runtimeType}');
+        task..failed = true..error = _describeError(e);
+        notifyListeners();
+      }
+      return false;
+    } finally {
+      _cancelTokens.remove(cancel);
       try {
         if (tmp != null && await tmp.exists()) await tmp.delete();
-      } catch (_) {}
-      task
-        ..failed = true
-        ..error = _describeError(e);
-      notifyListeners();
-      return false;
+      } catch (_) { /* clearAll 会等待写入结束后再删除整个目录。 */ }
     }
   }
 
   /// 把底层异常翻译成用户看得懂的原因
   static String _describeError(Object e) {
+    if (e is FormatException) return '音频文件不完整或格式异常，请重新缓存';
     final s = '$e';
     if (s.contains('ENOSPC') ||
         s.contains('No space left') ||
@@ -1148,6 +1207,23 @@ class CacheStore extends ChangeNotifier {
     return '下载失败，请稍后重试';
   }
 
+  /// 显式替换单条旧缓存；入队时保留原始作品与分 P 元数据。
+  Future<void> recache(CacheEntry entry, {
+    required Future<String?> Function(String bvid, int cid) resolveUrl,
+    required Map<String, String> headers,
+  }) async {
+    await remove(entry.bvid, entry.cid);
+    clearTask(entry.bvid, entry.cid);
+    await enqueue(
+      bvid: entry.bvid, bookTitle: entry.bookTitle, cover: entry.cover,
+      contentMode: entry.contentMode,
+      items: [(cid: entry.cid, chapterTitle: entry.chapterTitle,
+        durationSec: entry.durationSec, page: entry.page,
+        part: entry.part, order: entry.order)],
+      resolveUrl: resolveUrl, headers: headers,
+    );
+  }
+
   /// 清除某个任务的记录（下载完成后调用，避免列表里堆积）
   void clearTask(String bvid, int cid) {
     _tasks.remove('$bvid-$cid');
@@ -1156,14 +1232,16 @@ class CacheStore extends ChangeNotifier {
 
   /// 删除单条缓存（含磁盘文件）
   Future<void> remove(String bvid, int cid) async {
+    final file = await fileOf(CacheEntry(
+        bvid: bvid, cid: cid, bookTitle: '', chapterTitle: ''));
+    // File.exists() also returns false for a directory at this path. Do not
+    // mistake an obstructed path for a successful removal or start recaching.
+    if (await FileSystemEntity.type(file.path, followLinks: false) !=
+        FileSystemEntityType.notFound) {
+      await file.delete();
+    }
     _entries.removeWhere((e) => e.bvid == bvid && e.cid == cid);
     await _save();
-    try {
-      final dir = await _root();
-      final f = File(
-          '${dir.path}/${CacheEntry(bvid: bvid, cid: cid, bookTitle: '', chapterTitle: '').fileName}');
-      if (await f.exists()) await f.delete();
-    } catch (_) {}
   }
 
   /// 某集的缓存文件对象（路径与下载写盘时完全一致）
@@ -1226,33 +1304,62 @@ class CacheStore extends ChangeNotifier {
   /// 删除某本书的全部缓存
   Future<void> removeBook(String bvid) async {
     final targets = entriesOf(bvid);
-    _entries.removeWhere((e) => e.bvid == bvid);
-    await _save();
-    try {
-      final dir = await _root();
-      for (final e in targets) {
-        final f = File('${dir.path}/${e.fileName}');
-        if (await f.exists()) await f.delete();
-      }
-    } catch (_) {}
+    for (final entry in targets) {
+      // Persist each confirmed deletion, retaining any item that failed.
+      await remove(entry.bvid, entry.cid);
+    }
   }
 
-  /// 清空全部缓存（内部目录 + 旧版遗留的外部目录）
-  Future<void> clearAll() async {
-    _entries.clear();
-    await _save();
+  /// 清空完成意味着旧写入已停止，文件、索引和待恢复队列均已清除。
+  Future<void> clearAll() {
+    final active = _clearing;
+    if (active != null) return active;
+    final done = Completer<void>();
+    _clearing = done.future;
+    unawaited(_clearAll().then(done.complete, onError: done.completeError));
+    return done.future;
+  }
+
+  Future<void> _clearAll() async {
+    ++_generation;
+    _generationCanceled.complete();
+    _generationCanceled = Completer<void>();
+    for (final token in _cancelTokens) {
+      token.cancel('清空缓存');
+    }
+    _queue.clear();
+    _pendingOnDisk.clear();
+    _active = null;
+    _tasks.clear();
+    _failures.clear();
+    _batchTotal = 0;
+    _batchDone = 0;
+    _batchFailed = 0;
+    notifyListeners();
     try {
+      await _ready; // 对账/迁移也可能写文件，必须先收束。
+      final drain = _drainFuture;
+      if (drain != null) await drain;
+      await Future.wait(_writers.toList());
+      _pendingOnDisk.clear(); // load 在取消期间读到的旧恢复项也不能保留。
+      await _persistPending();
       final dir = await audioDir();
       if (await dir.exists()) await dir.delete(recursive: true);
       _dir = null;
-    } catch (_) {}
-    // 顺手清掉旧版外部目录，避免残留文件下次启动又被迁回来
-    try {
-      final extBase = await getExternalStorageDirectory();
-      if (extBase != null) {
-        final old = Directory('${extBase.path}/audio_cache');
-        if (await old.exists()) await old.delete(recursive: true);
+      if (Platform.isAndroid) {
+        final extBase = await getExternalStorageDirectory();
+        if (extBase != null) {
+          final old = Directory('${extBase.path}/audio_cache');
+          if (await old.exists()) await old.delete(recursive: true);
+        }
       }
-    } catch (_) {}
+      _entries.clear();
+      await _save();
+      await _persistPending();
+    } finally {
+      _clearing = null;
+      notifyListeners();
+      _onQueueDone();
+    }
   }
 }

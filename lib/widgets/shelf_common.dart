@@ -128,7 +128,6 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
   final navigator = Navigator.of(context);
   final messenger = ScaffoldMessenger.of(context);
   final player = context.read<BookPlayer>();
-  final shelf = context.read<ShelfStore>();
   player.flushProgress();
 
   // 立刻进播放页
@@ -154,7 +153,7 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
           ),
           content: Text(
             '《${sb.book.cleanTitle}》在平台上已无法访问（可能被删除或下架），'
-            '本地也没有它的离线缓存。\n\n要将它移出收藏吗？\n收听进度也会一并清除。',
+            '本地也没有它的离线缓存。\n\n要将它移出收藏吗？\n收听进度会保留在最近收听中。',
             style: TextStyle(
               color: AppTheme.textSub,
               fontSize: 13,
@@ -178,7 +177,7 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
       );
       if (!context.mounted) return;
       if (remove == true) {
-        await shelf.remove(sb.book.bvid);
+        await player.removeFromShelf(sb.book.bvid);
         if (!context.mounted) return;
         messenger.showSnackBar(
           SnackBar(content: Text('已将《${sb.book.cleanTitle}》移出收藏')),
@@ -200,9 +199,9 @@ Future<void> playFromShelf(BuildContext context, ShelfBook sb) async {
   }
 }
 
-/// 确认后把书移出收藏（收听进度一并清除）
+/// 确认后移出收藏，保留收听进度和当前播放。
 Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
-  final shelf = context.read<ShelfStore>();
+  final player = context.read<BookPlayer>();
   final messenger = ScaffoldMessenger.of(context);
   final ok = await showDialog<bool>(
     context: context,
@@ -213,7 +212,7 @@ Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
         style: TextStyle(color: AppTheme.textMain, fontSize: 17),
       ),
       content: Text(
-        '确定将《${sb.book.cleanTitle}》移出收藏吗？\n收听进度也会一并清除。',
+        '确定将《${sb.book.cleanTitle}》移出收藏吗？\n当前播放会继续，收听进度保留在最近收听中。',
         style: TextStyle(color: AppTheme.textSub, fontSize: 13, height: 1.5),
       ),
       actions: [
@@ -229,7 +228,8 @@ Future<void> confirmRemoveFromShelf(BuildContext context, ShelfBook sb) async {
     ),
   );
   if (ok != true) return;
-  await shelf.remove(sb.book.bvid);
+  await player.removeFromShelf(sb.book.bvid);
+  if (!context.mounted) return;
   messenger.showSnackBar(
     SnackBar(content: Text('已将《${sb.book.cleanTitle}》移出收藏')),
   );

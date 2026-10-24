@@ -105,6 +105,11 @@ class _RecentTile extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
+              tooltip: '清除收听记录',
+              onPressed: () => _clearRecord(context, player),
+              icon: Icon(Icons.delete_outline, color: AppTheme.textSub),
+            ),
+            IconButton(
               tooltip: !sb.book.contentMode.resumesPosition
                   ? '从头播放'
                   : isCurrent ? '打开播放页' : '继续收听',
@@ -121,6 +126,30 @@ class _RecentTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _clearRecord(BuildContext context, BookPlayer player) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('清除收听记录'),
+        content: Text('清除《${sb.book.cleanTitle}》的收听进度和已听标记？'
+            '\n如果它正在播放或加载，将停止该作品。收藏和离线缓存会保留。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('取消')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('清除')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await player.clearListeningRecord(sb.book.bvid);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清除收听记录')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('清除失败，请重试')));
+    }
   }
 
   Future<void> _resume(BuildContext context, BookPlayer player) async {
