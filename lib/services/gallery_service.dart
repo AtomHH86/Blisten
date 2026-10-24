@@ -22,12 +22,14 @@ class GalleryService {
   /// 保存 PNG 字节到相册；成功返回 true
   static Future<bool> savePng(Uint8List bytes, {required String name}) async {
     if (!Platform.isAndroid) return false;
-    // Android 9 及以下需要写存储权限（10+ 走 MediaStore 无需权限）
-    if (await sdkInt() < 29) {
-      final status = await Permission.storage.request();
-      if (!status.isGranted) return false;
-    }
     try {
+      final sdk = await sdkInt();
+      if (sdk <= 0) return false;
+      // Android 9 及以下需要写存储权限（10+ 走 MediaStore 无需权限）。
+      if (sdk < 29) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) return false;
+      }
       final path = await _channel.invokeMethod<String>('saveImage', {
         'base64': base64Encode(bytes),
         'name': name,

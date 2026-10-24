@@ -317,8 +317,12 @@ class MainActivity : AudioServiceActivity() {
                 cacheNotifyManager = n
                 n
             }
-            val b = android.app.Notification.Builder(this, CACHE_CHANNEL_ID)
-                .setContentTitle(title)
+            val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                android.app.Notification.Builder(this, CACHE_CHANNEL_ID)
+            } else {
+                android.app.Notification.Builder(this)
+            }
+            val b = builder.setContentTitle(title)
                 .setContentText(text)
                 .setSmallIcon(android.R.drawable.stat_sys_download)
                 .setOngoing(true)
