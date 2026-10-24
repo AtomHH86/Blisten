@@ -441,9 +441,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
   /// 请求失败时单独检查真实缓存，提供已下载内容入口
   List<Widget> _buildOfflineSection() {
     final store = context.watch<CacheStore>();
+    final shelf = context.watch<ShelfStore>();
     final cached = store.cachedBooks().where((b) {
       final entries = store.entriesOf(b.bvid);
-      final mode = ShelfStore.instance.byBvid(b.bvid)?.book.contentMode ??
+      final mode = shelf.progressByBvid(b.bvid)?.book.contentMode ??
           (entries.isEmpty ? ContentMode.audiobook : entries.first.contentMode);
       return mode == _mode;
     }).toList();
@@ -472,7 +473,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       ),
       ...cached.take(12).map((b) {
         final entries = context.read<CacheStore>().entriesOf(b.bvid);
-        final mode = ShelfStore.instance.byBvid(b.bvid)?.book.contentMode ??
+        final mode = shelf.progressByBvid(b.bvid)?.book.contentMode ??
             (entries.isEmpty ? ContentMode.audiobook : entries.first.contentMode);
         final book = Book(bvid: b.bvid, aid: 0, title: b.title, pic: b.cover,
             contentMode: mode);

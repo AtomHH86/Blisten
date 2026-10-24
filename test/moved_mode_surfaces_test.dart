@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:blisten/core/nav/home_tabs.dart';
 import 'package:blisten/core/network/api_config.dart';
 import 'package:blisten/core/network/bili_client.dart';
 import 'package:blisten/core/storage/cache_store.dart';
@@ -9,6 +13,7 @@ import 'package:blisten/models/chapter.dart';
 import 'package:blisten/models/content_mode.dart';
 import 'package:blisten/pages/book_detail_page.dart';
 import 'package:blisten/pages/cache_sheet.dart';
+import 'package:blisten/pages/discover_page.dart';
 import 'package:blisten/pages/search_page.dart';
 import 'package:blisten/pages/up_home_page.dart';
 import 'package:blisten/player/book_player.dart';
@@ -16,6 +21,9 @@ import 'package:blisten/services/bili_api.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+// Exercise the real cache index against a real local media fixture.
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -107,6 +115,15 @@ class _Player extends ChangeNotifier implements BookPlayer {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _Paths extends PathProviderPlatform {
+  _Paths(this.path);
+  final String path;
+  @override
+  Future<String?> getApplicationSupportPath() async => path;
+  @override
+  Future<String?> getExternalStoragePath() async => null;
+}
+
 class _Routes extends NavigatorObserver {
   UpHomePage? upPage;
   @override
@@ -153,6 +170,7 @@ Future<void> _hearAndCollect() async {
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    HomeTabs.discoverMode.value = null;
     await ShelfStore.instance.load();
   });
 
@@ -217,4 +235,68 @@ void main() {
     );
   }
 
+  testWidgets(
+    'offline discovery follows moved recent mode after unfavoriting and listens for moves',
+    (tester) async {
+      const entry = CacheEntry(
+        bvid: _bvid,
+        cid: 101,
+        bookTitle: _title,
+        chapterTitle: '第一首',
+        contentMode: ContentMode.audiobook,
+      );
+      SharedPreferences.setMockInitialValues({
+        'abts_cache_index': jsonEncode([entry.toJson()]),
+      });
+      final oldPaths = PathProviderPlatform.instance;
+      late Directory root;
+      await tester.runAsync(() async {
+        root = await Directory.systemTemp.createTemp(
+          'blisten-moved-discovery-',
+        );
+        PathProviderPlatform.instance = _Paths(root.path);
+        final dir = await Directory('${root.path}/audio_cache').create();
+        await File(
+          'test/fixtures/cache-silence.m4a',
+        ).copy('${dir.path}/${entry.fileName}');
+        await CacheStore.instance.load();
+        await ShelfStore.instance.load();
+      });
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox());
+        await tester.runAsync(() async {
+          await CacheStore.instance.clearAll();
+          await root.delete(recursive: true);
+          PathProviderPlatform.instance = oldPaths;
+        });
+        HomeTabs.discoverMode.value = null;
+      });
+      await _hearAndCollect();
+      final shelf = ShelfStore.instance;
+      await tester.pumpWidget(
+        _host(DiscoverPage(api: BiliApi(client: _Client(offline: true)))),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(find.text(_title), findsOneWidget);
+
+      await shelf.moveToMode(_bvid, ContentMode.music);
+      await tester.pumpAndSettle();
+      expect(find.text(_title), findsNothing);
+      await shelf.remove(_bvid);
+      await tester.pumpAndSettle();
+      expect(find.text(_title), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('discover-channel-music')));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(find.text(_title), findsOneWidget);
+      expect(find.text('已缓存 1 曲 · 离线可听'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('discover-channel-audiobook')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(_title), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
