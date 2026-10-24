@@ -288,6 +288,18 @@ void main() {
         LocalBiliFixture.retryBook,
         ContentMode.audiobook,
       );
+      // This suite intentionally leaves playback listeners disabled to isolate
+      // manual retries. Seed C's pre-existing heard checkpoint explicitly:
+      // requesting a resume offset alone is not evidence of new listening.
+      await shelf.updateProgress(
+        c.bvid,
+        book: c,
+        cid: LocalBiliFixture.cid(c.bvid, 3),
+        chapterIndex: 2,
+        positionMs: 7000,
+        chapterDurationMs: 90000,
+        totalChapters: 3,
+      );
       expect(await player.playBook(c, resumeIndex: 2, resumeMs: 7000), isTrue);
       final pendingGate = fixture.gatePlayUrl(LocalBiliFixture.cid(a.bvid, 1));
       final pendingA = player.playBook(a);
